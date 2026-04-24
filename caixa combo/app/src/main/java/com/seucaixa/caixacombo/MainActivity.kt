@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var produtosViewModel: ProdutosViewModel
     private lateinit var vendasViewModel: VendasViewModel
     private lateinit var caixaViewModel: CaixaViewModel
+    private var webSocketService: WebSocketService? = null
     private lateinit var configuracaoImpressaoViewModel: ConfiguracaoImpressaoViewModel
 
     private lateinit var lockPrefs: android.content.SharedPreferences
@@ -523,15 +524,28 @@ class MainActivity : ComponentActivity() {
             
             val passwordInput = android.widget.EditText(context).apply {
                 hint = "Digite a senha"
-                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                 setTextColor(android.graphics.Color.WHITE)
-                setHintTextColor(android.graphics.Color.parseColor("#666666"))
-                setBackgroundResource(android.R.drawable.edit_text)
-                setPadding(24, 24, 24, 24)
+                setHintTextColor(android.graphics.Color.parseColor("#999999"))
+                setBackgroundColor(android.graphics.Color.parseColor("#2a2a3e"))
+                setPadding(24, 20, 24, 20)
                 layoutParams = android.widget.LinearLayout.LayoutParams(
                     android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                     android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = 24 }
+                ).apply { 
+                    bottomMargin = 24
+                    setMargins(0, 0, 0, 0)
+                }
+                
+                // Configurar para teclado não cobrir o campo
+                setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus) {
+                        // Ajustar window para teclado não cobrir
+                        window?.setSoftInputMode(
+                            android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                        )
+                    }
+                }
             }
             addView(passwordInput)
             
@@ -541,11 +555,14 @@ class MainActivity : ComponentActivity() {
                 setBackgroundColor(android.graphics.Color.parseColor("#4e9f3d"))
                 setTextColor(android.graphics.Color.WHITE)
                 textSize = 16f
-                setPadding(32, 24, 32, 24)
+                setPadding(32, 20, 32, 20)
                 layoutParams = android.widget.LinearLayout.LayoutParams(
                     android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                     android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                )
+                ).apply { 
+                    bottomMargin = 16
+                    setMargins(0, 0, 0, 0)
+                }
                 setOnClickListener {
                     val password = passwordInput.text.toString()
                     if (password.isNotEmpty()) {
@@ -557,9 +574,19 @@ class MainActivity : ComponentActivity() {
                             android.util.Log.w("MainActivity", "Senha incorreta")
                             passwordInput.error = "Senha incorreta"
                             passwordInput.text?.clear()
+                            passwordInput.requestFocus()
+                            // Vibrar para feedback
+                            val vibrator = context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                            } else {
+                                @Suppress("DEPRECATION")
+                                vibrator.vibrate(200)
+                            }
                         }
                     } else {
                         passwordInput.error = "Digite a senha"
+                        passwordInput.requestFocus()
                     }
                 }
             })

@@ -4,6 +4,9 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -11,18 +14,110 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// ==================== DADOS EM MEMÓRIA (SEM ARQUIVOS) ====================
-const db = {
-  produtos: [],
-  categorias: [],
-  vendas: [],
-  operacoes: [],
-  usuarios: [
-    { id: 1, username: 'rodrigodevmt', password: bcrypt.hashSync('1985', 10), role: 'admin' }
-  ],
-  dispositivos: [],
-  auditoria: [] // Novo sistema de auditoria
-};
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Criar pasta uploads se não existir
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configurar multer para upload de imagens
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'produto-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de imagem são permitidos'));
+    }
+  }
+});
+
+// ==================== PERSISTÊNCIA DE DADOS ====================
+const DATA_FILE = path.join(__dirname, 'data.json');
+const AUDITORIA_FILE = path.join(__dirname, 'auditoria.json');
+
+// Carregar dados do arquivo
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const data = fs.readFileSync(DATA_FILE, 'utf8');
+      if (data.trim()) {
+        return JSON.parse(data);
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error.message);
+  }
+  
+  // Dados padrão se arquivo não existir ou estiver vazio
+  return {
+    produtos: [],
+    categorias: [],
+    vendas: [],
+    operacoes: [],
+    usuarios: [
+      { id: 1, username: 'rodrigodevmt', password: bcrypt.hashSync('1985', 10), role: 'admin' }
+    ],
+    dispositivos: []
+  };
+}
+
+// Carregar auditoria do arquivo
+function loadAuditoria() {
+  try {
+    if (fs.existsSync(AUDITORIA_FILE)) {
+      const data = fs.readFileSync(AUDITORIA_FILE, 'utf8');
+      if (data.trim()) {
+        return JSON.parse(data);
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao carregar auditoria:', error.message);
+  }
+  return [];
+}
+
+// Salvar dados em arquivo
+function saveData() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Erro ao salvar dados:', error.message);
+  }
+}
+
+// Salvar auditoria em arquivo
+function saveAuditoria() {
+  try {
+    fs.writeFileSync(AUDITORIA_FILE, JSON.stringify(db.auditoria, null, 2), 'utf8');
+  } catch (error) {
+    console.error('Erro ao salvar auditoria:', error.message);
+  }
+}
+
+// ==================== DADOS COM PERSISTÊNCIA ====================
+let db = loadData();
+db.auditoria = loadAuditoria();
 
 const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
@@ -47,11 +142,28 @@ function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
     db.auditoria = db.auditoria.slice(0, 1000);
   }
   
+  // Salvar auditoria em disco
+  saveAuditoria();
+  
   // Notificar dashboards sobre novo log
   io.emit('auditoria_update', log);
   
   console.log(`[AUDITORIA] ${tipo.toUpperCase()}: ${deviceId} - ${detalhes}`);
 }
+
+// Salvar dados periodicamente a cada 30 segundos
+setInterval(() => {
+  saveData();
+  console.log('💾 Dados salvos automaticamente');
+}, 30000);
+
+// Salvar dados ao encerrar servidor
+process.on('SIGINT', () => {
+  console.log('\n🔄 Salvando dados antes de encerrar...');
+  saveData();
+  saveAuditoria();
+  process.exit(0);
+});
 
 // ==================== CRIAR SERVER E IO ====================
 const server = http.createServer(app);
@@ -117,6 +229,212 @@ app.get('/api/auditoria', authenticateToken, (req, res) => {
   res.json(logs);
 });
 
+// ==================== ROTAS DE CATEGORIAS ====================
+app.get('/api/categorias', authenticateToken, (req, res) => {
+  res.json(db.categorias);
+});
+
+app.post('/api/categorias', authenticateToken, (req, res) => {
+  const categoria = {
+    id: Date.now(),
+    nome: req.body.nome,
+    descricao: req.body.descricao,
+    createdAt: new Date()
+  };
+  db.categorias.push(categoria);
+  saveData(); // Salvar imediatamente
+  io.emit('categoria_added', categoria);
+  
+  // Notificar dispositivos sobre nova categoria
+  io.emit('categorias_sync', {
+    categorias: db.categorias,
+    timestamp: new Date(),
+    action: 'added',
+    data: categoria
+  });
+  
+  res.json(categoria);
+});
+
+app.put('/api/categorias/:id', authenticateToken, (req, res) => {
+  const index = db.categorias.findIndex(c => c.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
+  
+  db.categorias[index] = { ...db.categorias[index], ...req.body };
+  saveData(); // Salvar imediatamente
+  io.emit('categoria_updated', db.categorias[index]);
+  
+  // Notificar dispositivos sobre categoria atualizada
+  io.emit('categorias_sync', {
+    categorias: db.categorias,
+    timestamp: new Date(),
+    action: 'updated',
+    data: db.categorias[index]
+  });
+  
+  res.json(db.categorias[index]);
+});
+
+app.delete('/api/categorias/:id', authenticateToken, (req, res) => {
+  const index = db.categorias.findIndex(c => c.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
+  
+  const deleted = db.categorias.splice(index, 1)[0];
+  saveData(); // Salvar imediatamente
+  io.emit('categoria_deleted', deleted);
+  
+  // Notificar dispositivos sobre categoria excluída
+  io.emit('categorias_sync', {
+    categorias: db.categorias,
+    timestamp: new Date(),
+    action: 'deleted',
+    data: deleted
+  });
+  
+  res.json(deleted);
+});
+
+app.post('/api/upload', authenticateToken, upload.single('imagem'), (req, res) => {
+  console.log('🔍 [DEBUG] Upload request recebido')
+  console.log('🔍 [DEBUG] req.file:', req.file)
+  
+  if (!req.file) {
+    console.log('❌ [DEBUG] Nenhum arquivo recebido')
+    return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+  }
+  
+  console.log('🔍 [DEBUG] Arquivo recebido:', req.file.filename)
+  console.log('🔍 [DEBUG] URL gerada:', `/uploads/${req.file.filename}`)
+  
+  res.json({ 
+    filename: req.file.filename,
+    url: `/uploads/${req.file.filename}`
+  });
+});
+
+// ==================== ROTAS DE PRODUTOS ====================
+app.get('/api/produtos', authenticateToken, (req, res) => {
+  res.json(db.produtos);
+// Rota para buscar vendas
+app.get('/api/vendas', authenticateToken, (req, res) => {
+  res.json(db.vendas);
+});
+});
+
+app.post('/api/produtos', authenticateToken, (req, res) => {
+  const produto = {
+    id: Date.now(),
+    nome: req.body.nome,
+    descricao: req.body.descricao,
+    preco: req.body.preco,
+    categoriaId: req.body.categoriaId,
+    codigoBarras: req.body.codigoBarras || Date.now().toString(),
+    estoque: req.body.estoque || 0,
+    unidade: req.body.unidade || 'un',
+    imagem: req.body.imagem || null,
+    createdAt: new Date()
+  };
+  db.produtos.push(produto);
+  saveData(); // Salvar imediatamente
+  io.emit('produto_added', produto);
+  
+  // Notificar dispositivos sobre novo produto
+  io.emit('produtos_sync', {
+    produtos: db.produtos,
+    timestamp: new Date(),
+    action: 'added',
+    data: produto
+  });
+  
+  res.json(produto);
+});
+
+app.put('/api/produtos/:id', authenticateToken, (req, res) => {
+  const index = db.produtos.findIndex(p => p.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
+  
+  db.produtos[index] = { ...db.produtos[index], ...req.body };
+  saveData(); // Salvar imediatamente
+  io.emit('produto_updated', db.produtos[index]);
+  
+  // Notificar dispositivos sobre produto atualizado
+  io.emit('produtos_sync', {
+    produtos: db.produtos,
+    timestamp: new Date(),
+    action: 'updated',
+    data: db.produtos[index]
+  });
+  
+  res.json(db.produtos[index]);
+});
+
+app.delete('/api/produtos/:id', authenticateToken, (req, res) => {
+  const index = db.produtos.findIndex(p => p.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
+  
+  const deleted = db.produtos.splice(index, 1)[0];
+  
+  // Remover imagem associada se existir
+  if (deleted.imagem) {
+    const imagePath = path.join(__dirname, 'uploads', path.basename(deleted.imagem));
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+  }
+  
+  saveData(); // Salvar imediatamente
+  io.emit('produto_deleted', deleted);
+  
+  // Notificar dispositivos sobre produto excluído
+  io.emit('produtos_sync', {
+    produtos: db.produtos,
+    timestamp: new Date(),
+    action: 'deleted',
+    data: deleted
+  });
+  
+  res.json(deleted);
+});
+
+// ==================== ROTAS DE DISPOSITIVOS ====================
+app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) => {
+  const { deviceId } = req.params;
+  const dashboardInfo = connectedDashboards.get(req.socket?.id);
+  
+  // Encontrar dispositivo nos dados persistidos
+  const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+  if (deviceIndex === -1) {
+    return res.status(404).json({ error: 'Dispositivo não encontrado' });
+  }
+  
+  // Gerar nova senha de 6 dígitos
+  const newPassword = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Atualizar senha no banco de dados
+  db.dispositivos[deviceIndex].lockPassword = newPassword;
+  saveData(); // Salvar imediatamente
+  
+  // Atualizar também no mapa de dispositivos conectados
+  const connectedDevice = connectedDevices.get(deviceId);
+  if (connectedDevice) {
+    connectedDevice.lockPassword = newPassword;
+  }
+  
+  // Notificar dashboards sobre nova senha
+  io.emit('device_password_updated', { deviceId, lockPassword: newPassword });
+  
+  // Auditoria
+  addAuditoria('mudanca_status', deviceId, 'Senha de bloqueio atualizada', dashboardInfo?.usuario);
+  
+  console.log(`🔑 Nova senha gerada para ${deviceId}: ${newPassword}`);
+  
+  res.json({ 
+    message: 'Senha de bloqueio atualizada com sucesso',
+    deviceId,
+    lockPassword: newPassword
+  });
+});
+
 // ==================== WEBSOCKET ====================
 io.on('connection', (socket) => {
   console.log('🔌 Socket:', socket.id);
@@ -124,10 +442,29 @@ io.on('connection', (socket) => {
   socket.on('device_connect', (data) => {
     const { deviceId, deviceName, deviceType, serialNumber } = data;
     
+    const existing = connectedDevices.get(deviceId);
+    
+    // Detectar se dispositivo estava bloqueado e está reconectando (possível desbloqueio)
+    if (existing && existing.status === 'locked') {
+      console.log(`🔓 [AUTO-UNLOCK] Dispositivo ${deviceId} reconectando - possível desbloqueio via terminal`);
+      
+      // Marcar como online se estava bloqueado e reconectou
+      existing.status = 'online';
+      delete existing.lockReason;
+      delete existing.lockedAt;
+      delete existing.usageTimeLimit;
+      delete existing.usageStartTime;
+      
+      // Auditoria: Desbloqueio detectado por reconexão
+      addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (reconexão detectada)');
+      
+      // Notificar dashboards sobre desbloqueio
+      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+    }
+    
     // Auditoria: Conexão
     addAuditoria('conexao', deviceId, `Dispositivo conectado - ${deviceType} (${serialNumber})`);
     
-    const existing = connectedDevices.get(deviceId);
     if (existing && existing.socketId && existing.socketId !== socket.id) {
       const oldSocket = io.sockets.sockets.get(existing.socketId);
       if (oldSocket) oldSocket.disconnect();
@@ -140,7 +477,9 @@ io.on('connection', (socket) => {
       serialNumber: serialNumber || deviceId,
       connectedAt: new Date(),
       status: (existing && existing.status === 'locked') ? 'locked' : 'online',
-      lockPassword: (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString()
+      lockPassword: (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString(),
+      usageTimeLimit: existing ? existing.usageTimeLimit : null,
+      usageStartTime: existing ? existing.usageStartTime : null
     });
 
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);
@@ -154,16 +493,116 @@ io.on('connection', (socket) => {
       const statusAnterior = device.status;
       device.status = status;
       
+      // Se estava bloqueado e mudou para online, registrar desbloqueio
+      if (statusAnterior === 'locked' && status === 'online') {
+        console.log(`🔓 [AUTO-DETECT] Dispositivo ${deviceId} desbloqueado via terminal (status: ${statusAnterior} → ${status})`);
+        delete device.lockReason;
+        delete device.lockedAt;
+        delete device.usageTimeLimit;
+        delete device.usageStartTime;
+        
+        // Auditoria: Desbloqueio detectado
+        addAuditoria('desbloqueio', deviceId, 'Desbloqueado via terminal (detectado automaticamente)');
+      }
+      
       // Auditoria: Mudança de status
       if (statusAnterior !== status) {
         addAuditoria('mudanca_status', deviceId, `Status alterado: ${statusAnterior} → ${status}`);
       }
       
-      io.emit('device_status_update', { deviceId, status });
+      io.emit('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
     }
   });
 
-  // Dispositivo confirmando desbloqueio via terminal
+  // Receber dados de venda do Android
+  socket.on('sale_data', (data) => {
+    const { deviceId, sale } = data;
+    console.log('💰 Venda recebida do dispositivo:', deviceId);
+    
+    // Verificar se dispositivo estava bloqueado e agora está ativo (desbloqueado automaticamente)
+    const device = connectedDevices.get(deviceId);
+    if (device && device.status === 'locked') {
+      console.log(`🔓 [AUTO-UNLOCK] Dispositivo ${deviceId} detectado como ativo via venda - desbloqueando automaticamente`);
+      device.status = 'online';
+      delete device.lockReason;
+      delete device.lockedAt;
+      delete device.usageTimeLimit;
+      delete device.usageStartTime;
+      
+      // Auditoria: Desbloqueio automático detectado
+      addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (atividade detectada)');
+      
+      // Notificar dashboards sobre desbloqueio
+      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+    }
+    
+    // Salvar venda no banco de dados
+    const venda = {
+      id: Date.now(),
+      deviceId: deviceId,
+      numero: sale.numero || `V${Date.now()}`,
+      itens: sale.itens || [],
+      subtotal: sale.subtotal || 0,
+      desconto: sale.desconto || 0,
+      total: sale.total || 0,
+      formaPagamento: sale.formaPagamento || 'DINHEIRO',
+      valorRecebido: sale.valorRecebido || 0,
+      troco: sale.troco || 0,
+      createdAt: new Date()
+    };
+    
+    db.vendas.push(venda);
+    saveData();
+    
+    // Emitir evento para atualizar dashboards
+    io.emit('venda_added', venda);
+    io.emit('sale_update', { sale: venda });
+    
+    console.log('✅ Venda processada e salva:', venda.id);
+  });
+
+  // Validar senha de desbloqueio enviada pelo terminal
+  socket.on('unlock_attempt', (data) => {
+    const { deviceId, password } = data;
+    const device = connectedDevices.get(deviceId);
+    
+    console.log(`🔑 [DEBUG] Tentativa de desbloqueio: ${deviceId} - senha: ${password}`);
+    
+    if (device) {
+      if (device.lockPassword === password) {
+        // Senha correta - desbloquear
+        console.log(`✅ Senha correta para ${deviceId} - desbloqueando`);
+        device.status = 'online';
+        delete device.lockReason;
+        delete device.lockedAt;
+        delete device.usageTimeLimit;
+        delete device.usageStartTime;
+        
+        // Auditoria: Desbloqueio via terminal
+        addAuditoria('desbloqueio', deviceId, 'Desbloqueado via terminal do dispositivo');
+        
+        // Responder sucesso para o dispositivo
+        socket.emit('unlock_response', { deviceId, success: true, message: 'Senha correta' });
+        
+        // Notificar dashboards sobre desbloqueio
+        io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      } else {
+        // Senha incorreta
+        console.log(`❌ Senha incorreta para ${deviceId}`);
+        
+        // Auditoria: Tentativa de senha incorreta
+        addAuditoria('mudanca_status', deviceId, 'Tentativa de desbloqueio com senha incorreta');
+        
+        // Responder erro para o dispositivo
+        socket.emit('unlock_response', { deviceId, success: false, message: 'Senha incorreta', correctPassword: device.lockPassword });
+      }
+    } else {
+      console.log(`❌ [DEBUG] Dispositivo não encontrado para unlock_attempt: ${deviceId}`);
+      socket.emit('unlock_response', { deviceId, success: false, message: 'Dispositivo não encontrado' });
+    }
+  });
+
+  // Dispositivo confirmando desbloqueio via terminal (legado - manter compatibilidade)
   socket.on('unlock_confirmed', (data) => {
     console.log('🔓 [DEBUG] Evento unlock_confirmed recebido:', data);
     const { deviceId } = data;
@@ -173,11 +612,13 @@ io.on('connection', (socket) => {
       device.status = 'online';
       delete device.lockReason;
       delete device.lockedAt;
+      delete device.usageTimeLimit;
+      delete device.usageStartTime;
       
       // Auditoria: Desbloqueio via terminal
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via terminal do dispositivo');
       
-      io.emit('device_status_update', { deviceId, status: 'online' });
+      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     } else {
       console.log(`❌ [DEBUG] Dispositivo não encontrado para unlock_confirmed: ${deviceId}`);
     }
@@ -202,6 +643,129 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Definir tempo de uso para dispositivo
+  socket.on('set_usage_time', (data) => {
+    const { deviceId, minutes } = data;
+    const device = connectedDevices.get(deviceId);
+    const dashboardInfo = connectedDashboards.get(socket.id);
+    
+    if (device) {
+      console.log(`⏱️ Definindo tempo de uso: ${deviceId} - ${minutes} minutos por ${dashboardInfo?.usuario}`);
+      device.usageTimeLimit = minutes;
+      device.usageStartTime = new Date();
+      
+      // Enviar comando para o dispositivo
+      if (device.socketId) {
+        io.to(device.socketId).emit('set_time_limit', { minutes, startTime: device.usageStartTime });
+      }
+      
+      // Auditoria: Tempo de uso definido
+      addAuditoria('mudanca_status', deviceId, `Tempo de uso definido: ${minutes} minutos`, dashboardInfo?.usuario);
+      
+      io.emit('device_status_update', { 
+        deviceId, 
+        usageTimeLimit: minutes, 
+        usageStartTime: device.usageStartTime 
+      });
+    }
+  });
+
+  // Verificar tempos de uso expirados (roda a cada segundo para precisão)
+  setInterval(() => {
+    for (const [deviceId, device] of connectedDevices.entries()) {
+      if (device.usageTimeLimit && device.usageStartTime) {
+        const elapsed = Math.floor((Date.now() - new Date(device.usageStartTime).getTime()) / 1000); // segundos
+        const remaining = device.usageTimeLimit * 60 - elapsed; // segundos restantes
+        
+        // Notificar tempo restante a cada segundo
+        io.emit('time_update', { 
+          deviceId, 
+          elapsed, 
+          remaining, 
+          total: device.usageTimeLimit * 60 
+        });
+        
+        // Bloquear quando tempo expirar
+        if (remaining <= 0 && device.status !== 'locked') {
+          console.log(`⏰ Tempo expirado para ${deviceId} - Bloqueando automaticamente`);
+          
+          device.status = 'locked';
+          device.lockReason = 'Tempo de uso expirado';
+          device.lockedAt = new Date();
+          
+          // Notificar dispositivo
+          if (device.socketId) {
+            io.to(device.socketId).emit('time_expired', { reason: 'Tempo de uso expirado' });
+            io.to(device.socketId).emit('device_locked', { 
+              reason: 'Tempo de uso expirado', 
+              lockPassword: device.lockPassword 
+            });
+          }
+          
+          // Auditoria
+          addAuditoria('bloqueio', deviceId, 'Bloqueado automaticamente - tempo expirado', 'Sistema');
+          
+          // Notificar dashboards
+          io.emit('device_status_update', { 
+            deviceId, 
+            status: 'locked',
+            lockReason: 'Tempo de uso expirado',
+            usageTimeLimit: null,
+            usageStartTime: null
+          });
+        }
+      }
+    }
+  }, 1000); // Verificar a cada segundo para contador preciso
+
+  // Endpoint para sincronizar dados com dispositivos
+  socket.on('sync_data', (data) => {
+    const { deviceId, type } = data;
+    const dashboardInfo = connectedDashboards.get(socket.id);
+    
+    console.log(`📡 [SYNC] Dispositivo ${deviceId} solicitando sincronização de ${type}`);
+    
+    // Verificar se dispositivo estava bloqueado e agora está ativo (desbloqueado automaticamente)
+    const device = connectedDevices.get(deviceId);
+    if (device && device.status === 'locked') {
+      console.log(`🔓 [AUTO-UNLOCK] Dispositivo ${deviceId} detectado como ativo via sync - desbloqueando automaticamente`);
+      device.status = 'online';
+      delete device.lockReason;
+      delete device.lockedAt;
+      delete device.usageTimeLimit;
+      delete device.usageStartTime;
+      
+      // Auditoria: Desbloqueio automático detectado
+      addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (sincronização detectada)');
+      
+      // Notificar dashboards sobre desbloqueio
+      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+    }
+    
+    if (type === 'produtos' || type === 'all') {
+      // Enviar produtos para o dispositivo
+      if (socket.id) {
+        io.to(socket.id).emit('produtos_sync', {
+          produtos: db.produtos,
+          timestamp: new Date()
+        });
+      }
+    }
+    
+    if (type === 'categorias' || type === 'all') {
+      // Enviar categorias para o dispositivo
+      if (socket.id) {
+        io.to(socket.id).emit('categorias_sync', {
+          categorias: db.categorias,
+          timestamp: new Date()
+        });
+      }
+    }
+    
+    // Auditoria
+    addAuditoria('mudanca_status', deviceId, `Sincronização solicitada: ${type}`, dashboardInfo?.usuario);
+  });
+
   socket.on('dashboard_connect', (data) => {
     const { token } = data || {};
     let usuario = 'dashboard';
@@ -212,12 +776,18 @@ io.on('connection', (socket) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         usuario = decoded.username;
         connectedDashboards.set(socket.id, { usuario, socketId: socket.id });
-      } catch (err) {
-        connectedDashboards.set(socket.id, { usuario: 'dashboard', socketId: socket.id });
+      } catch (e) {
+        console.log('Token inválido no dashboard_connect');
       }
     }
     
-    socket.emit('devices_list', Array.from(connectedDevices.entries()).map(([id, d]) => ({ deviceId: id, ...d, online: d.socketId !== null })));
+    console.log(`🖥️ Dashboard conectado: ${usuario}`);
+    
+    // Enviar lista de dispositivos conectados
+    const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
+      deviceId: id, ...d, online: d.socketId !== null
+    }));
+    socket.emit('devices_list', list);
   });
 
   socket.on('lock_device', (data) => {
@@ -228,8 +798,9 @@ io.on('connection', (socket) => {
     if (device) {
       device.status = 'locked';
       device.lockReason = reason;
+      device.lockedAt = new Date();
       if (device.socketId) io.to(device.socketId).emit('device_locked', { reason, lockPassword: device.lockPassword });
-      io.emit('device_status_update', { deviceId, status: 'locked' });
+      io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
       
       // Auditoria: Bloqueio via dashboard
       addAuditoria('bloqueio', deviceId, `Bloqueado: ${reason}`, dashboardInfo?.usuario);

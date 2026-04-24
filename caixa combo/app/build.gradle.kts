@@ -151,9 +151,11 @@ dependencies {
     
     // Gson for JSON
     implementation("com.google.code.gson:gson:2.10.1")
-    
+
     // Socket.io para WebSocket
-    implementation("io.socket:socket.io-client:2.1.0")
+    implementation("io.socket:socket.io-client:2.1.0") {
+        exclude(group = "org.json", module = "json")
+    }
     
     // Sunmi Printer SDK para V1/V2 compatibilidade
     implementation("com.sunmi:printerx:latest.release")

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
+import { useToast } from '../components/Toast'
 import { 
   LayoutDashboard, Package, Tags, ShoppingCart, Wifi, WifiOff,
   LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play, 
@@ -16,8 +17,8 @@ import Auditoria from './Auditoria'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'produtos', label: 'Produtos', icon: Package },
   { id: 'categorias', label: 'Categorias', icon: Tags },
+  { id: 'produtos', label: 'Produtos', icon: Package },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart },
   { id: 'caixa', label: 'Caixa', icon: DollarSign },
   { id: 'auditoria', label: 'Auditoria', icon: History },
@@ -25,7 +26,8 @@ const navItems = [
 
 export default function Dashboard() {
   const { user, logout, token } = useAuth()
-  const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp } = useSocket()
+  const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp, timeUpdates, socket } = useSocket()
+  const { success } = useToast()
   const [page, setPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [usageModal, setUsageModal] = useState(null)
@@ -35,9 +37,55 @@ export default function Dashboard() {
   const [showPassword, setShowPassword] = useState({})
   const [changePasswordModal, setChangePasswordModal] = useState(null)
 
+  // Listener para eventos de desbloqueio e bloqueio de terminal
+  useEffect(() => {
+    const handleDeviceUnlocked = (event) => {
+      const { deviceId, deviceName } = event.detail
+      console.log(`🔓 Terminal desbloqueado: ${deviceName}`)
+      
+      // Mostrar notificação toast
+      success(
+        `🔓 Terminal desbloqueado: ${deviceName}`,
+        5000
+      )
+    }
+
+    const handleDeviceLocked = (event) => {
+      const { deviceId, deviceName, reason } = event.detail
+      console.log(`🔒 Terminal bloqueado: ${deviceName} - ${reason}`)
+      
+      // Mostrar notificação toast
+      success(
+        `🔒 Terminal bloqueado: ${deviceName} - ${reason}`,
+        5000
+      )
+    }
+
+    window.addEventListener('device_unlocked', handleDeviceUnlocked)
+    window.addEventListener('device_locked', handleDeviceLocked)
+    
+    return () => {
+      window.removeEventListener('device_unlocked', handleDeviceUnlocked)
+      window.removeEventListener('device_locked', handleDeviceLocked)
+    }
+  }, [success])
+
   const onlineDevices = devices.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
   const lockedDevices = devices.filter(d => d.status === 'locked')
   const inUseDevices = devices.filter(d => d.status === 'in_use')
+
+  // Função para formatar tempo (MM:SS)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Verificar se tempo expirou para mostrar botão "Forçar Bloqueio"
+  const isTimeExpired = (deviceId) => {
+    const timeUpdate = timeUpdates[deviceId]
+    return timeUpdate && timeUpdate.remaining <= 0
+  }
 
   const statusConfig = {
     online: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Online' },
@@ -71,15 +119,21 @@ export default function Dashboard() {
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/password`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        }
       })
       const data = await res.json()
       if (res.ok) {
-        // Atualizar devices com nova senha
+        // Mostrar notificação de sucesso
+        success(`🔑 Nova senha gerada: ${data.lockPassword}`, 5000)
         setChangePasswordModal(null)
+      } else {
+        console.error('Erro ao gerar nova senha:', data.error)
       }
     } catch (err) {
-      console.error(err)
+      console.error('Erro ao gerar nova senha:', err)
     }
   }
 
@@ -99,6 +153,28 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const handleForceSync = () => {
+    // Teste básico para garantir que a função está sendo chamada
+    alert('Botão sincronizar clicado!')
+    
+    console.log('🔄 [DEBUG] Botão sincronizar clicado')
+    console.log('🔄 [DEBUG] Socket conectado:', connected)
+    console.log('🔄 [DEBUG] Socket object:', socket ? 'disponível' : 'nulo')
+    
+    if (socket && connected) {
+      console.log('🔄 [DEBUG] Enviando dashboard_connect...')
+      socket.emit('dashboard_connect', { token })
+      success('🔄 Sincronização forçada - atualizando dispositivos...', 3000)
+    } else {
+      console.error('❌ [DEBUG] Socket não disponível ou desconectado')
+      success('❌ WebSocket desconectado - tentando reconectar...', 3000)
+      // Forçar reconexão se necessário
+      if (socket) {
+        socket.connect()
+      }
     }
   }
 
@@ -181,6 +257,14 @@ export default function Dashboard() {
           </button>
           <h2 className="text-lg font-semibold text-white capitalize">{navItems.find(i => i.id === page)?.label}</h2>
           <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={handleForceSync}
+              className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
+              title="Forçar sincronização dos dispositivos"
+            >
+              <RefreshCw size={14} />
+              Sincronizar
+            </button>
             <span className="text-xs text-gray-500">{new Date().toLocaleDateString('pt-BR')}</span>
           </div>
         </header>
@@ -323,7 +407,13 @@ export default function Dashboard() {
                           {device.usageTimeLimit && (
                             <div className="flex items-center gap-1.5 text-xs text-amber-400 mb-3">
                               <Clock size={12} />
-                              {device.usageTimeLimit} min restantes
+                              {timeUpdates[device.deviceId] ? (
+                                <span className={`font-mono ${timeUpdates[device.deviceId].remaining <= 60 ? 'text-red-400 animate-pulse' : ''}`}>
+                                  {formatTime(timeUpdates[device.deviceId].remaining)}
+                                </span>
+                              ) : (
+                                <span>{device.usageTimeLimit} min</span>
+                              )}
                             </div>
                           )}
 
@@ -360,6 +450,15 @@ export default function Dashboard() {
                                   <AlertTriangle size={12} /> Forçar
                                 </button>
                               </>
+                            )}
+                            {/* Botão "Forçar Bloqueio" quando tempo expirou */}
+                            {device.usageTimeLimit && isTimeExpired(device.deviceId) && status !== 'locked' && (
+                              <button
+                                onClick={() => lockDevice(device.deviceId, 'Tempo expirado - forçando bloqueio')}
+                                className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1 animate-pulse"
+                              >
+                                <AlertTriangle size={12} /> Forçar Bloqueio
+                              </button>
                             )}
                             {status === 'in_use' && (
                               <button

@@ -1,0 +1,1492 @@
+[
+  {
+    "id": 1777056957826,
+    "timestamp": "2026-04-24T18:55:57.826Z",
+    "tipo": "bloqueio",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Bloqueado: dsfd",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056893306,
+    "timestamp": "2026-04-24T18:54:53.306Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056873674,
+    "timestamp": "2026-04-24T18:54:33.674Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TEST-DEVICE",
+    "deviceName": "TEST-DEVICE",
+    "detalhes": "Sincronização solicitada: produtos",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056796664,
+    "timestamp": "2026-04-24T18:53:16.664Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: dev",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056779416,
+    "timestamp": "2026-04-24T18:52:59.416Z",
+    "tipo": "desbloqueio",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056776808,
+    "timestamp": "2026-04-24T18:52:56.808Z",
+    "tipo": "bloqueio",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Bloqueado: haha",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056767961,
+    "timestamp": "2026-04-24T18:52:47.961Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056697239,
+    "timestamp": "2026-04-24T18:51:37.239Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: ahhaah",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056672836,
+    "timestamp": "2026-04-24T18:51:12.836Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056670835,
+    "timestamp": "2026-04-24T18:51:10.835Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B Teste",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B Teste",
+    "ip": null
+  },
+  {
+    "id": 1777056575968,
+    "timestamp": "2026-04-24T18:49:35.968Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B Teste",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B Teste",
+    "ip": null
+  },
+  {
+    "id": 1777056573968,
+    "timestamp": "2026-04-24T18:49:33.968Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B Teste",
+    "detalhes": "Tentativa de desbloqueio com senha incorreta",
+    "usuario": "P2-B Teste",
+    "ip": null
+  },
+  {
+    "id": 1777056571969,
+    "timestamp": "2026-04-24T18:49:31.969Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B Teste",
+    "detalhes": "Tentativa de desbloqueio com senha incorreta",
+    "usuario": "P2-B Teste",
+    "ip": null
+  },
+  {
+    "id": 1777056569972,
+    "timestamp": "2026-04-24T18:49:29.972Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056569966,
+    "timestamp": "2026-04-24T18:49:29.966Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056569398,
+    "timestamp": "2026-04-24T18:49:29.398Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056569254,
+    "timestamp": "2026-04-24T18:49:29.254Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056569227,
+    "timestamp": "2026-04-24T18:49:29.227Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056510141,
+    "timestamp": "2026-04-24T18:48:30.141Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056503095,
+    "timestamp": "2026-04-24T18:48:23.095Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056494335,
+    "timestamp": "2026-04-24T18:48:14.335Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056480004,
+    "timestamp": "2026-04-24T18:48:00.004Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056435062,
+    "timestamp": "2026-04-24T18:47:15.062Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056435059,
+    "timestamp": "2026-04-24T18:47:15.059Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056428612,
+    "timestamp": "2026-04-24T18:47:08.612Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056399454,
+    "timestamp": "2026-04-24T18:46:39.454Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056397220,
+    "timestamp": "2026-04-24T18:46:37.220Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056397100,
+    "timestamp": "2026-04-24T18:46:37.100Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056384333,
+    "timestamp": "2026-04-24T18:46:24.333Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056382078,
+    "timestamp": "2026-04-24T18:46:22.078Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056327705,
+    "timestamp": "2026-04-24T18:45:27.705Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056325473,
+    "timestamp": "2026-04-24T18:45:25.473Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056322931,
+    "timestamp": "2026-04-24T18:45:22.931Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056292400,
+    "timestamp": "2026-04-24T18:44:52.400Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056291520,
+    "timestamp": "2026-04-24T18:44:51.520Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056291189,
+    "timestamp": "2026-04-24T18:44:51.189Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777056247089,
+    "timestamp": "2026-04-24T18:44:07.089Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: bloqueado",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056184867,
+    "timestamp": "2026-04-24T18:43:04.867Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Status alterado: locked → online",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056184866,
+    "timestamp": "2026-04-24T18:43:04.866Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via terminal (detectado automaticamente)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056094264,
+    "timestamp": "2026-04-24T18:41:34.264Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056083470,
+    "timestamp": "2026-04-24T18:41:23.470Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Status alterado: locked → online",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056083467,
+    "timestamp": "2026-04-24T18:41:23.467Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via terminal (detectado automaticamente)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777056055188,
+    "timestamp": "2026-04-24T18:40:55.188Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777056047353,
+    "timestamp": "2026-04-24T18:40:47.353Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055990832,
+    "timestamp": "2026-04-24T18:39:50.832Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: Teste automático de bloqueio",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777055978841,
+    "timestamp": "2026-04-24T18:39:38.841Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055977513,
+    "timestamp": "2026-04-24T18:39:37.513Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055977374,
+    "timestamp": "2026-04-24T18:39:37.374Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055908285,
+    "timestamp": "2026-04-24T18:38:28.285Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi oi oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055846713,
+    "timestamp": "2026-04-24T18:37:26.713Z",
+    "tipo": "desconexao",
+    "deviceId": "TEST-DEVICE-001",
+    "deviceName": "Dispositivo Teste",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "Dispositivo Teste",
+    "ip": null
+  },
+  {
+    "id": 1777055844714,
+    "timestamp": "2026-04-24T18:37:24.714Z",
+    "tipo": "desbloqueio",
+    "deviceId": "TEST-DEVICE-001",
+    "deviceName": "Dispositivo Teste",
+    "detalhes": "Desbloqueado automaticamente (atividade detectada)",
+    "usuario": "Dispositivo Teste",
+    "ip": null
+  },
+  {
+    "id": 1777055842713,
+    "timestamp": "2026-04-24T18:37:22.713Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TEST-DEVICE-001",
+    "deviceName": "Dispositivo Teste",
+    "detalhes": "Status alterado: online → locked",
+    "usuario": "Dispositivo Teste",
+    "ip": null
+  },
+  {
+    "id": 1777055840716,
+    "timestamp": "2026-04-24T18:37:20.716Z",
+    "tipo": "conexao",
+    "deviceId": "TEST-DEVICE-001",
+    "deviceName": "TEST-DEVICE-001",
+    "detalhes": "Dispositivo conectado - Android (TEST123)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055839454,
+    "timestamp": "2026-04-24T18:37:19.454Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055838092,
+    "timestamp": "2026-04-24T18:37:18.092Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055836830,
+    "timestamp": "2026-04-24T18:37:16.830Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055828710,
+    "timestamp": "2026-04-24T18:37:08.710Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055828632,
+    "timestamp": "2026-04-24T18:37:08.632Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055828600,
+    "timestamp": "2026-04-24T18:37:08.600Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055726084,
+    "timestamp": "2026-04-24T18:35:26.084Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: cabou seu tempo",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055562885,
+    "timestamp": "2026-04-24T18:32:42.885Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055561560,
+    "timestamp": "2026-04-24T18:32:41.560Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055561441,
+    "timestamp": "2026-04-24T18:32:41.441Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055542049,
+    "timestamp": "2026-04-24T18:32:22.049Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055541977,
+    "timestamp": "2026-04-24T18:32:21.977Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055541900,
+    "timestamp": "2026-04-24T18:32:21.900Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777055377634,
+    "timestamp": "2026-04-24T18:29:37.634Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: fsfsf",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055333234,
+    "timestamp": "2026-04-24T18:28:53.234Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777055330504,
+    "timestamp": "2026-04-24T18:28:50.504Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777055310131,
+    "timestamp": "2026-04-24T18:28:30.131Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777055305783,
+    "timestamp": "2026-04-24T18:28:25.783Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777055232974,
+    "timestamp": "2026-04-24T18:27:12.974Z",
+    "tipo": "desbloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055210269,
+    "timestamp": "2026-04-24T18:26:50.269Z",
+    "tipo": "bloqueio",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: hahah",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777055202117,
+    "timestamp": "2026-04-24T18:26:42.117Z",
+    "tipo": "desbloqueio",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777054969234,
+    "timestamp": "2026-04-24T18:22:49.235Z",
+    "tipo": "bloqueio",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Bloqueado: ola",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777054959939,
+    "timestamp": "2026-04-24T18:22:39.939Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777054957577,
+    "timestamp": "2026-04-24T18:22:37.577Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777054951695,
+    "timestamp": "2026-04-24T18:22:31.695Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012039673,
+    "timestamp": "2026-04-24T06:27:19.673Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012038211,
+    "timestamp": "2026-04-24T06:27:18.211Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012038206,
+    "timestamp": "2026-04-24T06:27:18.206Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012021083,
+    "timestamp": "2026-04-24T06:27:01.083Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012020860,
+    "timestamp": "2026-04-24T06:27:00.860Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777012011238,
+    "timestamp": "2026-04-24T06:26:51.238Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011242033,
+    "timestamp": "2026-04-24T06:14:02.033Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011241941,
+    "timestamp": "2026-04-24T06:14:01.941Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011241935,
+    "timestamp": "2026-04-24T06:14:01.935Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011059051,
+    "timestamp": "2026-04-24T06:10:59.051Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011056678,
+    "timestamp": "2026-04-24T06:10:56.678Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777011056567,
+    "timestamp": "2026-04-24T06:10:56.567Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777010095795,
+    "timestamp": "2026-04-24T05:54:55.795Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777010093708,
+    "timestamp": "2026-04-24T05:54:53.708Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777010093699,
+    "timestamp": "2026-04-24T05:54:53.699Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777009664530,
+    "timestamp": "2026-04-24T05:47:44.530Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777009657162,
+    "timestamp": "2026-04-24T05:47:37.162Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777009640956,
+    "timestamp": "2026-04-24T05:47:20.956Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008376372,
+    "timestamp": "2026-04-24T05:26:16.372Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008376040,
+    "timestamp": "2026-04-24T05:26:16.040Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008375962,
+    "timestamp": "2026-04-24T05:26:15.962Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008280057,
+    "timestamp": "2026-04-24T05:24:40.057Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008278112,
+    "timestamp": "2026-04-24T05:24:38.112Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777008274038,
+    "timestamp": "2026-04-24T05:24:34.038Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777007959053,
+    "timestamp": "2026-04-24T05:19:19.053Z",
+    "tipo": "desbloqueio",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Desbloqueado via dashboard",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777007848821,
+    "timestamp": "2026-04-24T05:17:28.821Z",
+    "tipo": "bloqueio",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: hahaha",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777007313345,
+    "timestamp": "2026-04-24T05:08:33.345Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777007313234,
+    "timestamp": "2026-04-24T05:08:33.234Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777007313226,
+    "timestamp": "2026-04-24T05:08:33.226Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006930409,
+    "timestamp": "2026-04-24T05:02:10.409Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006929670,
+    "timestamp": "2026-04-24T05:02:09.670Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006929577,
+    "timestamp": "2026-04-24T05:02:09.577Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006921523,
+    "timestamp": "2026-04-24T05:02:01.523Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006921247,
+    "timestamp": "2026-04-24T05:02:01.247Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006921083,
+    "timestamp": "2026-04-24T05:02:01.083Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006914988,
+    "timestamp": "2026-04-24T05:01:54.988Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006914179,
+    "timestamp": "2026-04-24T05:01:54.179Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006913737,
+    "timestamp": "2026-04-24T05:01:53.737Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006612977,
+    "timestamp": "2026-04-24T04:56:52.977Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006611920,
+    "timestamp": "2026-04-24T04:56:51.920Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006611913,
+    "timestamp": "2026-04-24T04:56:51.913Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006525771,
+    "timestamp": "2026-04-24T04:55:25.771Z",
+    "tipo": "bloqueio",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado automaticamente - tempo expirado",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006465593,
+    "timestamp": "2026-04-24T04:54:25.593Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Tempo de uso definido: 1 minutos",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777006456797,
+    "timestamp": "2026-04-24T04:54:16.797Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006454271,
+    "timestamp": "2026-04-24T04:54:14.271Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006454263,
+    "timestamp": "2026-04-24T04:54:14.263Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006354454,
+    "timestamp": "2026-04-24T04:52:34.454Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Tempo de uso definido: 5 minutos",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777006348970,
+    "timestamp": "2026-04-24T04:52:28.970Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006347538,
+    "timestamp": "2026-04-24T04:52:27.538Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006347036,
+    "timestamp": "2026-04-24T04:52:27.036Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006341387,
+    "timestamp": "2026-04-24T04:52:21.387Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006341141,
+    "timestamp": "2026-04-24T04:52:21.141Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006339621,
+    "timestamp": "2026-04-24T04:52:19.621Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006270372,
+    "timestamp": "2026-04-24T04:51:10.372Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Tempo de uso definido: 5 minutos",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777006264644,
+    "timestamp": "2026-04-24T04:51:04.644Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006263958,
+    "timestamp": "2026-04-24T04:51:03.958Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006263337,
+    "timestamp": "2026-04-24T04:51:03.337Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006253309,
+    "timestamp": "2026-04-24T04:50:53.309Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Tempo de uso definido: 5 minutos",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777006247789,
+    "timestamp": "2026-04-24T04:50:47.789Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006246458,
+    "timestamp": "2026-04-24T04:50:46.458Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006246305,
+    "timestamp": "2026-04-24T04:50:46.305Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006238834,
+    "timestamp": "2026-04-24T04:50:38.834Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006238739,
+    "timestamp": "2026-04-24T04:50:38.739Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006238721,
+    "timestamp": "2026-04-24T04:50:38.721Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006192339,
+    "timestamp": "2026-04-24T04:49:52.339Z",
+    "tipo": "conexao",
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "2546df681997a5a0",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006182411,
+    "timestamp": "2026-04-24T04:49:42.411Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006182172,
+    "timestamp": "2026-04-24T04:49:42.172Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006173868,
+    "timestamp": "2026-04-24T04:49:33.868Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006173754,
+    "timestamp": "2026-04-24T04:49:33.754Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006168625,
+    "timestamp": "2026-04-24T04:49:28.625Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777006163862,
+    "timestamp": "2026-04-24T04:49:23.862Z",
+    "tipo": "conexao",
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "d8ffc0c5094e7a44",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  }
+]

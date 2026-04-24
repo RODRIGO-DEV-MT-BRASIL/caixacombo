@@ -9,6 +9,7 @@ export function SocketProvider({ children }) {
   const [devices, setDevices] = useState([])
   const [connected, setConnected] = useState(false)
   const [vendas, setVendas] = useState([])
+  const [timeUpdates, setTimeUpdates] = useState({})
   const socketRef = useRef(null)
 
   useEffect(() => {
@@ -23,9 +24,25 @@ export function SocketProvider({ children }) {
     socket.on('connect', () => {
       setConnected(true)
       socket.emit('dashboard_connect', { token })
+      
+      // Forçar atualização completa a cada 30 segundos para garantir sincronismo
+      const syncInterval = setInterval(() => {
+        if (socket.connected) {
+          socket.emit('dashboard_connect', { token })
+        }
+      }, 30000)
+      
+      // Salvar referência para limpar quando desconectar
+      socket.syncInterval = syncInterval
     })
 
-    socket.on('disconnect', () => setConnected(false))
+    socket.on('disconnect', () => {
+      setConnected(false)
+      // Limpar intervalo de sincronização
+      if (socket.syncInterval) {
+        clearInterval(socket.syncInterval)
+      }
+    })
 
     socket.on('devices_list', (list) => setDevices(list))
 
@@ -43,20 +60,65 @@ export function SocketProvider({ children }) {
     })
 
     socket.on('device_status_update', ({ deviceId, status, lockReason, lockedAt, lockPassword, usageTimeLimit, usageStartTime }) => {
-      setDevices(prev => prev.map(d => 
-        d.deviceId === deviceId 
-          ? { 
-              ...d, 
-              status, 
-              lockReason: status === 'locked' ? lockReason : undefined,
-              lockedAt: status === 'locked' ? lockedAt : undefined,
-              lockPassword: lockPassword || d.lockPassword,
-              usageTimeLimit, 
-              usageStartTime, 
-              online: status !== 'offline' 
-            } 
-          : d
-      ))
+      setDevices(prev => {
+        const updatedDevices = prev.map(d => 
+          d.deviceId === deviceId 
+            ? { 
+                ...d, 
+                status, 
+                lockReason: status === 'locked' ? lockReason : undefined,
+                lockedAt: status === 'locked' ? lockedAt : undefined,
+                lockPassword: lockPassword || d.lockPassword,
+                usageTimeLimit, 
+                usageStartTime, 
+                online: status !== 'offline' 
+              } 
+            : d
+        )
+        
+        // Detectar mudanças de status e mostrar notificações
+        const device = updatedDevices.find(d => d.deviceId === deviceId)
+        const oldDevice = prev.find(d => d.deviceId === deviceId)
+        
+        if (oldDevice && device) {
+          // Detectar desbloqueio
+          if (oldDevice.status === 'locked' && device.status === 'online') {
+            console.log(`🔓 Dispositivo ${device.deviceName || deviceId} desbloqueado!`)
+            
+            // Emitir evento customizado para notificação
+            const event = new CustomEvent('device_unlocked', {
+              detail: {
+                deviceId,
+                deviceName: device.deviceName || deviceId,
+                timestamp: new Date()
+              }
+            })
+            window.dispatchEvent(event)
+          }
+          
+          // Detectar bloqueio
+          if (oldDevice.status !== 'locked' && device.status === 'locked') {
+            console.log(`� Dispositivo ${device.deviceName || deviceId} bloqueado!`)
+            
+            // Emitir evento customizado para notificação
+            const event = new CustomEvent('device_locked', {
+              detail: {
+                deviceId,
+                deviceName: device.deviceName || deviceId,
+                reason: device.lockReason || 'Bloqueado pelo administrador',
+                timestamp: new Date()
+              }
+            })
+            window.dispatchEvent(event)
+          }
+        }
+        
+        return updatedDevices
+      })
+    })
+
+    socket.on('time_update', ({ deviceId, elapsed, remaining, total }) => {
+      setTimeUpdates(prev => ({ ...prev, [deviceId]: { elapsed, remaining, total } }))
     })
 
     socket.on('sale_update', ({ sale }) => {
@@ -67,7 +129,17 @@ export function SocketProvider({ children }) {
       setVendas(prev => [venda, ...prev])
     })
 
+    socket.on('device_password_updated', ({ deviceId, lockPassword }) => {
+      setDevices(prev => prev.map(d => 
+        d.deviceId === deviceId ? { ...d, lockPassword } : d
+      ))
+    })
+
     return () => {
+      // Limpar intervalo de sincronização
+      if (socket.syncInterval) {
+        clearInterval(socket.syncInterval)
+      }
       socket.disconnect()
       socketRef.current = null
     }
@@ -99,7 +171,7 @@ export function SocketProvider({ children }) {
 
   return (
     <SocketContext.Provider value={{
-      devices, connected, vendas, setVendas,
+      devices, connected, vendas, setVendas, timeUpdates,
       lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, commandDevice, controlApp,
       socket: socketRef.current
     }}>

@@ -174,7 +174,7 @@ class WebSocketService : Service() {
                 reconnectionDelayMax = 30000
                 timeout = 60000
 
-                // Usar apenas polling para evitar erros de WebSocket
+                // Usar apenas polling para evitar problemas de websocket em alguns terminais
                 transports = arrayOf("polling")
             }
             
