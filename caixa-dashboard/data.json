@@ -1,0 +1,22 @@
+{
+  "produtos": [],
+  "categorias": [],
+  "vendas": [],
+  "operacoes": [],
+  "usuarios": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "$2a$10$37BiCJovZKiQd2NVk3masOWOrTULzWMulHXTvILf4dXn7l3aDGpwW",
+      "role": "admin",
+      "createdAt": "2026-04-23T05:18:16.938Z"
+    },
+    {
+      "id": 1776996592103,
+      "username": "rodrigodevmt",
+      "password": "$2a$10$E.LB4snF9HQMhVsERoXbMevtfy8KCTjT0xOHKAei90M2bxbRRcUxS",
+      "role": "admin",
+      "createdAt": "2026-04-24T02:09:52.103Z"
+    }
+  ]
+}

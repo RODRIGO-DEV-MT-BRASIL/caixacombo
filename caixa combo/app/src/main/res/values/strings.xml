@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caixa Combo</string>
+    
+    <!-- Categorias -->
+    <string name="categoria_todos_produtos">Todos os Produtos</string>
+    <string name="categoria_todos">Todos</string>
+    
+    <!-- Erros -->
+    <string name="erro_salvar_configuracao">Erro ao salvar configuração: %s</string>
+    <string name="erro_abrir_caixa">Erro ao abrir caixa: %s</string>
+    <string name="erro_fechar_caixa">Erro ao fechar caixa: %s</string>
+    
+    <!-- Operações de Caixa -->
+    <string name="abertura_caixa">Abertura de Caixa</string>
+    <string name="fechamento_caixa">Fechamento de Caixa</string>
+    <string name="sangria">Sangria</string>
+    <string name="suprimento">Suprimento</string>
+    
+    <!-- Forms -->
+    <string name="nome_operador">Nome do Operador</string>
+    <string name="valor_inicial">Valor Inicial</string>
+    <string name="valor">Valor</string>
+    <string name="motivo">Motivo</string>
+    <string name="cidade_uf">Cidade - UF</string>
+    <string name="endereco">Endereço</string>
+    <string name="cep">CEP</string>
+</resources>

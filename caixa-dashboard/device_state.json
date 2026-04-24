@@ -1,0 +1,25 @@
+{
+  "9f3d162f7954a21": {
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "deviceType": "Android",
+    "status": "online",
+    "connectedAt": "2026-04-23T20:43:36.284Z"
+  },
+  "d8ffc0c5094e7a44": {
+    "deviceId": "d8ffc0c5094e7a44",
+    "deviceName": "D2s",
+    "deviceType": "Android",
+    "status": "locked",
+    "lockReason": "Bloqueado pelo administrador",
+    "lockedAt": "2026-04-23T20:43:39.258Z",
+    "connectedAt": "2026-04-23T20:43:36.106Z"
+  },
+  "2546df681997a5a0": {
+    "deviceId": "2546df681997a5a0",
+    "deviceName": "P2-B",
+    "deviceType": "Android",
+    "status": "online",
+    "connectedAt": "2026-04-23T20:43:35.965Z"
+  }
+}
