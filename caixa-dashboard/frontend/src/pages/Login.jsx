@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Lock, User, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function Login() {
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -14,8 +16,12 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(username, password)
+      console.log('Tentando login...', username)
+      const data = await login(username, password)
+      console.log('Login bem-sucedido!', data)
+      navigate('/')
     } catch (err) {
+      console.error('Erro no login:', err)
       setError(err.message)
     } finally {
       setLoading(false)

@@ -1,0 +1,9 @@
+{
+  "ignore": [
+    "data.json",
+    "device_state.json",
+    "frontend/*",
+    "node_modules/*"
+  ],
+  "delay": "1000"
+}

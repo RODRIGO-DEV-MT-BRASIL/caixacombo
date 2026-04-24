@@ -29,7 +29,7 @@ class WebSocketService : Service() {
         //   - Local: "http://localhost:3001"
         //   - Rede local: "http://192.168.1.100:3001"
         //   - Produção: "https://seu-servidor.com"
-        private var SOCKET_URL = "http://192.168.1.168:3001"
+        private var SOCKET_URL = "http://192.168.1.154:3001"
         
         // Token de autenticação (obtido via login no dashboard)
         private var authToken: String? = null
@@ -37,6 +37,7 @@ class WebSocketService : Service() {
         // ID único do dispositivo
         private var wsDeviceId: String? = null
         private var wsDeviceName: String? = null
+        private var wsSerialNumber: String? = null
         
         // Instância do socket
         private var socket: Socket? = null
@@ -45,6 +46,7 @@ class WebSocketService : Service() {
         private var onConnectionChange: ((Boolean) -> Unit)? = null
         private var onCommandReceived: ((String, JSONObject?) -> Unit)? = null
         private var onDataRequested: (() -> Unit)? = null
+        private var onLockPasswordReceived: ((String) -> Unit)? = null
         
         /**
          * Configura a URL do servidor WebSocket
@@ -63,9 +65,10 @@ class WebSocketService : Service() {
         /**
          * Define informações do dispositivo
          */
-        fun setDeviceInfo(id: String, name: String) {
+        fun setDeviceInfo(id: String, name: String, serialNumber: String? = null) {
             wsDeviceId = id
             wsDeviceName = name
+            wsSerialNumber = serialNumber
         }
         
         /**
@@ -74,11 +77,13 @@ class WebSocketService : Service() {
         fun setCallbacks(
             onConnectionChange: ((Boolean) -> Unit)?,
             onCommandReceived: ((String, JSONObject?) -> Unit)?,
-            onDataRequested: (() -> Unit)?
+            onDataRequested: (() -> Unit)?,
+            onLockPasswordReceived: ((String) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
             this.onDataRequested = onDataRequested
+            this.onLockPasswordReceived = onLockPasswordReceived
         }
         
         /**
@@ -162,15 +167,15 @@ class WebSocketService : Service() {
     private fun initializeSocket() {
         try {
             val options = IO.Options().apply {
-                // Configurar reconexão automática
+                // Configurar reconexão automática com delays maiores
                 reconnection = true
                 reconnectionAttempts = Int.MAX_VALUE
-                reconnectionDelay = 1000
-                reconnectionDelayMax = 5000
-                timeout = 10000
-                
-                // Forçar WebSocket
-                transports = arrayOf("websocket")
+                reconnectionDelay = 5000
+                reconnectionDelayMax = 30000
+                timeout = 60000
+
+                // Usar apenas polling para evitar erros de WebSocket
+                transports = arrayOf("polling")
             }
             
             socket = IO.socket(SOCKET_URL, options)
@@ -185,7 +190,10 @@ class WebSocketService : Service() {
             socket?.on("request_data", onRequestData)
             socket?.on("request_sync", onRequestSync)
             socket?.on("auth_error", onAuthError)
-            
+
+            // Eventos de controle de app
+            socket?.on("app_control", onAppControl)
+
             // Eventos de bloqueio e tempo de uso
             socket?.on("device_locked", onDeviceLocked)
             socket?.on("device_unlocked", onDeviceUnlocked)
@@ -222,7 +230,7 @@ class WebSocketService : Service() {
     private val onConnect = Emitter.Listener {
         Log.d(TAG, "Conectado ao servidor WebSocket")
         onConnectionChange?.invoke(true)
-        
+
         // Enviar informações do dispositivo ao conectar
         wsDeviceId?.let { id ->
             wsDeviceName?.let { name ->
@@ -230,12 +238,15 @@ class WebSocketService : Service() {
                     put("deviceId", id)
                     put("deviceName", name)
                     put("deviceType", "Android")
+                    wsSerialNumber?.let { serial ->
+                        put("serialNumber", serial)
+                    }
                     authToken?.let { token ->
                         put("token", token)
                     }
                 }
                 socket?.emit("device_connect", data)
-                Log.d(TAG, "Enviado device_connect: $id - $name")
+                Log.d(TAG, "Enviado device_connect: $id - $name - Serial: $wsSerialNumber")
             }
         }
     }
@@ -294,7 +305,13 @@ class WebSocketService : Service() {
             try {
                 val data = args[0] as JSONObject
                 val reason = data.optString("reason", "Bloqueado pelo administrador")
-                Log.w(TAG, "Dispositivo bloqueado: $reason")
+                val lockPassword = data.optString("lockPassword", "")
+                Log.w(TAG, "Dispositivo bloqueado: $reason - Senha: $lockPassword")
+                
+                // Notificar MainActivity sobre a senha de bloqueio
+                if (lockPassword.isNotEmpty()) {
+                    onLockPasswordReceived?.invoke(lockPassword)
+                }
                 
                 // Notificar MainActivity para bloquear o app
                 onCommandReceived?.invoke("lock_device", JSONObject().put("reason", reason))
@@ -318,17 +335,70 @@ class WebSocketService : Service() {
                 val data = args[0] as JSONObject
                 val minutes = data.optInt("minutes", 0)
                 Log.d(TAG, "Tempo de uso definido: $minutes minutos")
-                
+
                 // Notificar MainActivity sobre tempo de uso
                 onCommandReceived?.invoke("set_usage_time", JSONObject().put("minutes", minutes))
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Erro ao processar tempo de uso", e)
             }
         }
     }
+
+    private val onAppControl = Emitter.Listener { args ->
+        if (args.isNotEmpty()) {
+            try {
+                val data = args[0] as JSONObject
+                val action = data.optString("action", "")
+                Log.d(TAG, "Controle de app recebido: $action")
+
+                when (action) {
+                    "open_app" -> {
+                        // Abrir o app
+                        val intent = packageManager.getLaunchIntentForPackage(packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        startActivity(intent)
+                    }
+                    "close_app" -> {
+                        // Fechar o app
+                        onCommandReceived?.invoke("close_app", null)
+                    }
+                    "shutdown_device" -> {
+                        // Desligar o dispositivo (requer permissões de root)
+                        try {
+                            val process = Runtime.getRuntime()
+                            process.exec(arrayOf("su", "-c", "reboot -p"))
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Erro ao desligar dispositivo", e)
+                        }
+                    }
+                    else -> {
+                        Log.w(TAG, "Ação de controle desconhecida: $action")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao processar controle de app", e)
+            }
+        }
+    }
     
     // ==================== MÉTODOS DE ENVIO ====================
+    
+    fun sendLockConfirmed() {
+        val deviceId = wsDeviceId ?: return
+        if (deviceId.isNotEmpty() && socket?.connected() == true) {
+            socket?.emit("lock_confirmed", JSONObject().put("deviceId", deviceId))
+            Log.d(TAG, "Confirmação de bloqueio enviada: $deviceId")
+        }
+    }
+    
+    fun sendUnlockConfirmed() {
+        val deviceId = wsDeviceId ?: return
+        if (deviceId.isNotEmpty() && socket?.connected() == true) {
+            socket?.emit("unlock_confirmed", JSONObject().put("deviceId", deviceId))
+            Log.d(TAG, "Confirmação de desbloqueio enviada: $deviceId")
+        }
+    }
     
     // ==================== COMANDOS PREDEFINIDOS ====================
     

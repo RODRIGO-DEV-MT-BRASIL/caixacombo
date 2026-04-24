@@ -76,12 +76,11 @@ class MainActivity : ComponentActivity() {
         }
 
         // Iniciar WebSocket Service para comunicação com Dashboard
-        val deviceId = android.provider.Settings.Secure.getString(
-            contentResolver,
-            android.provider.Settings.Secure.ANDROID_ID
-        )
+        // Usar serial number como ID principal (fixo no hardware, não muda ao reinstalar)
+        val serialNumber = android.os.Build.SERIAL ?: "UNKNOWN"
+        val deviceId = serialNumber // Serial number é o identificador único e persistente
         val deviceName = android.os.Build.MODEL
-        WebSocketService.setDeviceInfo(deviceId, deviceName)
+        WebSocketService.setDeviceInfo(deviceId, deviceName, serialNumber)
         
         // Configurar callbacks do WebSocket para bloqueio/desbloqueio
         WebSocketService.setCallbacks(
@@ -99,6 +98,12 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     // Enviar dados do caixa para o servidor quando solicitado
                     sendCaixaDataToServer()
+                }
+            },
+            onLockPasswordReceived = { password ->
+                runOnUiThread {
+                    currentLockPassword = password
+                    android.util.Log.d("MainActivity", "Senha de bloqueio recebida: $password")
                 }
             }
         )
@@ -369,6 +374,7 @@ class MainActivity : ComponentActivity() {
      * Exibe tela de bloqueio moderna
      */
     private var lockDialog: android.app.Dialog? = null
+    private var currentLockPassword: String? = null
     
     private fun showLockScreen(reason: String) {
         try {
@@ -414,6 +420,9 @@ class MainActivity : ComponentActivity() {
                 
                 lockDialog?.show()
                 android.util.Log.d("MainActivity", "Dialog de bloqueio exibido com sucesso")
+                
+                // Notificar servidor que o bloqueio foi aplicado no terminal
+                webSocketService?.sendLockConfirmed()
             } catch (e: Exception) {
                 android.util.Log.e("MainActivity", "Erro ao exibir diálogo de bloqueio: ${e.message}", e)
                 // Fallback: mostrar toast se o diálogo falhar
@@ -540,10 +549,15 @@ class MainActivity : ComponentActivity() {
                 setOnClickListener {
                     val password = passwordInput.text.toString()
                     if (password.isNotEmpty()) {
-                        // Enviar senha para o servidor validar
-                        WebSocketService.sendDeviceStatus("unlock_request:$password")
-                        lockDialog?.dismiss()
-                        startLockTaskMode()
+                        // Validar senha localmente
+                        if (password == currentLockPassword) {
+                            android.util.Log.d("MainActivity", "Senha correta, desbloqueando")
+                            hideLockScreen()
+                        } else {
+                            android.util.Log.w("MainActivity", "Senha incorreta")
+                            passwordInput.error = "Senha incorreta"
+                            passwordInput.text?.clear()
+                        }
                     } else {
                         passwordInput.error = "Digite a senha"
                     }
@@ -563,6 +577,9 @@ class MainActivity : ComponentActivity() {
             .putBoolean("is_locked", false)
             .remove("lock_reason")
             .apply()
+        
+        // Notificar servidor que o dispositivo foi desbloqueado
+        webSocketService?.sendUnlockConfirmed()
         
         lockDialog?.dismiss()
         lockDialog = null

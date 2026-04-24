@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
-import { Package, Plus, Pencil, Trash2, Search, X, Loader2 } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, Search, X, Loader2, Image as ImageIcon, Barcode, ChevronDown } from 'lucide-react'
 
 export default function Produtos() {
   const { token } = useAuth()
   const { socket } = useSocket()
   const [produtos, setProdutos] = useState([])
+  const [categorias, setCategorias] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ nome: '', precoVenda: '', categoria: '', estoque: '' })
+  const [form, setForm] = useState({ nome: '', descricao: '', imagem: '', precoVenda: '', categoria: '', estoque: '', codigoBarras: '' })
 
   const fetchProdutos = async () => {
     try {
@@ -27,7 +28,19 @@ export default function Produtos() {
     }
   }
 
-  useEffect(() => { fetchProdutos() }, [])
+  const fetchCategorias = async () => {
+    try {
+      const res = await fetch('/api/categorias', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      setCategorias(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => { fetchProdutos(); fetchCategorias() }, [])
 
   useEffect(() => {
     if (!socket) return
@@ -45,9 +58,12 @@ export default function Produtos() {
     e.preventDefault()
     const body = {
       nome: form.nome,
+      descricao: form.descricao,
+      imagem: form.imagem,
       precoVenda: parseFloat(form.precoVenda),
       categoria: form.categoria,
       estoque: parseInt(form.estoque) || 0,
+      codigoBarras: form.codigoBarras || undefined,
     }
 
     if (editing) {
@@ -65,7 +81,7 @@ export default function Produtos() {
     }
     setShowModal(false)
     setEditing(null)
-    setForm({ nome: '', precoVenda: '', categoria: '', estoque: '' })
+    setForm({ nome: '', descricao: '', imagem: '', precoVenda: '', categoria: '', estoque: '', codigoBarras: '' })
     fetchProdutos()
   }
 
@@ -82,9 +98,12 @@ export default function Produtos() {
     setEditing(produto)
     setForm({
       nome: produto.nome || '',
+      descricao: produto.descricao || '',
+      imagem: produto.imagem || '',
       precoVenda: produto.precoVenda?.toString() || '',
       categoria: produto.categoria || '',
       estoque: produto.estoque?.toString() || '',
+      codigoBarras: produto.codigoBarras || '',
     })
     setShowModal(true)
   }
@@ -108,7 +127,7 @@ export default function Produtos() {
             placeholder="Buscar produto..."
           />
         </div>
-        <button onClick={() => { setEditing(null); setForm({ nome: '', precoVenda: '', categoria: '', estoque: '' }); setShowModal(true) }} className="btn-primary flex items-center gap-2 text-sm">
+        <button onClick={() => { setEditing(null); setForm({ nome: '', descricao: '', imagem: '', precoVenda: '', categoria: '', estoque: '', codigoBarras: '' }); setShowModal(true) }} className="btn-primary flex items-center gap-2 text-sm">
           <Plus size={16} /> Novo Produto
         </button>
       </div>
@@ -131,6 +150,7 @@ export default function Produtos() {
               <thead>
                 <tr className="border-b border-white/5">
                   <th className="text-left px-5 py-3 text-gray-400 font-medium">Produto</th>
+                  <th className="text-left px-5 py-3 text-gray-400 font-medium">Cód. Barras</th>
                   <th className="text-left px-5 py-3 text-gray-400 font-medium">Categoria</th>
                   <th className="text-right px-5 py-3 text-gray-400 font-medium">Preço</th>
                   <th className="text-right px-5 py-3 text-gray-400 font-medium">Estoque</th>
@@ -140,7 +160,24 @@ export default function Produtos() {
               <tbody>
                 {filtered.map(p => (
                   <tr key={p.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-5 py-3 text-white font-medium">{p.nome}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        {p.imagem ? (
+                          <img src={p.imagem} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-white/5" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+                            <ImageIcon size={16} className="text-gray-600" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-white font-medium">{p.nome}</p>
+                          {p.descricao && <p className="text-xs text-gray-500 truncate max-w-[200px]">{p.descricao}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-gray-400 font-mono text-xs">
+                      {p.codigoBarras || '-'}
+                    </td>
                     <td className="px-5 py-3 text-gray-400">{p.categoria || '-'}</td>
                     <td className="px-5 py-3 text-emerald-400 font-mono text-right">
                       R$ {(p.precoVenda || 0).toFixed(2)}
@@ -175,7 +212,7 @@ export default function Produtos() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setShowModal(false)}>
-          <div className="glass p-6 w-full max-w-md glow-blue" onClick={e => e.stopPropagation()}>
+          <div className="glass p-6 w-full max-w-lg glow-blue max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold text-white">{editing ? 'Editar Produto' : 'Novo Produto'}</h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -184,6 +221,17 @@ export default function Produtos() {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
                 <input type="text" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} className="input-field" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
+                <textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} className="input-field resize-none" rows="2" placeholder="Descrição do produto..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">URL da Imagem</label>
+                <div className="relative">
+                  <ImageIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input type="url" value={form.imagem} onChange={e => setForm({ ...form, imagem: e.target.value })} className="input-field pl-9" placeholder="https://..." />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -197,7 +245,23 @@ export default function Produtos() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
-                <input type="text" value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} className="input-field" />
+                <div className="relative">
+                  <select value={form.categoria} onChange={e => setForm({ ...form, categoria: e.target.value })} className="input-field appearance-none cursor-pointer">
+                    <option value="">Selecione uma categoria</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.nome}>{cat.nome}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Código de Barras</label>
+                <div className="relative">
+                  <Barcode size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input type="text" value={form.codigoBarras} onChange={e => setForm({ ...form, codigoBarras: e.target.value })} className="input-field pl-9" placeholder="Deixe vazio para gerar automaticamente" />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Se vazio, será gerado automaticamente (EAN-13)</p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost flex-1">Cancelar</button>

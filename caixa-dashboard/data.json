@@ -8,15 +8,37 @@
       "id": 1,
       "username": "admin",
       "password": "$2a$10$37BiCJovZKiQd2NVk3masOWOrTULzWMulHXTvILf4dXn7l3aDGpwW",
-      "role": "admin",
-      "createdAt": "2026-04-23T05:18:16.938Z"
+      "role": "admin"
     },
     {
       "id": 1776996592103,
       "username": "rodrigodevmt",
-      "password": "$2a$10$E.LB4snF9HQMhVsERoXbMevtfy8KCTjT0xOHKAei90M2bxbRRcUxS",
-      "role": "admin",
-      "createdAt": "2026-04-24T02:09:52.103Z"
+      "password": "$2a$10$2DNckCDg73aOGcDfFeGNUuXZVb3Qubk80May9C0fp0DPNhg6c8tIe",
+      "role": "admin"
+    }
+  ],
+  "dispositivos": [
+    {
+      "socketId": null,
+      "deviceName": "P2-B",
+      "deviceType": "Android",
+      "serialNumber": "PB59237K70640",
+      "connectedAt": "2026-04-24T04:12:01.818Z",
+      "status": "online",
+      "lockPassword": "355736",
+      "lockReason": null,
+      "lockedAt": null
+    },
+    {
+      "socketId": null,
+      "deviceName": "D2s",
+      "deviceType": "Android",
+      "serialNumber": "TC04209140208",
+      "connectedAt": "2026-04-24T04:12:01.878Z",
+      "status": "online",
+      "lockPassword": "847638",
+      "lockReason": null,
+      "lockedAt": null
     }
   ]
 }

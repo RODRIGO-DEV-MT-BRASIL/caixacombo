@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "nodemon --ignore '*.json' server.js",
     "dev:all": "concurrently \"npm run dev\" \"cd frontend && npm run dev\" --names \"SERVER,FRONTEND\" --prefix-colors \"blue,green\""
   },
   "dependencies": {

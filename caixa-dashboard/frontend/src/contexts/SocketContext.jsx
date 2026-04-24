@@ -14,7 +14,7 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!token) return
 
-    const socket = io({
+    const socket = io('http://localhost:3001', {
       auth: { token },
       transports: ['websocket', 'polling']
     })
@@ -36,16 +36,25 @@ export function SocketProvider({ children }) {
       })
     })
 
-    socket.on('device_disconnected', ({ deviceId }) => {
+    socket.on('device_disconnected', ({ deviceId, status }) => {
       setDevices(prev => prev.map(d => 
-        d.deviceId === deviceId ? { ...d, online: false, status: 'offline' } : d
+        d.deviceId === deviceId ? { ...d, online: false, status: status || 'offline' } : d
       ))
     })
 
-    socket.on('device_status_update', ({ deviceId, status, lockReason, lockedAt, usageTimeLimit, usageStartTime }) => {
+    socket.on('device_status_update', ({ deviceId, status, lockReason, lockedAt, lockPassword, usageTimeLimit, usageStartTime }) => {
       setDevices(prev => prev.map(d => 
         d.deviceId === deviceId 
-          ? { ...d, status, lockReason, lockedAt, usageTimeLimit, usageStartTime, online: status !== 'offline' } 
+          ? { 
+              ...d, 
+              status, 
+              lockReason: status === 'locked' ? lockReason : undefined,
+              lockedAt: status === 'locked' ? lockedAt : undefined,
+              lockPassword: lockPassword || d.lockPassword,
+              usageTimeLimit, 
+              usageStartTime, 
+              online: status !== 'offline' 
+            } 
           : d
       ))
     })
@@ -72,6 +81,10 @@ export function SocketProvider({ children }) {
     socketRef.current?.emit('unlock_device', { deviceId })
   }
 
+  const forceUnlockDevice = (deviceId) => {
+    socketRef.current?.emit('force_unlock', { deviceId })
+  }
+
   const setUsageTime = (deviceId, minutes) => {
     socketRef.current?.emit('set_usage_time', { deviceId, minutes })
   }
@@ -80,11 +93,15 @@ export function SocketProvider({ children }) {
     socketRef.current?.emit('command_device', { deviceId, command, params })
   }
 
+  const controlApp = (deviceId, action) => {
+    socketRef.current?.emit('control_app', { deviceId, action })
+  }
+
   return (
-    <SocketContext.Provider value={{ 
+    <SocketContext.Provider value={{
       devices, connected, vendas, setVendas,
-      lockDevice, unlockDevice, setUsageTime, commandDevice,
-      socket: socketRef.current 
+      lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, commandDevice, controlApp,
+      socket: socketRef.current
     }}>
       {children}
     </SocketContext.Provider>
