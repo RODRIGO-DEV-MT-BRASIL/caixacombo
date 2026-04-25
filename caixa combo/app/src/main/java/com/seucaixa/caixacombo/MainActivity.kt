@@ -39,6 +39,7 @@ import com.seucaixa.caixacombo.ui.viewmodel.CaixaViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ConfiguracaoImpressaoViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ProdutosViewModel
+import com.seucaixa.caixacombo.data.model.Produto
 import com.seucaixa.caixacombo.ui.viewmodel.VendasViewModel
 import com.seucaixa.caixacombo.data.backup.BackupScheduler
 import com.seucaixa.caixacombo.service.WebSocketService
@@ -78,10 +79,18 @@ class MainActivity : ComponentActivity() {
         }
 
         // Iniciar WebSocket Service para comunicação com Dashboard
-        // Usar serial number como ID principal (fixo no hardware, não muda ao reinstalar)
+        // Usar ANDROID_ID como ID principal (funciona sem modo desenvolvedor)
+        val androidId = android.provider.Settings.Secure.getString(
+            contentResolver,
+            android.provider.Settings.Secure.ANDROID_ID
+        ) ?: "UNKNOWN"
+        
+        // Usar ANDROID_ID como deviceId (único por dispositivo, funciona sem modo desenvolvedor)
+        val deviceId = androidId
+        val manufacturer = android.os.Build.MANUFACTURER
+        val model = android.os.Build.MODEL
+        val deviceName = "${manufacturer.capitalize()} $model"
         val serialNumber = android.os.Build.SERIAL ?: "UNKNOWN"
-        val deviceId = serialNumber // Serial number é o identificador único e persistente
-        val deviceName = android.os.Build.MODEL
         WebSocketService.setDeviceInfo(deviceId, deviceName, serialNumber)
         
         // Configurar Admin para reboot sem root
@@ -108,6 +117,12 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     // Enviar dados do caixa para o servidor quando solicitado
                     sendCaixaDataToServer()
+                }
+            },
+            onProdutosReceived = { produtos ->
+                runOnUiThread {
+                    // Processar produtos recebidos do servidor
+                    updateProdutosFromServer(produtos)
                 }
             },
             onLockPasswordReceived = { password ->
@@ -854,6 +869,42 @@ class MainActivity : ComponentActivity() {
             WebSocketService.sendCaixaData(caixaData)
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao enviar dados do caixa", e)
+        }
+    }
+
+    /**
+     * Atualiza produtos recebidos do servidor
+     */
+    private fun updateProdutosFromServer(produtos: org.json.JSONArray) {
+        try {
+            android.util.Log.d("MainActivity", "Atualizando ${produtos.length()} produtos do servidor")
+            
+            // Converter JSONArray para lista de produtos
+            val produtosList = mutableListOf<Produto>()
+            for (i in 0 until produtos.length()) {
+                val produtoJson = produtos.getJSONObject(i)
+                val produto = Produto(
+                    id = produtoJson.getLong("id"),
+                    nome = produtoJson.getString("nome"),
+                    descricao = produtoJson.optString("descricao", ""),
+                    precoVenda = produtoJson.getDouble("preco"),
+                    categoriaId = produtoJson.optLong("categoriaId", 0),
+                    codigoBarras = produtoJson.optString("codigoBarras", ""),
+                    estoque = produtoJson.optDouble("estoque", 0.0),
+                    imagem = produtoJson.optString("imagem", ""),
+                    unidade = produtoJson.optString("unidade", "UN")
+                )
+                produtosList.add(produto)
+            }
+            
+            // Atualizar ViewModels
+            caixaViewModel.atualizarProdutos(produtosList)
+            checkoutViewModel.atualizarProdutosServidor(produtosList)
+            
+            android.util.Log.d("MainActivity", "✅ Produtos atualizados com sucesso")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao atualizar produtos do servidor", e)
         }
     }
 

@@ -8,6 +8,7 @@ import com.seucaixa.caixacombo.data.repository.ConfiguracaoImpressaoRepository
 import com.seucaixa.caixacombo.data.repository.OperacaoCaixaRepository
 import com.seucaixa.caixacombo.data.repository.VendaRepository
 import com.seucaixa.caixacombo.service.SunmiPrintService
+import com.seucaixa.caixacombo.service.WebSocketService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -47,6 +48,10 @@ class CaixaViewModel(
 
     private val _vendasCredito = MutableStateFlow(0.0)
     val vendasCredito: StateFlow<Double> = _vendasCredito.asStateFlow()
+
+    // Produtos do servidor
+    private val _produtosServidor = MutableStateFlow<List<Produto>>(emptyList())
+    val produtosServidor: StateFlow<List<Produto>> = _produtosServidor.asStateFlow()
 
     private val _vendasDebito = MutableStateFlow(0.0)
     val vendasDebito: StateFlow<Double> = _vendasDebito.asStateFlow()
@@ -227,9 +232,11 @@ class CaixaViewModel(
         onSuccess: () -> Unit,
         onError: (String) -> Unit = {}
     ) {
+        android.util.Log.d("CaixaViewModel", "🔓 abrirCaixa chamado: nome=$nomeOperador, valor=$valorInicial")
         viewModelScope.launch {
             try {
                 _isLoading.value = true
+                android.util.Log.d("CaixaViewModel", "🔓 Iniciando abertura de caixa...")
 
                 val operacao = OperacaoCaixa(
                     tipo = TipoOperacaoCaixa.ABERTURA,
@@ -239,6 +246,15 @@ class CaixaViewModel(
                 )
 
                 operacaoRepository.insert(operacao)
+                
+                // Enviar operação para o servidor/dashboard
+                android.util.Log.d("CaixaViewModel", "🔓 Enviando abertura para servidor...")
+                WebSocketService.sendOperacaoCaixa(
+                    tipo = "abertura",
+                    valor = valorInicial,
+                    nomeOperador = nomeOperador
+                )
+                android.util.Log.d("CaixaViewModel", "🔓 Abertura enviada com sucesso!")
 
                 // Imprimir comprovante
                 val configuracaoAbertura = configuracaoRepository.getConfiguracao().firstOrNull() ?: ConfiguracaoImpressao()
@@ -298,6 +314,15 @@ class CaixaViewModel(
                 )
 
                 operacaoRepository.insert(operacao)
+
+                // Enviar operação para o servidor/dashboard
+                android.util.Log.d("CaixaViewModel", "🔒 Enviando fechamento para servidor...")
+                WebSocketService.sendOperacaoCaixa(
+                    tipo = "fechamento",
+                    valor = totalVendas,
+                    nomeOperador = nomeOperador
+                )
+                android.util.Log.d("CaixaViewModel", "🔒 Fechamento enviado com sucesso!")
 
                 val valorInicial = abertura.valorInicial ?: 0.0
                 val totalSangrias = _totalSangrias.value
@@ -368,6 +393,16 @@ class CaixaViewModel(
 
             operacaoRepository.insert(operacao)
 
+            // Enviar operação para o servidor/dashboard
+            android.util.Log.d("CaixaViewModel", "💸 Enviando sangria para servidor...")
+            WebSocketService.sendOperacaoCaixa(
+                tipo = "sangria",
+                valor = valor,
+                nomeOperador = nomeOperador,
+                observacao = motivo
+            )
+            android.util.Log.d("CaixaViewModel", "💸 Sangria enviada com sucesso!")
+
             // Calcular novo saldo antes de imprimir
             val novoSaldo = _saldoAtual.value - valor
 
@@ -413,6 +448,14 @@ class CaixaViewModel(
             )
 
             operacaoRepository.insert(operacao)
+            
+            // Enviar operação para o servidor/dashboard
+            WebSocketService.sendOperacaoCaixa(
+                tipo = "suprimento",
+                valor = valor,
+                nomeOperador = nomeOperador,
+                observacao = motivo
+            )
 
             // Calcular novo saldo antes de imprimir
             val novoSaldo = _saldoAtual.value + valor
@@ -435,6 +478,13 @@ class CaixaViewModel(
             _isLoading.value = false
             onSuccess()
         }
+    }
+
+    /**
+     * Atualiza produtos recebidos do servidor
+     */
+    fun atualizarProdutos(produtos: List<Produto>) {
+        _produtosServidor.value = produtos
     }
 
     // Factory

@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 const app = express();
@@ -356,10 +357,11 @@ app.post('/api/upload', authenticateToken, upload.single('imagem'), (req, res) =
 // ==================== ROTAS DE PRODUTOS ====================
 app.get('/api/produtos', authenticateToken, (req, res) => {
   res.json(db.produtos);
+});
+
 // Rota para buscar vendas
 app.get('/api/vendas', authenticateToken, (req, res) => {
   res.json(db.vendas);
-});
 });
 
 app.post('/api/produtos', authenticateToken, (req, res) => {
@@ -553,6 +555,245 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
   }
 });
 
+// ==================== API DE OPERAÇÕES DE CAIXA ====================
+app.get('/api/operacoes', (req, res) => {
+  // Retornar operações do banco local (do dashboard)
+  res.json(db.operacoes || []);
+});
+
+app.post('/api/operacoes', (req, res) => {
+  const { tipo, valor, deviceId, nomeOperador, observacao } = req.body;
+  
+  const operacao = {
+    id: Date.now(),
+    tipo, // 'abertura', 'fechamento', 'suprimento', 'sangria'
+    valor: parseFloat(valor) || 0,
+    deviceId,
+    nomeOperador: nomeOperador || 'dashboard',
+    observacao: observacao || '',
+    dataHora: new Date().toISOString(),
+    timestamp: Date.now()
+  };
+  
+  const valorProcessado = operacao.valor;
+  
+  // Salvar no banco local
+  if (!db.operacoes) db.operacoes = [];
+  db.operacoes.push(operacao);
+  saveData();
+  
+  // Broadcast para dashboards
+  io.emit('operacao_adicionada', operacao);
+  
+  // Broadcast para dispositivos
+  io.emit('operacoes_sync', {
+    operacoes: db.operacoes,
+    timestamp: new Date()
+  });
+  
+  // Auditoria
+  addAuditoria('operacao_caixa', deviceId, `${tipo} registrada: R$ ${valorProcessado.toFixed(2)}`, nomeOperador);
+  
+  res.json(operacao);
+});
+
+// DELETE operação (para limpar dados incorretos)
+app.delete('/api/operacoes/:id', (req, res) => {
+  const { id } = req.params;
+  
+  if (!db.operacoes) {
+    return res.status(404).json({ error: 'Operações não encontradas' });
+  }
+  
+  const index = db.operacoes.findIndex(op => op.id == id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Operação não encontrada' });
+  }
+  
+  const operacaoRemovida = db.operacoes.splice(index, 1)[0];
+  saveData();
+  
+  // Broadcast para dashboards
+  io.emit('operacao_removida', { id: id });
+  
+  // Auditoria
+  addAuditoria('operacao_caixa', 'dashboard', `Operação removida: ${operacaoRemovida.tipo} R$ ${operacaoRemovida.valor}`, 'dashboard');
+  
+  res.json({ message: 'Operação removida com sucesso', operacao: operacaoRemovida });
+});
+
+// ==================== GERAÇÃO DE PDF ====================
+app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
+  try {
+    const dados = req.body;
+    
+    console.log('📄 Gerando PDF do fechamento geral:', dados.dataHora);
+    console.log('📊 Dados recebidos:', {
+      totalAbertura: dados.totalAbertura,
+      totalSuprimento: dados.totalSuprimento,
+      totalSangria: dados.totalSangria,
+      totalFechamento: dados.totalFechamento,
+      totalVendas: dados.totalVendas,
+      operacoes: dados.operacoes?.length || 0,
+      vendas: dados.vendas?.length || 0
+    });
+    
+    if (!dados || dados.totalAbertura === undefined) {
+      console.error('❌ Dados inválidos para gerar PDF');
+      return res.status(400).json({ error: 'Dados inválidos para gerar PDF' });
+    }
+    
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    
+    // Criar HTML para o PDF
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { text-align: center; margin-bottom: 40px; }
+          .header h1 { color: #6200EE; margin: 0; }
+          .header p { color: #666; margin: 5px 0; }
+          .section { margin-bottom: 30px; }
+          .section h2 { color: #333; border-bottom: 2px solid #6200EE; padding-bottom: 10px; }
+          .row { display: flex; justify-content: space-between; margin: 10px 0; }
+          .label { color: #666; }
+          .value { font-weight: bold; color: #333; }
+          .total { font-size: 18px; color: #6200EE; }
+          .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          .table th, .table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          .table th { background-color: #6200EE; color: white; }
+          .table tr:nth-child(even) { background-color: #f9f9f9; }
+          .positive { color: #00C853; }
+          .negative { color: #D50000; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>FECHAMENTO GERAL DO CAIXA</h1>
+          <p>CaixaCombo - Sistema de PDV</p>
+          <p>Data: ${dados.dataHora}</p>
+        </div>
+        
+        <div class="section">
+          <h2>RESUMO FINANCEIRO</h2>
+          <div class="row">
+            <span class="label">Total de Aberturas:</span>
+            <span class="value positive">+ R$ ${dados.totalAbertura.toFixed(2)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Total de Suprimentos:</span>
+            <span class="value positive">+ R$ ${dados.totalSuprimento.toFixed(2)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Total de Sangrias:</span>
+            <span class="value negative">- R$ ${dados.totalSangria.toFixed(2)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Total de Vendas:</span>
+            <span class="value positive">R$ ${dados.totalVendas.toFixed(2)}</span>
+          </div>
+          <div class="row" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #6200EE;">
+            <span class="label total">SALDO FINAL:</span>
+            <span class="value total">R$ ${dados.totalFechamento.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        ${dados.operacoes && dados.operacoes.length > 0 ? `
+        <div class="section">
+          <h2>OPERAÇÕES DE CAIXA</h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Data/Hora</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dados.operacoes.map(op => `
+                <tr>
+                  <td>${op.tipo.toUpperCase()}</td>
+                  <td class="${op.tipo === 'abertura' || op.tipo === 'suprimento' ? 'positive' : 'negative'}">
+                    ${op.tipo === 'abertura' || op.tipo === 'suprimento' ? '+' : '-'} R$ ${(op.valor || 0).toFixed(2)}
+                  </td>
+                  <td>${new Date(op.dataHora || op.createdAt).toLocaleString('pt-BR')}</td>
+                  <td>${op.observacao || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+        
+        ${dados.vendas && dados.vendas.length > 0 ? `
+        <div class="section">
+          <h2>VENDAS REALIZADAS</h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nº</th>
+                <th>Data/Hora</th>
+                <th>Forma Pagamento</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dados.vendas.map(venda => `
+                <tr>
+                  <td>${venda.id || venda.numero}</td>
+                  <td>${new Date(venda.dataHora || venda.createdAt).toLocaleString('pt-BR')}</td>
+                  <td>${venda.formaPagamento}</td>
+                  <td class="positive">R$ ${(venda.total || 0).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : ''}
+        
+        <div class="section" style="margin-top: 50px; text-align: center; color: #666; font-size: 12px;">
+          <p>Documento gerado automaticamente pelo sistema CaixaCombo</p>
+          <p>Não é necessário assinatura - documento digital válido</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20px',
+        right: '20px',
+        bottom: '20px',
+        left: '20px'
+      }
+    });
+    
+    await browser.close();
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=fechamento-geral-${new Date().toISOString().split('T')[0]}.pdf`);
+    res.send(pdfBuffer);
+    
+    console.log('✅ PDF gerado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao gerar PDF:', error);
+    res.status(500).json({ error: 'Erro ao gerar PDF', details: error.message });
+  }
+});
+
 // ==================== WEBSOCKET ====================
 io.on('connection', (socket) => {
   console.log('🔌 Socket:', socket.id);
@@ -602,6 +843,13 @@ io.on('connection', (socket) => {
 
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);
     io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+    
+    // Enviar produtos para o dispositivo recém-conectado
+    socket.emit('produtos_sync', {
+      produtos: db.produtos,
+      timestamp: new Date()
+    });
+    console.log(`📦 Enviados ${db.produtos.length} produtos para ${deviceId}`);
   });
 
   socket.on('device_status', (data) => {
@@ -630,6 +878,62 @@ io.on('connection', (socket) => {
       
       io.emit('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
     }
+  });
+
+  // Receber atualizações de estoque dos dispositivos
+  socket.on('estoque_update', (data) => {
+    console.log(`📦 [ESTOQUE] Atualização de ${data.deviceId}: produto ${data.produtoId} -> ${data.novoEstoque}`);
+    
+    // Atualizar estoque no banco local
+    const produto = db.produtos.find(p => p.id == data.produtoId);
+    if (produto) {
+      const estoqueAnterior = produto.estoque;
+      produto.estoque = data.novoEstoque;
+      saveData();
+      
+      // Broadcast para todos os dashboards
+      io.emit('estoque_atualizado', {
+        produtoId: data.produtoId,
+        nome: produto.nome,
+        estoqueAnterior,
+        novoEstoque: data.novoEstoque,
+        deviceId: data.deviceId,
+        timestamp: data.timestamp
+      });
+      
+      // Broadcast para outros dispositivos
+      socket.broadcast.emit('produtos_sync', {
+        produtos: db.produtos,
+        timestamp: new Date()
+      });
+      
+      addAuditoria('estoque', data.deviceId, `Estoque atualizado: ${produto.nome} (${estoqueAnterior} -> ${data.novoEstoque})`, connectedDevices.get(data.deviceId)?.deviceName);
+    }
+  });
+
+  // Receber operações de caixa do Android
+  socket.on('operacao_data', (data) => {
+    console.log('🔓 [DEBUG] operacao_data recebido:', data);
+    const { deviceId, operacao } = data;
+    console.log(`💰 [OPERAÇÃO] Recebida de ${deviceId}:`, operacao);
+    
+    // Salvar no banco local
+    if (!db.operacoes) db.operacoes = [];
+    db.operacoes.push({
+      ...operacao,
+      deviceId,
+      timestamp: Date.now()
+    });
+    saveData();
+    
+    // Broadcast para todos os dashboards
+    io.emit('operacao_adicionada', {
+      ...operacao,
+      deviceId
+    });
+    
+    // Auditoria
+    addAuditoria('operacao_caixa', deviceId, `${operacao.tipo}: R$ ${operacao.valor}`, operacao.nomeOperador);
   });
 
   // Receber dados de venda do Android

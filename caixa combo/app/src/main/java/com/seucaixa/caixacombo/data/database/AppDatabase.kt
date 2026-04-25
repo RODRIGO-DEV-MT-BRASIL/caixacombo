@@ -32,9 +32,19 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Limpar todas as tabelas para remover dados mockados
+        database.execSQL("DELETE FROM produtos")
+        database.execSQL("DELETE FROM categorias")
+        database.execSQL("DELETE FROM vendas")
+        database.execSQL("DELETE FROM operacoes_caixa")
+    }
+}
+
 @Database(
     entities = [Produto::class, Categoria::class, Venda::class, OperacaoCaixa::class, ConfiguracaoImpressao::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -57,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "caixa_combo_database"
                 )
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 INSTANCE = instance
                 instance

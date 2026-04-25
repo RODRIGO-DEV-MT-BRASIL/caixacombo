@@ -65,11 +65,21 @@ fun CheckoutScreenPOS(
     val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
     val vendaFinalizada by viewModel.vendaFinalizada.collectAsState()
     val ultimaVenda by viewModel.ultimaVenda.collectAsState()
+    val precisaSincronizar by viewModel.precisaSincronizar.collectAsState()
+    val produtosPendentes by viewModel.produtosPendentes.collectAsState()
     
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var formaPagamentoSelecionada by remember { mutableStateOf<FormaPagamento?>(null) }
     var showValorDialog by remember { mutableStateOf(false) }
     var valorRecebido by remember { mutableStateOf("") }
+    var showSyncAlert by remember { mutableStateOf(false) }
+    
+    // Mostrar alerta de sincronização se necessário
+    LaunchedEffect(precisaSincronizar) {
+        if (precisaSincronizar) {
+            showSyncAlert = true
+        }
+    }
     
     // Diálogo de sucesso com botões de impressão
     if (vendaFinalizada && ultimaVenda != null) {
@@ -346,6 +356,48 @@ fun CheckoutScreenPOS(
                 showValorDialog = false
                 valorRecebido = ""
                 formaPagamentoSelecionada = null
+            }
+        )
+    }
+    
+    // Diálogo de alerta de sincronização
+    if (showSyncAlert && precisaSincronizar) {
+        AlertDialog(
+            onDismissRequest = { showSyncAlert = false },
+            title = { 
+                Text(
+                    "🔄 Sincronização de Produtos",
+                    fontWeight = FontWeight.Bold
+                ) 
+            },
+            text = { 
+                Column {
+                    Text(
+                        "Existem $produtosPendentes produtos locais que precisam ser sincronizados com o servidor.",
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        "Deseja sincronizar agora?",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.sincronizarProdutos()
+                        showSyncAlert = false
+                    }
+                ) {
+                    Text("Sincronizar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showSyncAlert = false }
+                ) {
+                    Text("Depois")
+                }
             }
         )
     }

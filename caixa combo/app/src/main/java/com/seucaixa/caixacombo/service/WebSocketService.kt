@@ -7,10 +7,14 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
+import java.net.HttpURLConnection
+import java.net.URL
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import org.json.JSONObject
+import org.json.JSONArray
+import org.json.JSONException
 
 /**
  * Serviço WebSocket para comunicação em tempo real com o Dashboard CaixaCombo.
@@ -28,8 +32,8 @@ class WebSocketService : Service() {
         // ==================== CONFIGURAÇÃO DO SERVIDOR ====================
         // Altere para o IP do seu servidor WebSocket
         // Exemplos: 
-        //   - Local: "http://localhost:3001"
-        //   - Rede local: "http://192.168.1.100:3001"
+        //   - Local: "http://localhost:3000"
+        //   - Rede local: "http://192.168.1.100:3000"
         //   - Produção: "https://seu-servidor.com"
         private var SOCKET_URL = "http://192.168.1.154:3001"
         
@@ -53,6 +57,7 @@ class WebSocketService : Service() {
         private var onCommandReceived: ((String, JSONObject?) -> Unit)? = null
         private var onDataRequested: (() -> Unit)? = null
         private var onLockPasswordReceived: ((String) -> Unit)? = null
+        private var onProdutosReceived: ((JSONArray) -> Unit)? = null
         
         /**
          * Configura o Admin para permitir reboot sem root
@@ -92,12 +97,14 @@ class WebSocketService : Service() {
             onConnectionChange: ((Boolean) -> Unit)?,
             onCommandReceived: ((String, JSONObject?) -> Unit)?,
             onDataRequested: (() -> Unit)?,
-            onLockPasswordReceived: ((String) -> Unit)? = null
+            onLockPasswordReceived: ((String) -> Unit)? = null,
+            onProdutosReceived: ((JSONArray) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
             this.onDataRequested = onDataRequested
             this.onLockPasswordReceived = onLockPasswordReceived
+            this.onProdutosReceived = onProdutosReceived
         }
         
         /**
@@ -146,6 +153,108 @@ class WebSocketService : Service() {
                 }
                 socket?.emit("device_status", data)
                 Log.d(TAG, "Status enviado: $status")
+            }
+        }
+        
+        /**
+         * Envia atualizações de estoque para o servidor
+         */
+        fun sendEstoqueUpdate(produtoId: Long, novoEstoque: Double) {
+            wsDeviceId?.let { id ->
+                val data = JSONObject().apply {
+                    put("deviceId", id)
+                    put("produtoId", produtoId)
+                    put("novoEstoque", novoEstoque)
+                    put("timestamp", System.currentTimeMillis())
+                }
+                socket?.emit("estoque_update", data)
+                Log.d(TAG, "Estoque atualizado: produtoId=$produtoId, estoque=$novoEstoque")
+            }
+        }
+        
+        /**
+         * Envia operações de caixa para o servidor via API REST
+         */
+        fun sendOperacaoCaixa(tipo: String, valor: Double, nomeOperador: String, observacao: String? = null) {
+            wsDeviceId?.let { id ->
+                Log.d(TAG, "🔓 sendOperacaoCaixa: deviceId=$id, tipo=$tipo, valor=$valor")
+                
+                // Enviar via API REST em vez de WebSocket
+                Thread {
+                    try {
+                        val url = URL("http://192.168.1.154:3001/api/operacoes")
+                        val conn = url.openConnection() as HttpURLConnection
+                        conn.requestMethod = "POST"
+                        conn.setRequestProperty("Content-Type", "application/json")
+                        conn.doOutput = true
+                        
+                        val data = JSONObject().apply {
+                            put("tipo", tipo)
+                            put("valor", valor)
+                            put("deviceId", id)
+                            put("nomeOperador", nomeOperador)
+                            put("observacao", observacao ?: "")
+                        }
+                        
+                        conn.outputStream.use { output ->
+                            output.write(data.toString().toByteArray())
+                        }
+                        
+                        val responseCode = conn.responseCode
+                        Log.d(TAG, "🔓 API Response: $responseCode")
+                        
+                        if (responseCode == HttpURLConnection.HTTP_OK) {
+                            Log.d(TAG, "🔓 Operação de caixa enviada via API: $tipo R$$valor")
+                        } else {
+                            Log.e(TAG, "❌ Erro ao enviar operação: $responseCode")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Erro na API de operações", e)
+                    }
+                }.start()
+            } ?: run {
+                Log.e(TAG, "❌ sendOperacaoCaixa: wsDeviceId é null!")
+            }
+        }
+        
+        /**
+         * Envia produtos para sincronização com o servidor
+         */
+        fun sendProdutosSync(produtosJson: JSONArray) {
+            wsDeviceId?.let { id ->
+                Log.d(TAG, "🔄 sendProdutosSync: deviceId=$id, produtos=${produtosJson.length()}")
+                
+                Thread {
+                    try {
+                        val url = URL("http://192.168.1.154:3001/api/produtos/sync")
+                        val conn = url.openConnection() as HttpURLConnection
+                        conn.requestMethod = "POST"
+                        conn.setRequestProperty("Content-Type", "application/json")
+                        conn.doOutput = true
+                        
+                        val data = JSONObject().apply {
+                            put("deviceId", id)
+                            put("produtos", produtosJson)
+                        }
+                        
+                        conn.outputStream.use { output ->
+                            output.write(data.toString().toByteArray())
+                        }
+                        
+                        val responseCode = conn.responseCode
+                        Log.d(TAG, "🔄 Sync Response: $responseCode")
+                        
+                        if (responseCode == HttpURLConnection.HTTP_OK) {
+                            Log.d(TAG, "✅ Produtos sincronizados com sucesso: ${produtosJson.length()}")
+                        } else {
+                            Log.e(TAG, "❌ Erro ao sincronizar produtos: $responseCode")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Erro na sincronização de produtos", e)
+                    }
+                }.start()
+            } ?: run {
+                Log.e(TAG, "❌ sendProdutosSync: wsDeviceId é null!")
             }
         }
     }
@@ -208,6 +317,7 @@ class WebSocketService : Service() {
             // Eventos de controle de app
             socket?.on("app_control", onAppControl)
             socket?.on("control_command", onControlCommand)
+            socket?.on("produtos_sync", onProdutosSync)
 
             // Eventos de bloqueio e tempo de uso
             socket?.on("device_locked", onDeviceLocked)
@@ -304,6 +414,19 @@ class WebSocketService : Service() {
     private val onRequestSync = Emitter.Listener {
         Log.d(TAG, "Solicitação de sincronização recebida")
         onDataRequested?.invoke()
+    }
+    
+    private val onProdutosSync = Emitter.Listener { args ->
+        if (args.isNotEmpty()) {
+            try {
+                val data = args[0] as JSONObject
+                val produtos = data.getJSONArray("produtos")
+                Log.d(TAG, "Recebidos ${produtos.length()} produtos do servidor")
+                onProdutosReceived?.invoke(produtos)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao processar produtos_sync", e)
+            }
+        }
     }
     
     private val onAuthError = Emitter.Listener { args ->

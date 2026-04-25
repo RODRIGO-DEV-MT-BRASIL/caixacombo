@@ -6,6 +6,7 @@ import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.data.repository.CategoriaRepository
 import com.seucaixa.caixacombo.data.repository.ProdutoRepository
 import com.seucaixa.caixacombo.data.repository.VendaRepository
+import com.seucaixa.caixacombo.service.WebSocketService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -19,6 +20,17 @@ class CheckoutViewModel(
     // StateFlow para UI reativa
     private val _produtos = MutableStateFlow<List<Produto>>(emptyList())
     val produtos: StateFlow<List<Produto>> = _produtos.asStateFlow()
+    
+    // Flag para usar produtos do servidor
+    private var _usandoProdutosServidor = false
+    
+    // Flag para controle de sincronização
+    private val _precisaSincronizar = MutableStateFlow(false)
+    val precisaSincronizar: StateFlow<Boolean> = _precisaSincronizar.asStateFlow()
+    
+    // Contador de produtos pendentes de sincronização
+    private val _produtosPendentes = MutableStateFlow(0)
+    val produtosPendentes: StateFlow<Int> = _produtosPendentes.asStateFlow()
     
     private val _carrinho = MutableStateFlow<List<ItemCarrinho>>(emptyList())
     val carrinho: StateFlow<List<ItemCarrinho>> = _carrinho.asStateFlow()
@@ -47,9 +59,28 @@ class CheckoutViewModel(
     val categoriaSelecionada: StateFlow<Categoria?> = _categoriaSelecionada.asStateFlow()
 
     init {
+        // Carregar produtos locais primeiro como fallback
         carregarProdutos()
-        carregarVendasHoje()
         carregarCategorias()
+        carregarVendasHoje()
+        // Verificar se há produtos pendentes de sincronização
+        verificarProdutosPendentes()
+    }
+
+    /**
+     * Atualiza produtos com dados do servidor e salva localmente
+     */
+    fun atualizarProdutosServidor(produtos: List<Produto>) {
+        // Salvar produtos localmente para uso offline
+        viewModelScope.launch {
+            produtos.forEach { produto ->
+                produtoRepository.insert(produto)
+            }
+            _produtos.value = produtos
+            _usandoProdutosServidor = true
+            _precisaSincronizar.value = false
+            _produtosPendentes.value = 0
+        }
     }
 
     private fun carregarCategorias() {
@@ -62,17 +93,24 @@ class CheckoutViewModel(
 
     fun selecionarCategoria(categoria: Categoria?) {
         _categoriaSelecionada.value = categoria
-        // Recarregar produtos com filtro
-        viewModelScope.launch {
+        
+        // Se estiver usando produtos do servidor, filtrar localmente
+        if (_usandoProdutosServidor) {
+            val produtosAtuais = _produtos.value
             if (categoria == null) {
-                produtoRepository.allProdutos.collect { lista ->
-                    _produtos.value = lista
-                }
+                // Já tem todos os produtos
+                return
             } else {
-                produtoRepository.getProdutosByCategoria(categoria.id).collect { lista ->
-                    _produtos.value = lista
-                }
+                // Filtrar por categoria
+                val filtrados = produtosAtuais.filter { it.categoriaId == categoria.id }
+                _produtos.value = filtrados
             }
+            return
+        }
+        
+        // Se não estiver usando produtos do servidor, não fazer nada
+        if (!_usandoProdutosServidor) {
+            return
         }
     }
 
@@ -107,24 +145,46 @@ class CheckoutViewModel(
     
     private fun carregarProdutos() {
         viewModelScope.launch {
+            // Carregar produtos locais como fallback
             produtoRepository.allProdutos.collect { lista ->
-                _produtos.value = lista
+                // Se não estiver usando produtos do servidor, usar locais
+                if (!_usandoProdutosServidor) {
+                    _produtos.value = lista
+                }
             }
         }
     }
     
     fun buscarProdutos(query: String) {
         _busca.value = query
-        viewModelScope.launch {
-            if (query.isEmpty()) {
-                produtoRepository.allProdutos.collect { lista ->
-                    _produtos.value = lista
-                }
+        
+        // Se estiver usando produtos do servidor, filtrar localmente
+        if (_usandoProdutosServidor) {
+            val produtosAtuais = if (_categoriaSelecionada.value != null) {
+                // Se tiver categoria selecionada, buscar todos os produtos da categoria
+                _produtos.value
             } else {
-                produtoRepository.searchProdutos(query).collect { lista ->
-                    _produtos.value = lista
-                }
+                // Senão, buscar todos os produtos já carregados
+                _produtos.value
             }
+            
+            if (query.isEmpty()) {
+                // Se busca vazia, manter produtos atuais
+                return
+            } else {
+                // Filtrar por nome ou código de barras
+                val filtrados = produtosAtuais.filter { produto ->
+                    produto.nome.contains(query, ignoreCase = true) ||
+                    produto.codigoBarras?.contains(query, ignoreCase = true) == true
+                }
+                _produtos.value = filtrados
+            }
+            return
+        }
+        
+        // Se não estiver usando produtos do servidor, não fazer nada
+        if (!_usandoProdutosServidor) {
+            return
         }
     }
     
@@ -223,13 +283,52 @@ class CheckoutViewModel(
             // Salvar venda
             vendaRepository.insert(venda)
 
-            // Atualizar estoque
+            // Atualizar estoque local
             _carrinho.value.forEach { item ->
                 produtoRepository.decrementarEstoque(item.produtoId, item.quantidade)
+            }
+            
+            // Atualizar produtos do servidor com novo estoque
+            if (_usandoProdutosServidor) {
+                val produtosAtualizados = _produtos.value.map { produto ->
+                    val itemVendido = _carrinho.value.find { it.produtoId == produto.id }
+                    if (itemVendido != null) {
+                        val novoEstoque = produto.estoque - itemVendido.quantidade
+                        // Enviar atualização para o servidor
+                        WebSocketService.sendEstoqueUpdate(produto.id, novoEstoque)
+                        produto.copy(estoque = novoEstoque)
+                    } else {
+                        produto
+                    }
+                }
+                _produtos.value = produtosAtualizados
             }
 
             // Guardar referência da última venda para impressão
             _ultimaVenda.value = venda
+
+            // Enviar dados da venda para o servidor
+            val vendaJson = org.json.JSONObject().apply {
+                put("id", venda.numero)
+                put("dataHora", venda.dataHora)
+                put("total", venda.total)
+                put("formaPagamento", venda.formaPagamento.name)
+                put("valorRecebido", venda.valorRecebido)
+                put("troco", venda.troco)
+                
+                val itensArray = org.json.JSONArray()
+                venda.itens.forEach { item ->
+                    itensArray.put(org.json.JSONObject().apply {
+                        put("produtoId", item.produtoId)
+                        put("produtoNome", item.produtoNome)
+                        put("quantidade", item.quantidade)
+                        put("precoUnitario", item.precoUnitario)
+                        put("total", item.total)
+                    })
+                }
+                put("itens", itensArray)
+            }
+            WebSocketService.sendSaleData(vendaJson)
 
             // Atualizar contador de vendidos
             val vendidosAtual = _vendidosPorProduto.value.toMutableMap()
@@ -255,6 +354,51 @@ class CheckoutViewModel(
     fun resetVendaFinalizada() {
         _vendaFinalizada.value = false
         _ultimaVenda.value = null
+    }
+    
+    /**
+     * Verifica se há produtos locais que precisam ser sincronizados
+     */
+    private fun verificarProdutosPendentes() {
+        viewModelScope.launch {
+            val produtosLocais = produtoRepository.getAllProdutosList()
+            if (produtosLocais.isNotEmpty() && !_usandoProdutosServidor) {
+                _produtosPendentes.value = produtosLocais.size
+                _precisaSincronizar.value = true
+            } else {
+                _produtosPendentes.value = 0
+                _precisaSincronizar.value = false
+            }
+        }
+    }
+    
+    /**
+     * Força sincronização dos produtos locais com o servidor
+     */
+    fun sincronizarProdutos() {
+        viewModelScope.launch {
+            val produtosLocais = produtoRepository.getAllProdutosList()
+            if (produtosLocais.isNotEmpty()) {
+                // Enviar produtos para sincronização via WebSocket
+                val produtosJson = org.json.JSONArray()
+                produtosLocais.forEach { produto ->
+                    produtosJson.put(org.json.JSONObject().apply {
+                        put("id", produto.id)
+                        put("nome", produto.nome)
+                        put("descricao", produto.descricao)
+                        put("precoVenda", produto.precoVenda)
+                        put("estoque", produto.estoque)
+                        put("unidade", produto.unidade)
+                        put("codigoBarras", produto.codigoBarras)
+                        put("categoriaId", produto.categoriaId)
+                        put("ativo", produto.ativo)
+                    })
+                }
+                
+                WebSocketService.sendProdutosSync(produtosJson)
+                android.util.Log.d("CheckoutViewModel", "Enviados ${produtosLocais.size} produtos para sincronização")
+            }
+        }
     }
     
     // Factory para criar ViewModel com repositórios

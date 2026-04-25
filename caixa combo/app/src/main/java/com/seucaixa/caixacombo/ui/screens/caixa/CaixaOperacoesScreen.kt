@@ -653,8 +653,8 @@ fun AberturaCaixaDialog(
     onDismiss: () -> Unit
 ) {
     var nome by remember { mutableStateOf("") }
-    // Usar TextFieldValue para controlar posição do cursor - iniciar com "0.00"
-    var valorField by remember { mutableStateOf(TextFieldValue("0.00", selection = TextRange(4))) }
+    // Usar TextFieldValue para controlar posição do cursor - iniciar vazio para forçar digitação
+    var valorField by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
 
     // Função para formatar valor monetário
     fun formatarValor(input: String): String {
@@ -713,11 +713,11 @@ fun AberturaCaixaDialog(
             Button(
                 onClick = {
                     val valorInicial = valorField.text.toDoubleSafe()
-                    if (nome.isNotBlank()) {
+                    if (nome.isNotBlank() && valorInicial > 0) {
                         onConfirm(nome, valorInicial)
                     }
                 },
-                enabled = nome.isNotBlank()
+                enabled = nome.isNotBlank() && valorField.text.toDoubleSafe() > 0
             ) {
                 Text("Abrir Caixa")
             }

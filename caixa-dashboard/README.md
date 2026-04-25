@@ -124,10 +124,10 @@ JWT_SECRET=sua-chave-super-secreta-muito-longa
 ## 🔧 Configuração (.env)
 
 ```env
-PORT=3001
+PORT=3000
 HOST=0.0.0.0
 FRONTEND_URL=http://localhost:3000
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+CORS_ORIGINS=http://localhost:3000
 JWT_SECRET=caixacombo-secret-key-change-in-production
 SERVER_IP=localhost
 ```

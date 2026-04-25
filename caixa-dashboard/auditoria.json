@@ -1,5 +1,3075 @@
 [
   {
+    "id": 1777100385960,
+    "timestamp": "2026-04-25T06:59:45.960Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777100359832,
+    "timestamp": "2026-04-25T06:59:19.832Z",
+    "tipo": "desconexao",
+    "deviceId": "1080d0f35c271945",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777100358370,
+    "timestamp": "2026-04-25T06:59:18.370Z",
+    "tipo": "desconexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777100107368,
+    "timestamp": "2026-04-25T06:55:07.368Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100104686,
+    "timestamp": "2026-04-25T06:55:04.686Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100102627,
+    "timestamp": "2026-04-25T06:55:02.627Z",
+    "tipo": "mudanca_status",
+    "deviceId": "1080d0f35c271945",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100085657,
+    "timestamp": "2026-04-25T06:54:45.657Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100061747,
+    "timestamp": "2026-04-25T06:54:21.747Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100051728,
+    "timestamp": "2026-04-25T06:54:11.728Z",
+    "tipo": "bloqueio",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Bloqueado: oi",
+    "usuario": "rodrigodevmt",
+    "ip": null
+  },
+  {
+    "id": 1777100022678,
+    "timestamp": "2026-04-25T06:53:42.678Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777100022550,
+    "timestamp": "2026-04-25T06:53:42.550Z",
+    "tipo": "conexao",
+    "deviceId": "1080d0f35c271945",
+    "deviceName": "1080d0f35c271945",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777100015939,
+    "timestamp": "2026-04-25T06:53:35.939Z",
+    "tipo": "mudanca_status",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777099820772,
+    "timestamp": "2026-04-25T06:50:20.772Z",
+    "tipo": "conexao",
+    "deviceId": "9f3d162f7954a21",
+    "deviceName": "9f3d162f7954a21",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099799865,
+    "timestamp": "2026-04-25T06:49:59.865Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777099434674,
+    "timestamp": "2026-04-25T06:43:54.674Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099434644,
+    "timestamp": "2026-04-25T06:43:54.644Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099433179,
+    "timestamp": "2026-04-25T06:43:53.179Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099076579,
+    "timestamp": "2026-04-25T06:37:56.579Z",
+    "tipo": "operacao_caixa",
+    "deviceId": null,
+    "deviceName": null,
+    "detalhes": "fechamento registrada: R$ 0",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099076237,
+    "timestamp": "2026-04-25T06:37:56.237Z",
+    "tipo": "operacao_caixa",
+    "deviceId": null,
+    "deviceName": null,
+    "detalhes": "fechamento registrada: R$ 0",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099075352,
+    "timestamp": "2026-04-25T06:37:55.352Z",
+    "tipo": "operacao_caixa",
+    "deviceId": null,
+    "deviceName": null,
+    "detalhes": "fechamento registrada: R$ 0",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099073761,
+    "timestamp": "2026-04-25T06:37:53.761Z",
+    "tipo": "operacao_caixa",
+    "deviceId": null,
+    "deviceName": null,
+    "detalhes": "fechamento registrada: R$ 14",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777099004571,
+    "timestamp": "2026-04-25T06:36:44.571Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098992218,
+    "timestamp": "2026-04-25T06:36:32.218Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098988232,
+    "timestamp": "2026-04-25T06:36:28.232Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098719754,
+    "timestamp": "2026-04-25T06:31:59.754Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "abertura registrada: R$ 14",
+    "usuario": "Dev",
+    "ip": null
+  },
+  {
+    "id": 1777098458558,
+    "timestamp": "2026-04-25T06:27:38.558Z",
+    "tipo": "operacao_caixa",
+    "deviceId": null,
+    "deviceName": null,
+    "detalhes": "fechamento registrada: R$ 36.500000000000114",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098441670,
+    "timestamp": "2026-04-25T06:27:21.670Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 35",
+    "usuario": "deb",
+    "ip": null
+  },
+  {
+    "id": 1777098406583,
+    "timestamp": "2026-04-25T06:26:46.583Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 25",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777098375068,
+    "timestamp": "2026-04-25T06:26:15.068Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777098375064,
+    "timestamp": "2026-04-25T06:26:15.064Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777098374532,
+    "timestamp": "2026-04-25T06:26:14.532Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098363001,
+    "timestamp": "2026-04-25T06:26:03.001Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777098361447,
+    "timestamp": "2026-04-25T06:26:01.447Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777098361441,
+    "timestamp": "2026-04-25T06:26:01.441Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777098361232,
+    "timestamp": "2026-04-25T06:26:01.232Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777097443245,
+    "timestamp": "2026-04-25T06:10:43.245Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 25",
+    "usuario": "degv",
+    "ip": null
+  },
+  {
+    "id": 1777097417430,
+    "timestamp": "2026-04-25T06:10:17.430Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097416271,
+    "timestamp": "2026-04-25T06:10:16.271Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097413894,
+    "timestamp": "2026-04-25T06:10:13.894Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097412974,
+    "timestamp": "2026-04-25T06:10:12.974Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097410630,
+    "timestamp": "2026-04-25T06:10:10.630Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097409479,
+    "timestamp": "2026-04-25T06:10:09.479Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097406328,
+    "timestamp": "2026-04-25T06:10:06.328Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097151675,
+    "timestamp": "2026-04-25T06:05:51.675Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097150193,
+    "timestamp": "2026-04-25T06:05:50.193Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097148339,
+    "timestamp": "2026-04-25T06:05:48.339Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777097147091,
+    "timestamp": "2026-04-25T06:05:47.091Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096928378,
+    "timestamp": "2026-04-25T06:02:08.378Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 35",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777096812910,
+    "timestamp": "2026-04-25T06:00:12.910Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096811901,
+    "timestamp": "2026-04-25T06:00:11.901Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096811199,
+    "timestamp": "2026-04-25T06:00:11.199Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096809175,
+    "timestamp": "2026-04-25T06:00:09.175Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096807973,
+    "timestamp": "2026-04-25T06:00:07.973Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096807007,
+    "timestamp": "2026-04-25T06:00:07.007Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096801433,
+    "timestamp": "2026-04-25T06:00:01.433Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096798839,
+    "timestamp": "2026-04-25T05:59:58.839Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096796158,
+    "timestamp": "2026-04-25T05:59:56.158Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096794397,
+    "timestamp": "2026-04-25T05:59:54.397Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777096355051,
+    "timestamp": "2026-04-25T05:52:35.051Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777095861386,
+    "timestamp": "2026-04-25T05:44:21.386Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "fechamento registrada: R$ 0",
+    "usuario": "dev",
+    "ip": null
+  },
+  {
+    "id": 1777095819932,
+    "timestamp": "2026-04-25T05:43:39.932Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "fechamento registrada: R$ 698.4999999999999",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777095727366,
+    "timestamp": "2026-04-25T05:42:07.366Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (105 -> 104)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777095426610,
+    "timestamp": "2026-04-25T05:37:06.610Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1228 -> 1226)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777095426601,
+    "timestamp": "2026-04-25T05:37:06.601Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (106 -> 105)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777095377788,
+    "timestamp": "2026-04-25T05:36:17.788Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1464 -> 1462)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777095377776,
+    "timestamp": "2026-04-25T05:36:17.776Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1230 -> 1228)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777095377575,
+    "timestamp": "2026-04-25T05:36:17.575Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (107 -> 106)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094900283,
+    "timestamp": "2026-04-25T05:28:20.283Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1470 -> 1464)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094900272,
+    "timestamp": "2026-04-25T05:28:20.272Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1234 -> 1230)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094900260,
+    "timestamp": "2026-04-25T05:28:20.260Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (110 -> 107)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094308493,
+    "timestamp": "2026-04-25T05:18:28.493Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "suprimento registrada: R$ 25",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777094162631,
+    "timestamp": "2026-04-25T05:16:02.631Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1236 -> 1234)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094162616,
+    "timestamp": "2026-04-25T05:16:02.616Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (111 -> 110)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094156292,
+    "timestamp": "2026-04-25T05:15:56.292Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1472 -> 1470)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094156283,
+    "timestamp": "2026-04-25T05:15:56.283Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1238 -> 1236)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094156254,
+    "timestamp": "2026-04-25T05:15:56.254Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (112 -> 111)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094146592,
+    "timestamp": "2026-04-25T05:15:46.592Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1473 -> 1472)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094146584,
+    "timestamp": "2026-04-25T05:15:46.584Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1239 -> 1238)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094146568,
+    "timestamp": "2026-04-25T05:15:46.568Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (114 -> 112)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094137392,
+    "timestamp": "2026-04-25T05:15:37.392Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1474 -> 1473)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094137384,
+    "timestamp": "2026-04-25T05:15:37.384Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1240 -> 1239)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094137372,
+    "timestamp": "2026-04-25T05:15:37.372Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (116 -> 114)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094124100,
+    "timestamp": "2026-04-25T05:15:24.100Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777094124005,
+    "timestamp": "2026-04-25T05:15:24.005Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777094061273,
+    "timestamp": "2026-04-25T05:14:21.273Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1475 -> 1474)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094061262,
+    "timestamp": "2026-04-25T05:14:21.262Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1241 -> 1240)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094061248,
+    "timestamp": "2026-04-25T05:14:21.248Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (117 -> 116)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094052236,
+    "timestamp": "2026-04-25T05:14:12.236Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1477 -> 1475)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094052228,
+    "timestamp": "2026-04-25T05:14:12.228Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1242 -> 1241)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094052208,
+    "timestamp": "2026-04-25T05:14:12.208Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (118 -> 117)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094046004,
+    "timestamp": "2026-04-25T05:14:06.004Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1478 -> 1477)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094045995,
+    "timestamp": "2026-04-25T05:14:05.995Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1243 -> 1242)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094045982,
+    "timestamp": "2026-04-25T05:14:05.982Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (119 -> 118)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094039539,
+    "timestamp": "2026-04-25T05:13:59.539Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1479 -> 1478)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094039530,
+    "timestamp": "2026-04-25T05:13:59.530Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1244 -> 1243)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094039514,
+    "timestamp": "2026-04-25T05:13:59.514Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (120 -> 119)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777094019937,
+    "timestamp": "2026-04-25T05:13:39.937Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777094016007,
+    "timestamp": "2026-04-25T05:13:36.007Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777093963730,
+    "timestamp": "2026-04-25T05:12:43.730Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1481 -> 1479)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093963715,
+    "timestamp": "2026-04-25T05:12:43.715Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1246 -> 1244)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093963683,
+    "timestamp": "2026-04-25T05:12:43.683Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (122 -> 120)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093184797,
+    "timestamp": "2026-04-25T04:59:44.797Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1482 -> 1481)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093184786,
+    "timestamp": "2026-04-25T04:59:44.786Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1248 -> 1246)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093184773,
+    "timestamp": "2026-04-25T04:59:44.773Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (123 -> 122)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777093119371,
+    "timestamp": "2026-04-25T04:58:39.371Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "suprimento registrada: R$ 120",
+    "usuario": "caixa",
+    "ip": null
+  },
+  {
+    "id": 1777093076551,
+    "timestamp": "2026-04-25T04:57:56.551Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "abertura registrada: R$ 35",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777093045776,
+    "timestamp": "2026-04-25T04:57:25.776Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "sangria registrada: R$ 25",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777092905041,
+    "timestamp": "2026-04-25T04:55:05.041Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "suprimento registrada: R$ 85",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777092871536,
+    "timestamp": "2026-04-25T04:54:31.536Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 100",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777092840189,
+    "timestamp": "2026-04-25T04:54:00.189Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "fechamento registrada: R$ 0",
+    "usuario": "fev",
+    "ip": null
+  },
+  {
+    "id": 1777092738196,
+    "timestamp": "2026-04-25T04:52:18.196Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "dashboard",
+    "deviceName": "dashboard",
+    "detalhes": "Operação removida: abertura R$ 0",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777092735366,
+    "timestamp": "2026-04-25T04:52:15.366Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777092735329,
+    "timestamp": "2026-04-25T04:52:15.329Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777092577977,
+    "timestamp": "2026-04-25T04:49:37.977Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "suprimento registrada: R$ 25",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777092289757,
+    "timestamp": "2026-04-25T04:44:49.757Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092283120,
+    "timestamp": "2026-04-25T04:44:43.120Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092282079,
+    "timestamp": "2026-04-25T04:44:42.079Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092179694,
+    "timestamp": "2026-04-25T04:42:59.694Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "suprimento registrada: R$ 250",
+    "usuario": "rodrigo",
+    "ip": null
+  },
+  {
+    "id": 1777092112064,
+    "timestamp": "2026-04-25T04:41:52.064Z",
+    "tipo": "operacao_caixa",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "abertura registrada: R$ 0",
+    "usuario": "fggh",
+    "ip": null
+  },
+  {
+    "id": 1777092087900,
+    "timestamp": "2026-04-25T04:41:27.900Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092086455,
+    "timestamp": "2026-04-25T04:41:26.455Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092085891,
+    "timestamp": "2026-04-25T04:41:25.891Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777092026085,
+    "timestamp": "2026-04-25T04:40:26.085Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777091879761,
+    "timestamp": "2026-04-25T04:37:59.761Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777091879627,
+    "timestamp": "2026-04-25T04:37:59.627Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777091878958,
+    "timestamp": "2026-04-25T04:37:58.958Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777089385368,
+    "timestamp": "2026-04-25T03:56:25.368Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777089376363,
+    "timestamp": "2026-04-25T03:56:16.363Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1484 -> 1482)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777089376347,
+    "timestamp": "2026-04-25T03:56:16.347Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1249 -> 1248)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777089376331,
+    "timestamp": "2026-04-25T03:56:16.331Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (124 -> 123)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777089303472,
+    "timestamp": "2026-04-25T03:55:03.472Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777089301889,
+    "timestamp": "2026-04-25T03:55:01.889Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777089289157,
+    "timestamp": "2026-04-25T03:54:49.157Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777088993042,
+    "timestamp": "2026-04-25T03:49:53.042Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777088965194,
+    "timestamp": "2026-04-25T03:49:25.194Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777088877074,
+    "timestamp": "2026-04-25T03:47:57.074Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777088844708,
+    "timestamp": "2026-04-25T03:47:24.708Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777088826726,
+    "timestamp": "2026-04-25T03:47:06.726Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777088825531,
+    "timestamp": "2026-04-25T03:47:05.531Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777088823883,
+    "timestamp": "2026-04-25T03:47:03.883Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777088798912,
+    "timestamp": "2026-04-25T03:46:38.912Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777088798007,
+    "timestamp": "2026-04-25T03:46:38.007Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777088797728,
+    "timestamp": "2026-04-25T03:46:37.729Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777088456158,
+    "timestamp": "2026-04-25T03:40:56.158Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087961371,
+    "timestamp": "2026-04-25T03:32:41.371Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087797091,
+    "timestamp": "2026-04-25T03:29:57.091Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1485 -> 1484)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087771375,
+    "timestamp": "2026-04-25T03:29:31.375Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1487 -> 1485)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087771354,
+    "timestamp": "2026-04-25T03:29:31.354Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1250 -> 1249)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087771330,
+    "timestamp": "2026-04-25T03:29:31.330Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (125 -> 124)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087721642,
+    "timestamp": "2026-04-25T03:28:41.642Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1489 -> 1487)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087721615,
+    "timestamp": "2026-04-25T03:28:41.615Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1251 -> 1250)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087721543,
+    "timestamp": "2026-04-25T03:28:41.543Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (126 -> 125)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777087560668,
+    "timestamp": "2026-04-25T03:26:00.668Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777087560387,
+    "timestamp": "2026-04-25T03:26:00.387Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777087560253,
+    "timestamp": "2026-04-25T03:26:00.253Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777086895984,
+    "timestamp": "2026-04-25T03:14:55.984Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777086895970,
+    "timestamp": "2026-04-25T03:14:55.970Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777086895938,
+    "timestamp": "2026-04-25T03:14:55.938Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777085891494,
+    "timestamp": "2026-04-25T02:58:11.494Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085835176,
+    "timestamp": "2026-04-25T02:57:15.176Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085732391,
+    "timestamp": "2026-04-25T02:55:32.391Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085597817,
+    "timestamp": "2026-04-25T02:53:17.817Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777085595957,
+    "timestamp": "2026-04-25T02:53:15.957Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777085595888,
+    "timestamp": "2026-04-25T02:53:15.888Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777085463134,
+    "timestamp": "2026-04-25T02:51:03.134Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085432063,
+    "timestamp": "2026-04-25T02:50:32.063Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085310202,
+    "timestamp": "2026-04-25T02:48:30.202Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777085203070,
+    "timestamp": "2026-04-25T02:46:43.070Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777084804174,
+    "timestamp": "2026-04-25T02:40:04.174Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084802338,
+    "timestamp": "2026-04-25T02:40:02.338Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084802289,
+    "timestamp": "2026-04-25T02:40:02.289Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084783658,
+    "timestamp": "2026-04-25T02:39:43.658Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084768498,
+    "timestamp": "2026-04-25T02:39:28.498Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084757028,
+    "timestamp": "2026-04-25T02:39:17.028Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084207829,
+    "timestamp": "2026-04-25T02:30:07.829Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084205553,
+    "timestamp": "2026-04-25T02:30:05.553Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084205442,
+    "timestamp": "2026-04-25T02:30:05.442Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084157744,
+    "timestamp": "2026-04-25T02:29:17.744Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084156243,
+    "timestamp": "2026-04-25T02:29:16.243Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777084155924,
+    "timestamp": "2026-04-25T02:29:15.924Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777083825018,
+    "timestamp": "2026-04-25T02:23:45.018Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083820760,
+    "timestamp": "2026-04-25T02:23:40.760Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083459355,
+    "timestamp": "2026-04-25T02:17:39.355Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1491 -> 1489)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083459348,
+    "timestamp": "2026-04-25T02:17:39.348Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1255 -> 1251)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083459331,
+    "timestamp": "2026-04-25T02:17:39.331Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (128 -> 126)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083011387,
+    "timestamp": "2026-04-25T02:10:11.387Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777083007329,
+    "timestamp": "2026-04-25T02:10:07.329Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082988360,
+    "timestamp": "2026-04-25T02:09:48.360Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1493 -> 1491)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082988348,
+    "timestamp": "2026-04-25T02:09:48.348Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Bohemia (1258 -> 1255)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082988329,
+    "timestamp": "2026-04-25T02:09:48.329Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: skol lata (129 -> 128)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082978895,
+    "timestamp": "2026-04-25T02:09:38.895Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1495 -> 1493)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082978888,
+    "timestamp": "2026-04-25T02:09:38.888Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1260 -> 1258)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082978861,
+    "timestamp": "2026-04-25T02:09:38.861Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (130 -> 129)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082897631,
+    "timestamp": "2026-04-25T02:08:17.631Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1496 -> 1495)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082897625,
+    "timestamp": "2026-04-25T02:08:17.625Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1262 -> 1260)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082897609,
+    "timestamp": "2026-04-25T02:08:17.609Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (131 -> 130)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082829774,
+    "timestamp": "2026-04-25T02:07:09.774Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082826148,
+    "timestamp": "2026-04-25T02:07:06.148Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082790864,
+    "timestamp": "2026-04-25T02:06:30.864Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082788542,
+    "timestamp": "2026-04-25T02:06:28.542Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082785944,
+    "timestamp": "2026-04-25T02:06:25.944Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082784498,
+    "timestamp": "2026-04-25T02:06:24.498Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082713539,
+    "timestamp": "2026-04-25T02:05:13.539Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1497 -> 1496)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082713532,
+    "timestamp": "2026-04-25T02:05:13.532Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1265 -> 1262)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082713497,
+    "timestamp": "2026-04-25T02:05:13.497Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (132 -> 131)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082697414,
+    "timestamp": "2026-04-25T02:04:57.414Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082692847,
+    "timestamp": "2026-04-25T02:04:52.847Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082692250,
+    "timestamp": "2026-04-25T02:04:52.250Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082688168,
+    "timestamp": "2026-04-25T02:04:48.168Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082632828,
+    "timestamp": "2026-04-25T02:03:52.828Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1499 -> 1497)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082632823,
+    "timestamp": "2026-04-25T02:03:52.823Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1268 -> 1265)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082632809,
+    "timestamp": "2026-04-25T02:03:52.809Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (133 -> 132)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082626205,
+    "timestamp": "2026-04-25T02:03:46.205Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1500 -> 1499)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082626197,
+    "timestamp": "2026-04-25T02:03:46.197Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1270 -> 1268)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082626165,
+    "timestamp": "2026-04-25T02:03:46.165Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (134 -> 133)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082619072,
+    "timestamp": "2026-04-25T02:03:39.072Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1502 -> 1500)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082619064,
+    "timestamp": "2026-04-25T02:03:39.064Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1271 -> 1270)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082619044,
+    "timestamp": "2026-04-25T02:03:39.044Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (135 -> 134)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082611694,
+    "timestamp": "2026-04-25T02:03:31.694Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1507 -> 1502)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082611684,
+    "timestamp": "2026-04-25T02:03:31.684Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1275 -> 1271)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082611672,
+    "timestamp": "2026-04-25T02:03:31.672Z",
+    "tipo": "estoque",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (138 -> 135)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082594047,
+    "timestamp": "2026-04-25T02:03:14.047Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1509 -> 1507)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082594037,
+    "timestamp": "2026-04-25T02:03:14.037Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1276 -> 1275)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082594026,
+    "timestamp": "2026-04-25T02:03:14.026Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (140 -> 138)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082587042,
+    "timestamp": "2026-04-25T02:03:07.042Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1510 -> 1509)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082587032,
+    "timestamp": "2026-04-25T02:03:07.032Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1278 -> 1276)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082587020,
+    "timestamp": "2026-04-25T02:03:07.020Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (141 -> 140)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082579431,
+    "timestamp": "2026-04-25T02:02:59.431Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1512 -> 1510)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082579424,
+    "timestamp": "2026-04-25T02:02:59.424Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1279 -> 1278)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082579414,
+    "timestamp": "2026-04-25T02:02:59.414Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (142 -> 141)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082571964,
+    "timestamp": "2026-04-25T02:02:51.964Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1515 -> 1512)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082571957,
+    "timestamp": "2026-04-25T02:02:51.957Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1281 -> 1279)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082571940,
+    "timestamp": "2026-04-25T02:02:51.940Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (143 -> 142)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082558676,
+    "timestamp": "2026-04-25T02:02:38.676Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777082556951,
+    "timestamp": "2026-04-25T02:02:36.951Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777082553364,
+    "timestamp": "2026-04-25T02:02:33.364Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777082478711,
+    "timestamp": "2026-04-25T02:01:18.711Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1517 -> 1515)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082478699,
+    "timestamp": "2026-04-25T02:01:18.699Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: Bohemia (1283 -> 1281)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082478687,
+    "timestamp": "2026-04-25T02:01:18.687Z",
+    "tipo": "estoque",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Estoque atualizado: skol lata (146 -> 143)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777082154212,
+    "timestamp": "2026-04-25T01:55:54.212Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1518 -> 1517)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082154207,
+    "timestamp": "2026-04-25T01:55:54.207Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Bohemia (1285 -> 1283)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082154194,
+    "timestamp": "2026-04-25T01:55:54.194Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: skol lata (147 -> 146)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082148371,
+    "timestamp": "2026-04-25T01:55:48.371Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1519 -> 1518)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082148361,
+    "timestamp": "2026-04-25T01:55:48.361Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Bohemia (1286 -> 1285)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082148347,
+    "timestamp": "2026-04-25T01:55:48.347Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: skol lata (148 -> 147)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082142171,
+    "timestamp": "2026-04-25T01:55:42.171Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1521 -> 1519)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082142165,
+    "timestamp": "2026-04-25T01:55:42.165Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Bohemia (1287 -> 1286)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082142145,
+    "timestamp": "2026-04-25T01:55:42.145Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: skol lata (149 -> 148)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082135204,
+    "timestamp": "2026-04-25T01:55:35.204Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Brahma lata 369 ml (1522 -> 1521)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082135194,
+    "timestamp": "2026-04-25T01:55:35.194Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: Bohemia (1288 -> 1287)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082135168,
+    "timestamp": "2026-04-25T01:55:35.168Z",
+    "tipo": "estoque",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Estoque atualizado: skol lata (150 -> 149)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777082114828,
+    "timestamp": "2026-04-25T01:55:14.828Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777082114820,
+    "timestamp": "2026-04-25T01:55:14.820Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777082114807,
+    "timestamp": "2026-04-25T01:55:14.807Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777081902919,
+    "timestamp": "2026-04-25T01:51:42.919Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777081899576,
+    "timestamp": "2026-04-25T01:51:39.576Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777081882063,
+    "timestamp": "2026-04-25T01:51:22.063Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081881001,
+    "timestamp": "2026-04-25T01:51:21.001Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081877467,
+    "timestamp": "2026-04-25T01:51:17.467Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081876940,
+    "timestamp": "2026-04-25T01:51:16.940Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081657834,
+    "timestamp": "2026-04-25T01:47:37.834Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777081654097,
+    "timestamp": "2026-04-25T01:47:34.097Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777081634741,
+    "timestamp": "2026-04-25T01:47:14.741Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081632753,
+    "timestamp": "2026-04-25T01:47:12.753Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081629854,
+    "timestamp": "2026-04-25T01:47:09.854Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777081628575,
+    "timestamp": "2026-04-25T01:47:08.575Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080940867,
+    "timestamp": "2026-04-25T01:35:40.867Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777080937167,
+    "timestamp": "2026-04-25T01:35:37.167Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777080919766,
+    "timestamp": "2026-04-25T01:35:19.766Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080918894,
+    "timestamp": "2026-04-25T01:35:18.894Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080914761,
+    "timestamp": "2026-04-25T01:35:14.761Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080914594,
+    "timestamp": "2026-04-25T01:35:14.594Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080502187,
+    "timestamp": "2026-04-25T01:28:22.187Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777080499211,
+    "timestamp": "2026-04-25T01:28:19.211Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777080480863,
+    "timestamp": "2026-04-25T01:28:00.863Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080480196,
+    "timestamp": "2026-04-25T01:28:00.196Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777080475131,
+    "timestamp": "2026-04-25T01:27:55.131Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777079871766,
+    "timestamp": "2026-04-25T01:17:51.766Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777079821646,
+    "timestamp": "2026-04-25T01:17:01.646Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079818262,
+    "timestamp": "2026-04-25T01:16:58.262Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079802047,
+    "timestamp": "2026-04-25T01:16:42.047Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079167834,
+    "timestamp": "2026-04-25T01:06:07.834Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079166440,
+    "timestamp": "2026-04-25T01:06:06.440Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079164673,
+    "timestamp": "2026-04-25T01:06:04.673Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079162177,
+    "timestamp": "2026-04-25T01:06:02.177Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079157425,
+    "timestamp": "2026-04-25T01:05:57.425Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079155535,
+    "timestamp": "2026-04-25T01:05:55.535Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079153702,
+    "timestamp": "2026-04-25T01:05:53.702Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079152217,
+    "timestamp": "2026-04-25T01:05:52.217Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079151475,
+    "timestamp": "2026-04-25T01:05:51.475Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079148724,
+    "timestamp": "2026-04-25T01:05:48.724Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079147137,
+    "timestamp": "2026-04-25T01:05:47.137Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079145177,
+    "timestamp": "2026-04-25T01:05:45.177Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079138064,
+    "timestamp": "2026-04-25T01:05:38.064Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079135059,
+    "timestamp": "2026-04-25T01:05:35.059Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777079130536,
+    "timestamp": "2026-04-25T01:05:30.536Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777079118360,
+    "timestamp": "2026-04-25T01:05:18.360Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777079113191,
+    "timestamp": "2026-04-25T01:05:13.191Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078999401,
+    "timestamp": "2026-04-25T01:03:19.401Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078966544,
+    "timestamp": "2026-04-25T01:02:46.544Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777078954586,
+    "timestamp": "2026-04-25T01:02:34.586Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078945120,
+    "timestamp": "2026-04-25T01:02:25.120Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777078931469,
+    "timestamp": "2026-04-25T01:02:11.469Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078920134,
+    "timestamp": "2026-04-25T01:02:00.134Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078903778,
+    "timestamp": "2026-04-25T01:01:43.778Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777078900294,
+    "timestamp": "2026-04-25T01:01:40.294Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777078897622,
+    "timestamp": "2026-04-25T01:01:37.622Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
     "id": 1777078585635,
     "timestamp": "2026-04-25T00:56:25.635Z",
     "tipo": "conexao",
@@ -6927,1076 +9997,6 @@
     "deviceName": "P2-B",
     "detalhes": "Desbloqueado via terminal (detectado automaticamente)",
     "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777056055188,
-    "timestamp": "2026-04-24T18:40:55.188Z",
-    "tipo": "bloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: oi",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777056047353,
-    "timestamp": "2026-04-24T18:40:47.353Z",
-    "tipo": "desbloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Desbloqueado via dashboard",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055990832,
-    "timestamp": "2026-04-24T18:39:50.832Z",
-    "tipo": "bloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: Teste automático de bloqueio",
-    "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777055978841,
-    "timestamp": "2026-04-24T18:39:38.841Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055977513,
-    "timestamp": "2026-04-24T18:39:37.513Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055977374,
-    "timestamp": "2026-04-24T18:39:37.374Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055908285,
-    "timestamp": "2026-04-24T18:38:28.285Z",
-    "tipo": "bloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: oi oi oi",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055846713,
-    "timestamp": "2026-04-24T18:37:26.713Z",
-    "tipo": "desconexao",
-    "deviceId": "TEST-DEVICE-001",
-    "deviceName": "Dispositivo Teste",
-    "detalhes": "Dispositivo desconectado",
-    "usuario": "Dispositivo Teste",
-    "ip": null
-  },
-  {
-    "id": 1777055844714,
-    "timestamp": "2026-04-24T18:37:24.714Z",
-    "tipo": "desbloqueio",
-    "deviceId": "TEST-DEVICE-001",
-    "deviceName": "Dispositivo Teste",
-    "detalhes": "Desbloqueado automaticamente (atividade detectada)",
-    "usuario": "Dispositivo Teste",
-    "ip": null
-  },
-  {
-    "id": 1777055842713,
-    "timestamp": "2026-04-24T18:37:22.713Z",
-    "tipo": "mudanca_status",
-    "deviceId": "TEST-DEVICE-001",
-    "deviceName": "Dispositivo Teste",
-    "detalhes": "Status alterado: online → locked",
-    "usuario": "Dispositivo Teste",
-    "ip": null
-  },
-  {
-    "id": 1777055840716,
-    "timestamp": "2026-04-24T18:37:20.716Z",
-    "tipo": "conexao",
-    "deviceId": "TEST-DEVICE-001",
-    "deviceName": "TEST-DEVICE-001",
-    "detalhes": "Dispositivo conectado - Android (TEST123)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055839454,
-    "timestamp": "2026-04-24T18:37:19.454Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055838092,
-    "timestamp": "2026-04-24T18:37:18.092Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055836830,
-    "timestamp": "2026-04-24T18:37:16.830Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055828710,
-    "timestamp": "2026-04-24T18:37:08.710Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055828632,
-    "timestamp": "2026-04-24T18:37:08.632Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055828600,
-    "timestamp": "2026-04-24T18:37:08.600Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055726084,
-    "timestamp": "2026-04-24T18:35:26.084Z",
-    "tipo": "bloqueio",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: cabou seu tempo",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055562885,
-    "timestamp": "2026-04-24T18:32:42.885Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055561560,
-    "timestamp": "2026-04-24T18:32:41.560Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055561441,
-    "timestamp": "2026-04-24T18:32:41.441Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055542049,
-    "timestamp": "2026-04-24T18:32:22.049Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055541977,
-    "timestamp": "2026-04-24T18:32:21.977Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055541900,
-    "timestamp": "2026-04-24T18:32:21.900Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777055377634,
-    "timestamp": "2026-04-24T18:29:37.634Z",
-    "tipo": "bloqueio",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: fsfsf",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055333234,
-    "timestamp": "2026-04-24T18:28:53.234Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777055330504,
-    "timestamp": "2026-04-24T18:28:50.504Z",
-    "tipo": "desconexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Dispositivo desconectado",
-    "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777055310131,
-    "timestamp": "2026-04-24T18:28:30.131Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777055305783,
-    "timestamp": "2026-04-24T18:28:25.783Z",
-    "tipo": "desconexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Dispositivo desconectado",
-    "usuario": "P2-B",
-    "ip": null
-  },
-  {
-    "id": 1777055232974,
-    "timestamp": "2026-04-24T18:27:12.974Z",
-    "tipo": "desbloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Desbloqueado via dashboard",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055210269,
-    "timestamp": "2026-04-24T18:26:50.269Z",
-    "tipo": "bloqueio",
-    "deviceId": "PB59237K70640",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: hahah",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777055202117,
-    "timestamp": "2026-04-24T18:26:42.117Z",
-    "tipo": "desbloqueio",
-    "deviceId": "TC04209140208",
-    "deviceName": "D2s",
-    "detalhes": "Desbloqueado via dashboard",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777054969234,
-    "timestamp": "2026-04-24T18:22:49.235Z",
-    "tipo": "bloqueio",
-    "deviceId": "TC04209140208",
-    "deviceName": "D2s",
-    "detalhes": "Bloqueado: ola",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777054959939,
-    "timestamp": "2026-04-24T18:22:39.939Z",
-    "tipo": "conexao",
-    "deviceId": "PBF921CE70402",
-    "deviceName": "PBF921CE70402",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777054957577,
-    "timestamp": "2026-04-24T18:22:37.577Z",
-    "tipo": "conexao",
-    "deviceId": "PB59237K70640",
-    "deviceName": "PB59237K70640",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777054951695,
-    "timestamp": "2026-04-24T18:22:31.695Z",
-    "tipo": "conexao",
-    "deviceId": "TC04209140208",
-    "deviceName": "TC04209140208",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012039673,
-    "timestamp": "2026-04-24T06:27:19.673Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012038211,
-    "timestamp": "2026-04-24T06:27:18.211Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012038206,
-    "timestamp": "2026-04-24T06:27:18.206Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012021083,
-    "timestamp": "2026-04-24T06:27:01.083Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012020860,
-    "timestamp": "2026-04-24T06:27:00.860Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777012011238,
-    "timestamp": "2026-04-24T06:26:51.238Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011242033,
-    "timestamp": "2026-04-24T06:14:02.033Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011241941,
-    "timestamp": "2026-04-24T06:14:01.941Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011241935,
-    "timestamp": "2026-04-24T06:14:01.935Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011059051,
-    "timestamp": "2026-04-24T06:10:59.051Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011056678,
-    "timestamp": "2026-04-24T06:10:56.678Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777011056567,
-    "timestamp": "2026-04-24T06:10:56.567Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777010095795,
-    "timestamp": "2026-04-24T05:54:55.795Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777010093708,
-    "timestamp": "2026-04-24T05:54:53.708Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777010093699,
-    "timestamp": "2026-04-24T05:54:53.699Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777009664530,
-    "timestamp": "2026-04-24T05:47:44.530Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777009657162,
-    "timestamp": "2026-04-24T05:47:37.162Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777009640956,
-    "timestamp": "2026-04-24T05:47:20.956Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008376372,
-    "timestamp": "2026-04-24T05:26:16.372Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008376040,
-    "timestamp": "2026-04-24T05:26:16.040Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008375962,
-    "timestamp": "2026-04-24T05:26:15.962Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008280057,
-    "timestamp": "2026-04-24T05:24:40.057Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008278112,
-    "timestamp": "2026-04-24T05:24:38.112Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777008274038,
-    "timestamp": "2026-04-24T05:24:34.038Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777007959053,
-    "timestamp": "2026-04-24T05:19:19.053Z",
-    "tipo": "desbloqueio",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Desbloqueado via dashboard",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777007848821,
-    "timestamp": "2026-04-24T05:17:28.821Z",
-    "tipo": "bloqueio",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado: hahaha",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777007313345,
-    "timestamp": "2026-04-24T05:08:33.345Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777007313234,
-    "timestamp": "2026-04-24T05:08:33.234Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777007313226,
-    "timestamp": "2026-04-24T05:08:33.226Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006930409,
-    "timestamp": "2026-04-24T05:02:10.409Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006929670,
-    "timestamp": "2026-04-24T05:02:09.670Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006929577,
-    "timestamp": "2026-04-24T05:02:09.577Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006921523,
-    "timestamp": "2026-04-24T05:02:01.523Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006921247,
-    "timestamp": "2026-04-24T05:02:01.247Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006921083,
-    "timestamp": "2026-04-24T05:02:01.083Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006914988,
-    "timestamp": "2026-04-24T05:01:54.988Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006914179,
-    "timestamp": "2026-04-24T05:01:54.179Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006913737,
-    "timestamp": "2026-04-24T05:01:53.737Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006612977,
-    "timestamp": "2026-04-24T04:56:52.977Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006611920,
-    "timestamp": "2026-04-24T04:56:51.920Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006611913,
-    "timestamp": "2026-04-24T04:56:51.913Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006525771,
-    "timestamp": "2026-04-24T04:55:25.771Z",
-    "tipo": "bloqueio",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Bloqueado automaticamente - tempo expirado",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006465593,
-    "timestamp": "2026-04-24T04:54:25.593Z",
-    "tipo": "mudanca_status",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Tempo de uso definido: 1 minutos",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777006456797,
-    "timestamp": "2026-04-24T04:54:16.797Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006454271,
-    "timestamp": "2026-04-24T04:54:14.271Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006454263,
-    "timestamp": "2026-04-24T04:54:14.263Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006354454,
-    "timestamp": "2026-04-24T04:52:34.454Z",
-    "tipo": "mudanca_status",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Tempo de uso definido: 5 minutos",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777006348970,
-    "timestamp": "2026-04-24T04:52:28.970Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006347538,
-    "timestamp": "2026-04-24T04:52:27.538Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006347036,
-    "timestamp": "2026-04-24T04:52:27.036Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006341387,
-    "timestamp": "2026-04-24T04:52:21.387Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006341141,
-    "timestamp": "2026-04-24T04:52:21.141Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006339621,
-    "timestamp": "2026-04-24T04:52:19.621Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006270372,
-    "timestamp": "2026-04-24T04:51:10.372Z",
-    "tipo": "mudanca_status",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Tempo de uso definido: 5 minutos",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777006264644,
-    "timestamp": "2026-04-24T04:51:04.644Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006263958,
-    "timestamp": "2026-04-24T04:51:03.958Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006263337,
-    "timestamp": "2026-04-24T04:51:03.337Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006253309,
-    "timestamp": "2026-04-24T04:50:53.309Z",
-    "tipo": "mudanca_status",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "P2-B",
-    "detalhes": "Tempo de uso definido: 5 minutos",
-    "usuario": "rodrigodevmt",
-    "ip": null
-  },
-  {
-    "id": 1777006247789,
-    "timestamp": "2026-04-24T04:50:47.789Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006246458,
-    "timestamp": "2026-04-24T04:50:46.458Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006246305,
-    "timestamp": "2026-04-24T04:50:46.305Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006238834,
-    "timestamp": "2026-04-24T04:50:38.834Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006238739,
-    "timestamp": "2026-04-24T04:50:38.739Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006238721,
-    "timestamp": "2026-04-24T04:50:38.721Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006192339,
-    "timestamp": "2026-04-24T04:49:52.339Z",
-    "tipo": "conexao",
-    "deviceId": "2546df681997a5a0",
-    "deviceName": "2546df681997a5a0",
-    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006182411,
-    "timestamp": "2026-04-24T04:49:42.411Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006182172,
-    "timestamp": "2026-04-24T04:49:42.172Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006173868,
-    "timestamp": "2026-04-24T04:49:33.868Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006173754,
-    "timestamp": "2026-04-24T04:49:33.754Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006168625,
-    "timestamp": "2026-04-24T04:49:28.625Z",
-    "tipo": "conexao",
-    "deviceId": "9f3d162f7954a21",
-    "deviceName": "9f3d162f7954a21",
-    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-    "usuario": "Sistema",
-    "ip": null
-  },
-  {
-    "id": 1777006163862,
-    "timestamp": "2026-04-24T04:49:23.862Z",
-    "tipo": "conexao",
-    "deviceId": "d8ffc0c5094e7a44",
-    "deviceName": "d8ffc0c5094e7a44",
-    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-    "usuario": "Sistema",
     "ip": null
   }
 ]

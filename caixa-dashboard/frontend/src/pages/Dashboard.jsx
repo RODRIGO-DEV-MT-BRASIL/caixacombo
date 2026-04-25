@@ -194,12 +194,14 @@ export default function Dashboard() {
   }, [token, success])
 
   const handleForceSync = () => {
-    // Teste básico para garantir que a função está sendo chamada
-    alert('Botão sincronizar clicado!')
-    
     console.log('🔄 [DEBUG] Botão sincronizar clicado')
     console.log('🔄 [DEBUG] Socket conectado:', connected)
     console.log('🔄 [DEBUG] Socket object:', socket ? 'disponível' : 'nulo')
+    
+    if (socket) {
+      console.log('🔄 [DEBUG] Socket ID:', socket.id)
+      console.log('🔄 [DEBUG] Socket connected:', socket.connected)
+    }
     
     if (socket && connected) {
       console.log('🔄 [DEBUG] Enviando dashboard_connect...')
