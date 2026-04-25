@@ -35,7 +35,7 @@ class WebSocketService : Service() {
         //   - Local: "http://localhost:3000"
         //   - Rede local: "http://192.168.1.100:3000"
         //   - Produção: "https://seu-servidor.com"
-        private var SOCKET_URL = "http://192.168.1.154:3001"
+        private var SOCKET_URL = "https://caixa-dashboard-mt.onrender.com"
         
         // Token de autenticação (obtido via login no dashboard)
         private var authToken: String? = null
@@ -182,7 +182,7 @@ class WebSocketService : Service() {
                 // Enviar via API REST em vez de WebSocket
                 Thread {
                     try {
-                        val url = URL("http://192.168.1.154:3001/api/operacoes")
+                        val url = URL("https://caixa-dashboard-mt.onrender.com/api/operacoes")
                         val conn = url.openConnection() as HttpURLConnection
                         conn.requestMethod = "POST"
                         conn.setRequestProperty("Content-Type", "application/json")
@@ -226,7 +226,7 @@ class WebSocketService : Service() {
                 
                 Thread {
                     try {
-                        val url = URL("http://192.168.1.154:3001/api/produtos/sync")
+                        val url = URL("https://caixa-dashboard-mt.onrender.com/api/produtos/sync")
                         val conn = url.openConnection() as HttpURLConnection
                         conn.requestMethod = "POST"
                         conn.setRequestProperty("Content-Type", "application/json")
