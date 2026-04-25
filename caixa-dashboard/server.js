@@ -1228,11 +1228,25 @@ io.on('connection', (socket) => {
     
     console.log(`🖥️ Dashboard conectado: ${usuario}`);
     
-    // Enviar lista de dispositivos conectados
-    const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
+    // Enviar lista de dispositivos conectados + dispositivos salvos (offline)
+    const connectedList = Array.from(connectedDevices.entries()).map(([id, d]) => ({
       deviceId: id, ...d, online: d.socketId !== null
     }));
-    socket.emit('devices_list', list);
+    
+    // Adicionar dispositivos salvos que não estão conectados
+    const savedDevices = db.dispositivos || [];
+    const savedOffline = savedDevices.filter(d => !connectedDevices.has(d.deviceId));
+    const offlineList = savedOffline.map(d => ({
+      deviceId: d.deviceId,
+      deviceName: d.deviceName,
+      deviceType: d.deviceType,
+      serialNumber: d.serialNumber,
+      status: d.status || 'offline',
+      online: false,
+      lockPassword: d.lockPassword
+    }));
+    
+    socket.emit('devices_list', [...connectedList, ...offlineList]);
   });
 
   socket.on('lock_device', (data) => {
