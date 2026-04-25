@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: caixa-dashboard
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
