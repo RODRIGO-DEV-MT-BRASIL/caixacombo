@@ -1,11 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { v2: cloudinary } = require('cloudinary').v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { put } from '@vercel/blob';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -24,14 +18,14 @@ export default async function handler(req, res) {
     
     const { base64 } = req.body;
     
-    const result = await cloudinary.uploader.upload(base64, {
-      folder: 'caixa-combo/produtos',
-      transformation: [
-        { width: 500, height: 500, crop: 'limit' }
-      ]
+    // Converter base64 para buffer
+    const buffer = Buffer.from(base64.split(',')[1], 'base64');
+    
+    const blob = await put(`produtos/${Date.now()}.jpg`, buffer, {
+      access: 'public',
     });
     
-    res.json({ url: result.secure_url });
+    res.json({ url: blob.url });
   } catch (err) {
     console.error('Erro ao fazer upload:', err);
     return res.status(500).json({ error: 'Erro ao fazer upload' });
