@@ -1085,6 +1085,17 @@ io.on('connection', (socket) => {
       addAuditoria('desbloqueio', deviceId, 'Desbloqueio forçado via dashboard', dashboardInfo?.usuario);
       
       io.emit('device_status_update', { deviceId, status: 'online' });
+    } else {
+      // Dispositivo offline - atualizar no banco de dados
+      const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+      if (deviceIndex !== -1) {
+        db.dispositivos[deviceIndex].status = 'online';
+        db.dispositivos[deviceIndex].lockReason = null;
+        db.dispositivos[deviceIndex].lockedAt = null;
+        saveData();
+        io.emit('device_status_update', { deviceId, status: 'online' });
+        addAuditoria('desbloqueio', deviceId, 'Desbloqueio forçado (offline)', dashboardInfo?.usuario);
+      }
     }
   });
 
@@ -1246,6 +1257,12 @@ io.on('connection', (socket) => {
       lockPassword: d.lockPassword
     }));
     
+    console.log(`📊 [DEBUG] Dispositivos conectados: ${connectedList.length}`);
+    console.log(`📊 [DEBUG] Dispositivos offline salvos: ${offlineList.length}`);
+    console.log(`📊 [DEBUG] Total dispositivos enviados: ${connectedList.length + offlineList.length}`);
+    console.log(`📊 [DEBUG] DeviceIds conectados:`, connectedList.map(d => d.deviceId));
+    console.log(`📊 [DEBUG] DeviceIds offline:`, offlineList.map(d => d.deviceId));
+    
     socket.emit('devices_list', [...connectedList, ...offlineList]);
   });
 
@@ -1263,6 +1280,17 @@ io.on('connection', (socket) => {
       
       // Auditoria: Bloqueio via dashboard
       addAuditoria('bloqueio', deviceId, `Bloqueado: ${reason}`, dashboardInfo?.usuario);
+    } else {
+      // Dispositivo offline - atualizar no banco de dados
+      const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+      if (deviceIndex !== -1) {
+        db.dispositivos[deviceIndex].status = 'locked';
+        db.dispositivos[deviceIndex].lockReason = reason;
+        db.dispositivos[deviceIndex].lockedAt = new Date();
+        saveData();
+        io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
+        addAuditoria('bloqueio', deviceId, `Bloqueado (offline): ${reason}`, dashboardInfo?.usuario);
+      }
     }
   });
 
@@ -1278,6 +1306,17 @@ io.on('connection', (socket) => {
       
       // Auditoria: Desbloqueio via dashboard
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via dashboard', dashboardInfo?.usuario);
+    } else {
+      // Dispositivo offline - atualizar no banco de dados
+      const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+      if (deviceIndex !== -1) {
+        db.dispositivos[deviceIndex].status = 'online';
+        db.dispositivos[deviceIndex].lockReason = null;
+        db.dispositivos[deviceIndex].lockedAt = null;
+        saveData();
+        io.emit('device_status_update', { deviceId, status: 'online' });
+        addAuditoria('desbloqueio', deviceId, 'Desbloqueado (offline)', dashboardInfo?.usuario);
+      }
     }
   });
 
