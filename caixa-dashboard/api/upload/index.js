@@ -1,4 +1,11 @@
 const jwt = require('jsonwebtoken');
+const { v2: cloudinary } = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,10 +22,18 @@ export default async function handler(req, res) {
   try {
     jwt.verify(token, JWT_SECRET);
     
-    // Depois migrar para Cloudinary ou Vercel Blob
-    // Por agora retorna URL placeholder
-    res.json({ url: 'https://placeholder.com/image.jpg' });
+    const { base64 } = req.body;
+    
+    const result = await cloudinary.uploader.upload(base64, {
+      folder: 'caixa-combo/produtos',
+      transformation: [
+        { width: 500, height: 500, crop: 'limit' }
+      ]
+    });
+    
+    res.json({ url: result.secure_url });
   } catch (err) {
-    return res.status(403).json({ error: 'Token inválido' });
+    console.error('Erro ao fazer upload:', err);
+    return res.status(500).json({ error: 'Erro ao fazer upload' });
   }
 }

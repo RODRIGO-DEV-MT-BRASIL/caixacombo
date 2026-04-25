@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+import redis from '../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -11,8 +12,8 @@ export default async function handler(req, res) {
 
     try {
       jwt.verify(token, JWT_SECRET);
-      // Depois migrar para banco de dados
-      res.json([]);
+      const vendas = await redis.get('vendas') || [];
+      res.json(vendas);
     } catch (err) {
       return res.status(403).json({ error: 'Token inválido' });
     }

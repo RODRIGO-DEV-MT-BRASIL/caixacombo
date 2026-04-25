@@ -53,6 +53,15 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
     }
   }
 
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = error => reject(error)
+    })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -61,13 +70,15 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
       let imagemUrl = produto?.imagem || ''
 
       if (imagemFile) {
-        const formData = new FormData()
-        formData.append('imagem', imagemFile)
+        const base64 = await fileToBase64(imagemFile)
 
         const res = await fetch(apiUrl('/api/upload'), {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ base64 })
         })
 
         if (res.ok) {
