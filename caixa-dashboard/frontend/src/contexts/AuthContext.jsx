@@ -48,8 +48,19 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const hasPermission = (permission) => {
+    // Admin tem todas as permissões
+    if (user?.role === 'admin') return true
+    // Empresas verificam suas permissões específicas
+    if (user?.role === 'empresa') {
+      return user?.permissoes?.[permission] === true
+    }
+    // Usuários comuns não têm permissões específicas
+    return false
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, hasPermission }}>
       {children}
     </AuthContext.Provider>
   )

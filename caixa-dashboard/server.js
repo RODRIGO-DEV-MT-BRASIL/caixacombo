@@ -234,7 +234,35 @@ app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   console.log(`[LOGIN] ${username}`);
   
-  const user = db.usuarios.find(u => u.username === username);
+  // Verificar se é usuário do sistema
+  let user = db.usuarios.find(u => u.username === username);
+  
+  // Se não for usuário do sistema, verificar se é empresa
+  if (!user) {
+    const empresa = (db.empresas || []).find(e => e.login === username);
+    if (empresa) {
+      if (!bcrypt.compareSync(password, empresa.senha)) {
+        return res.status(401).json({ error: 'Credenciais inválidas' });
+      }
+      
+      const token = jwt.sign(
+        { id: empresa.id, username: empresa.login, role: 'empresa', empresaId: empresa.id, permissoes: empresa.permissoes },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      return res.json({
+        token,
+        user: {
+          id: empresa.id,
+          username: empresa.login,
+          role: 'empresa',
+          empresaNome: empresa.nome,
+          permissoes: empresa.permissoes
+        }
+      });
+    }
+  }
+  
   if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
   
   if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Credenciais inválidas' });
@@ -439,6 +467,87 @@ app.delete('/api/produtos/:id', authenticateToken, (req, res) => {
     data: deleted
   });
   
+  res.json(deleted);
+});
+
+// ==================== ROTAS DE EMPRESAS ====================
+app.get('/api/empresas', authenticateToken, (req, res) => {
+  res.json(db.empresas || []);
+});
+
+app.post('/api/empresas', authenticateToken, (req, res) => {
+  const { nome, cnpj, email, telefone, login, senha, permissoes } = req.body;
+  
+  if (!nome || !login || !senha) {
+    return res.status(400).json({ error: 'Nome, login e senha são obrigatórios' });
+  }
+  
+  // Verificar se login já existe
+  const existingLogin = (db.empresas || []).find(e => e.login === login);
+  if (existingLogin) {
+    return res.status(400).json({ error: 'Login já existe' });
+  }
+  
+  const empresa = {
+    id: Date.now(),
+    nome,
+    cnpj: cnpj || null,
+    email: email || null,
+    telefone: telefone || null,
+    login,
+    senha: bcrypt.hashSync(senha, 10),
+    permissoes: permissoes || {
+      dashboard: false,
+      produtos: false,
+      categorias: false,
+      vendas: false,
+      caixa: false,
+      auditoria: false
+    },
+    createdAt: new Date()
+  };
+  
+  if (!db.empresas) db.empresas = [];
+  db.empresas.push(empresa);
+  saveData();
+  
+  res.json(empresa);
+});
+
+app.put('/api/empresas/:id', authenticateToken, (req, res) => {
+  const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
+  
+  const { nome, cnpj, email, telefone, login, senha, permissoes } = req.body;
+  
+  // Verificar se login já existe (excluindo a empresa atual)
+  const existingLogin = (db.empresas || []).find(e => e.login === login && e.id != req.params.id);
+  if (existingLogin) {
+    return res.status(400).json({ error: 'Login já existe' });
+  }
+  
+  db.empresas[index] = {
+    ...db.empresas[index],
+    nome: nome || db.empresas[index].nome,
+    cnpj: cnpj !== undefined ? cnpj : db.empresas[index].cnpj,
+    email: email !== undefined ? email : db.empresas[index].email,
+    telefone: telefone !== undefined ? telefone : db.empresas[index].telefone,
+    login: login || db.empresas[index].login,
+    senha: senha ? bcrypt.hashSync(senha, 10) : db.empresas[index].senha,
+    permissoes: permissoes || db.empresas[index].permissoes,
+    updatedAt: new Date()
+  };
+  
+  saveData();
+  res.json(db.empresas[index]);
+});
+
+app.delete('/api/empresas/:id', authenticateToken, (req, res) => {
+  const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
+  
+  const deleted = db.empresas.splice(index, 1)[0];
+  saveData();
   res.json(deleted);
 });
 

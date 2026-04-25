@@ -7,25 +7,27 @@ import {
   LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play, 
   ChevronRight, Activity, TrendingUp, AlertTriangle, CheckCircle2,
   Search, RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
-  Play as PlayIcon, X as CloseIcon, Power, History
+  Play as PlayIcon, X as CloseIcon, Power, History, Building2
 } from 'lucide-react'
 import Produtos from './Produtos'
 import Categorias from './Categorias'
 import Vendas from './Vendas'
 import Caixa from './Caixa'
 import Auditoria from './Auditoria'
+import Empresas from './Empresas'
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'categorias', label: 'Categorias', icon: Tags },
-  { id: 'produtos', label: 'Produtos', icon: Package },
-  { id: 'vendas', label: 'Vendas', icon: ShoppingCart },
-  { id: 'caixa', label: 'Caixa', icon: DollarSign },
-  { id: 'auditoria', label: 'Auditoria', icon: History },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
+  { id: 'empresas', label: 'Empresas', icon: Building2, adminOnly: true },
+  { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
+  { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
+  { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
+  { id: 'caixa', label: 'Caixa', icon: DollarSign, permission: 'caixa' },
+  { id: 'auditoria', label: 'Auditoria', icon: History, permission: 'auditoria' },
 ]
 
 export default function Dashboard() {
-  const { user, logout, token } = useAuth()
+  const { user, logout, token, hasPermission } = useAuth()
   const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp, timeUpdates, socket } = useSocket()
   const { success } = useToast()
   const [page, setPage] = useState('dashboard')
@@ -94,6 +96,13 @@ export default function Dashboard() {
   const onlineDevices = devices.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
   const lockedDevices = devices.filter(d => d.status === 'locked')
   const inUseDevices = devices.filter(d => d.status === 'in_use')
+
+  // Filtrar itens do menu baseado em permissões
+  const filteredNavItems = navItems.filter(item => {
+    if (item.adminOnly) return user?.role === 'admin'
+    if (item.permission) return hasPermission(item.permission)
+    return true
+  })
 
   // Função para formatar tempo (MM:SS)
   const formatTime = (seconds) => {
@@ -238,7 +247,7 @@ export default function Dashboard() {
 
           {/* Nav */}
           <nav className="flex-1 px-3 space-y-1">
-            {navItems.map(item => (
+            {filteredNavItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
@@ -548,6 +557,7 @@ export default function Dashboard() {
             </div>
           )}
 
+          {page === 'empresas' && <Empresas />}
           {page === 'produtos' && <Produtos />}
           {page === 'categorias' && <Categorias />}
           {page === 'vendas' && <Vendas />}
