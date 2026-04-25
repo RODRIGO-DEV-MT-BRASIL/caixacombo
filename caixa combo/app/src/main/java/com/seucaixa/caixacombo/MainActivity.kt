@@ -753,7 +753,10 @@ class MainActivity : ComponentActivity() {
             override fun onFinish() {
                 android.util.Log.d("MainActivity", "Tempo de uso expirado")
                 usageTimeDialog?.dismiss()
-                // Bloquear automaticamente
+                // Bloquear automaticamente (mantém a senha atual se existir)
+                if (currentLockPassword != null) {
+                    android.util.Log.d("MainActivity", "Mantendo senha atual para desbloqueio: $currentLockPassword")
+                }
                 showLockScreen("Tempo de uso expirado")
             }
         }.start()
