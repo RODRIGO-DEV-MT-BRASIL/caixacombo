@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { useToast } from '../components/Toast'
@@ -42,7 +42,7 @@ export default function Dashboard() {
     const handleDeviceUnlocked = (event) => {
       const { deviceId, deviceName } = event.detail
       console.log(`🔓 Terminal desbloqueado: ${deviceName}`)
-      
+
       // Mostrar notificação toast
       success(
         `🔓 Terminal desbloqueado: ${deviceName}`,
@@ -53,7 +53,7 @@ export default function Dashboard() {
     const handleDeviceLocked = (event) => {
       const { deviceId, deviceName, reason } = event.detail
       console.log(`🔒 Terminal bloqueado: ${deviceName} - ${reason}`)
-      
+
       // Mostrar notificação toast
       success(
         `🔒 Terminal bloqueado: ${deviceName} - ${reason}`,
@@ -61,14 +61,35 @@ export default function Dashboard() {
       )
     }
 
+    const handleControlResult = (event) => {
+      const { deviceId, action, success, error } = event.detail
+      const device = devices.find(d => d.deviceId === deviceId)
+      const deviceName = device?.deviceName || deviceId
+
+      const actionNames = {
+        'open_app': 'Abrir app',
+        'close_app': 'Fechar app',
+        'restart': 'Reiniciar dispositivo',
+        'shutdown': 'Desligar dispositivo'
+      }
+
+      if (success) {
+        success(`✅ ${actionNames[action] || action} executado com sucesso em ${deviceName}`, 3000)
+      } else {
+        success(`❌ Erro ao ${actionNames[action] || action} em ${deviceName}: ${error}`, 5000)
+      }
+    }
+
     window.addEventListener('device_unlocked', handleDeviceUnlocked)
     window.addEventListener('device_locked', handleDeviceLocked)
-    
+    window.addEventListener('control_result', handleControlResult)
+
     return () => {
       window.removeEventListener('device_unlocked', handleDeviceUnlocked)
       window.removeEventListener('device_locked', handleDeviceLocked)
+      window.removeEventListener('control_result', handleControlResult)
     }
-  }, [success])
+  }, [success, devices])
 
   const onlineDevices = devices.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
   const lockedDevices = devices.filter(d => d.status === 'locked')
@@ -137,7 +158,8 @@ export default function Dashboard() {
     }
   }
 
-  const handleControlDevice = async (deviceId, action) => {
+  const handleControlDevice = useCallback(async (deviceId, action) => {
+    console.log(`🎮 [DEBUG] handleControlDevice chamado: deviceId=${deviceId}, action=${action}`)
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/control`, {
         method: 'POST',
@@ -148,13 +170,28 @@ export default function Dashboard() {
         body: JSON.stringify({ action })
       })
       const data = await res.json()
+      console.log(`🎮 [DEBUG] Resposta do servidor:`, data)
       if (!res.ok) {
         console.error('Erro ao controlar dispositivo:', data.error)
+        // Mostrar erro ao usuário
+        if (data.error) {
+          success(`❌ Erro: ${data.error}`, 5000)
+        }
+      } else {
+        // Mostrar confirmação
+        const actionNames = {
+          'open_app': 'Abrindo app',
+          'close_app': 'Fechando app',
+          'restart': 'Reiniciando dispositivo',
+          'shutdown': 'Desligando dispositivo'
+        }
+        success(`✅ ${actionNames[action] || 'Comando enviado'}`, 3000)
       }
     } catch (err) {
       console.error(err)
+      success('❌ Erro ao enviar comando', 3000)
     }
-  }
+  }, [token, success])
 
   const handleForceSync = () => {
     // Teste básico para garantir que a função está sendo chamada
@@ -485,7 +522,14 @@ export default function Dashboard() {
                                 <CloseIcon size={12} />
                               </button>
                               <button
-                                onClick={() => handleControlDevice(device.deviceId, 'shutdown_device')}
+                                onClick={() => handleControlDevice(device.deviceId, 'restart')}
+                                className="px-2 py-1.5 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/20 text-orange-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
+                                title="Reiniciar"
+                              >
+                                <RotateCw size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleControlDevice(device.deviceId, 'shutdown')}
                                 className="px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 title="Desligar"
                               >

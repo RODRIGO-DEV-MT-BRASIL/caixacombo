@@ -21,6 +21,9 @@
     <!-- Permissão para mostrar diálogo sobre outras apps (bloqueio de tela) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Permissão para reiniciar o dispositivo (requer assinatura do sistema ou device admin) -->
+    <uses-permission android:name="android.permission.REBOOT" />
+
     <application
         android:name=".CaixaApplication"
         android:allowBackup="true"
@@ -51,7 +54,7 @@
 
         <!-- Device Admin Receiver para modo quiosque -->
         <receiver
-            android:name=".AdminReceiver"
+            android:name="com.seucaixa.caixacombo.AdminReceiver"
             android:exported="true"
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data

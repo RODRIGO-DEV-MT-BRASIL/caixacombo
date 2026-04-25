@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -156,6 +157,46 @@ setInterval(() => {
   saveData();
   console.log('💾 Dados salvos automaticamente');
 }, 30000);
+
+// ==================== CONTROLE VIA ADB ====================
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+/**
+ * Envia comando ADB diretamente ao dispositivo para reiniciar ou desligar
+ * @param {string} action - 'reboot' ou 'shutdown'
+ * @param {string} deviceId - Serial number do dispositivo (mesmo que o ADB usa)
+ */
+async function sendAdbCommand(action, deviceId) {
+  console.log(`🔌 [ADB] Enviando comando ${action} para ${deviceId}`);
+
+  // Verificar se dispositivo está conectado
+  try {
+    const { stdout } = await execPromise('adb devices');
+    const isConnected = stdout.includes(deviceId);
+
+    if (!isConnected) {
+      console.log(`❌ [ADB] Dispositivo ${deviceId} não está conectado via ADB`);
+      return { success: false, error: 'Dispositivo não está conectado via USB/WiFi ADB' };
+    }
+
+    // Enviar comando
+    const adbCommand = action === 'shutdown'
+      ? `adb -s ${deviceId} shell reboot -p`
+      : `adb -s ${deviceId} shell reboot`;
+
+    console.log(`🔌 [ADB] Executando: ${adbCommand}`);
+
+    await execPromise(adbCommand);
+    console.log(`✅ [ADB] Comando ${action} enviado com sucesso para ${deviceId}`);
+
+    return { success: true, method: 'adb' };
+  } catch (error) {
+    console.error(`❌ [ADB] Erro:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
 
 // Salvar dados ao encerrar servidor
 process.on('SIGINT', () => {
@@ -435,6 +476,83 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) =>
   });
 });
 
+// ==================== API DE CONTROLE DE DISPOSITIVOS ====================
+app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, res) => {
+  const { deviceId } = req.params;
+  const { action } = req.body;
+  const dashboardInfo = { usuario: 'dashboard' };
+
+  console.log(`🎮 [CONTROL] Comando recebido: ${deviceId} - ${action}`);
+  console.log(`🎮 [CONTROL] Dispositivos conectados:`, Array.from(connectedDevices.keys()));
+
+  const device = connectedDevices.get(deviceId);
+
+  // Verificar se o comando requer permissões especiais
+  const requiresSpecialPermissions = ['restart', 'shutdown'].includes(action);
+
+  // Se comando reiniciar/desligar e dispositivo estiver conectado via ADB, usar ADB direto
+  if (requiresSpecialPermissions) {
+    console.log(`🔌 [CONTROL] Tentando via ADB para ${deviceId}`);
+
+    try {
+      const result = await sendAdbCommand(action, deviceId);
+
+      if (result.success) {
+        // Auditoria
+        addAuditoria('mudanca_status', deviceId, `Comando ${action} enviado via ADB`, dashboardInfo?.usuario);
+
+        res.json({
+          message: `Comando ${action === 'restart' ? 'reiniciar' : 'desligar'} enviado via ADB. Dispositivo vai ${action === 'restart' ? 'reiniciar' : 'desligar'} agora.`,
+          deviceId,
+          action,
+          method: 'adb',
+          timestamp: new Date()
+        });
+        return;
+      } else {
+        console.log(`⚠️ [CONTROL] ADB falhou: ${result.error}`);
+      }
+    } catch (error) {
+      console.error(`❌ [CONTROL] Erro ADB:`, error.message);
+    }
+  }
+
+  // Fallback: usar WebSocket para dispositivos não-SUNMI ou comandos simples
+  if (!device) {
+    console.log(`❌ [CONTROL] Dispositivo ${deviceId} não encontrado em connectedDevices`);
+    return res.status(404).json({ error: 'Dispositivo não encontrado ou desconectado' });
+  }
+
+  console.log(`🎮 [CONTROL] Dispositivo encontrado: ${device.deviceName}, socketId: ${device.socketId}`);
+
+  if (requiresSpecialPermissions) {
+    console.log(`⚠️ [CONTROL] Comando '${action}' requer permissões especiais (Admin ou Root)`);
+  }
+
+  // Enviar comando para o dispositivo via WebSocket
+  if (device.socketId) {
+    io.to(device.socketId).emit('control_command', { action });
+    console.log(`📤 [CONTROL] Comando '${action}' enviado para socketId ${device.socketId} (deviceId: ${deviceId})`);
+
+    // Auditoria
+    addAuditoria('mudanca_status', deviceId, `Comando de controle enviado: ${action}`, dashboardInfo?.usuario);
+
+    res.json({
+      message: requiresSpecialPermissions
+        ? `Comando enviado. Pode não funcionar se o dispositivo não tiver permissões de Admin ou Root`
+        : 'Comando enviado com sucesso',
+      deviceId,
+      action,
+      socketId: device.socketId,
+      requiresSpecialPermissions,
+      timestamp: new Date()
+    });
+  } else {
+    console.log(`❌ [CONTROL] Dispositivo ${deviceId} não possui socketId`);
+    res.status(400).json({ error: 'Dispositivo não está conectado' });
+  }
+});
+
 // ==================== WEBSOCKET ====================
 io.on('connection', (socket) => {
   console.log('🔌 Socket:', socket.id);
@@ -614,14 +732,34 @@ io.on('connection', (socket) => {
       delete device.lockedAt;
       delete device.usageTimeLimit;
       delete device.usageStartTime;
-      
+
       // Auditoria: Desbloqueio via terminal
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via terminal do dispositivo');
-      
+
       io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     } else {
       console.log(`❌ [DEBUG] Dispositivo não encontrado para unlock_confirmed: ${deviceId}`);
     }
+  });
+
+  // Resultado de comando de controle do dispositivo
+  socket.on('control_result', (data) => {
+    const { deviceId, action, success, error } = data;
+    console.log(`🎮 [CONTROL_RESULT] ${deviceId} - ${action} - sucesso=${success} ${error ? `- erro: ${error}` : ''}`);
+
+    // Encaminhar resultado para todos os dashboards conectados
+    io.emit('control_result', data);
+
+    // Auditoria se houve erro
+    if (!success && error) {
+      addAuditoria('mudanca_status', deviceId, `Erro ao executar ${action}: ${error}`);
+    }
+  });
+
+  // Log de comando recebido pelo dispositivo (para rastreamento)
+  socket.on('control_log', (data) => {
+    const { deviceId, action, timestamp } = data;
+    console.log(`📝 [CONTROL_LOG] Dispositivo ${deviceId} recebeu comando: ${action} em ${new Date(timestamp).toLocaleString('pt-BR')}`);
   });
 
   // Endpoint alternativo para forçar desbloqueio (se o app não enviar unlock_confirmed)

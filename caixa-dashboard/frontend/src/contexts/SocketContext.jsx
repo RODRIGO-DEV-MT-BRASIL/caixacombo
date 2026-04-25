@@ -15,9 +15,9 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!token) return
 
-    const socket = io('http://localhost:3001', {
+    const socket = io('/', {
       auth: { token },
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     })
     socketRef.current = socket
 
@@ -130,9 +130,25 @@ export function SocketProvider({ children }) {
     })
 
     socket.on('device_password_updated', ({ deviceId, lockPassword }) => {
-      setDevices(prev => prev.map(d => 
+      setDevices(prev => prev.map(d =>
         d.deviceId === deviceId ? { ...d, lockPassword } : d
       ))
+    })
+
+    socket.on('control_result', ({ deviceId, action, success, error }) => {
+      console.log(`🎮 [CONTROL_RESULT] ${deviceId} - ${action} - sucesso=${success} ${error ? `- erro: ${error}` : ''}`)
+
+      // Emitir evento customizado para notificação no Dashboard
+      const event = new CustomEvent('control_result', {
+        detail: {
+          deviceId,
+          action,
+          success,
+          error,
+          timestamp: new Date()
+        }
+      })
+      window.dispatchEvent(event)
     })
 
     return () => {

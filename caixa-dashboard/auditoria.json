@@ -1,5 +1,6515 @@
 [
   {
+    "id": 1777078585635,
+    "timestamp": "2026-04-25T00:56:25.635Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777078574270,
+    "timestamp": "2026-04-25T00:56:14.270Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777078574215,
+    "timestamp": "2026-04-25T00:56:14.215Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076724417,
+    "timestamp": "2026-04-25T00:25:24.417Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076721348,
+    "timestamp": "2026-04-25T00:25:21.348Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076704582,
+    "timestamp": "2026-04-25T00:25:04.582Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777076408828,
+    "timestamp": "2026-04-25T00:20:08.828Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777076403606,
+    "timestamp": "2026-04-25T00:20:03.606Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076400612,
+    "timestamp": "2026-04-25T00:20:00.612Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076386542,
+    "timestamp": "2026-04-25T00:19:46.542Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777076381601,
+    "timestamp": "2026-04-25T00:19:41.601Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076368916,
+    "timestamp": "2026-04-25T00:19:28.916Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076266373,
+    "timestamp": "2026-04-25T00:17:46.373Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777076261400,
+    "timestamp": "2026-04-25T00:17:41.400Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076248708,
+    "timestamp": "2026-04-25T00:17:28.708Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076221881,
+    "timestamp": "2026-04-25T00:17:01.881Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777076211373,
+    "timestamp": "2026-04-25T00:16:51.373Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076202248,
+    "timestamp": "2026-04-25T00:16:42.248Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076161229,
+    "timestamp": "2026-04-25T00:16:01.229Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076159379,
+    "timestamp": "2026-04-25T00:15:59.379Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076156765,
+    "timestamp": "2026-04-25T00:15:56.765Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076137509,
+    "timestamp": "2026-04-25T00:15:37.509Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076135363,
+    "timestamp": "2026-04-25T00:15:35.363Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076132408,
+    "timestamp": "2026-04-25T00:15:32.408Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076128122,
+    "timestamp": "2026-04-25T00:15:28.122Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076126732,
+    "timestamp": "2026-04-25T00:15:26.732Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076100643,
+    "timestamp": "2026-04-25T00:15:00.643Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076097851,
+    "timestamp": "2026-04-25T00:14:57.851Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076094270,
+    "timestamp": "2026-04-25T00:14:54.270Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777076091229,
+    "timestamp": "2026-04-25T00:14:51.229Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076082164,
+    "timestamp": "2026-04-25T00:14:42.164Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777076076644,
+    "timestamp": "2026-04-25T00:14:36.644Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075970682,
+    "timestamp": "2026-04-25T00:12:50.682Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075970208,
+    "timestamp": "2026-04-25T00:12:50.208Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075969784,
+    "timestamp": "2026-04-25T00:12:49.784Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075969694,
+    "timestamp": "2026-04-25T00:12:49.694Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075966097,
+    "timestamp": "2026-04-25T00:12:46.097Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075964818,
+    "timestamp": "2026-04-25T00:12:44.818Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075961974,
+    "timestamp": "2026-04-25T00:12:41.974Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075936471,
+    "timestamp": "2026-04-25T00:12:16.471Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075933243,
+    "timestamp": "2026-04-25T00:12:13.243Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075929280,
+    "timestamp": "2026-04-25T00:12:09.280Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075926594,
+    "timestamp": "2026-04-25T00:12:06.594Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075925452,
+    "timestamp": "2026-04-25T00:12:05.452Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075850539,
+    "timestamp": "2026-04-25T00:10:50.539Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777075849981,
+    "timestamp": "2026-04-25T00:10:49.981Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777075849551,
+    "timestamp": "2026-04-25T00:10:49.551Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777075626821,
+    "timestamp": "2026-04-25T00:07:06.821Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075624630,
+    "timestamp": "2026-04-25T00:07:04.630Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075620649,
+    "timestamp": "2026-04-25T00:07:00.649Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075618445,
+    "timestamp": "2026-04-25T00:06:58.445Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075612764,
+    "timestamp": "2026-04-25T00:06:52.764Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075384591,
+    "timestamp": "2026-04-25T00:03:04.591Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075383949,
+    "timestamp": "2026-04-25T00:03:03.949Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075383631,
+    "timestamp": "2026-04-25T00:03:03.631Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075371771,
+    "timestamp": "2026-04-25T00:02:51.771Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075371246,
+    "timestamp": "2026-04-25T00:02:51.246Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075364327,
+    "timestamp": "2026-04-25T00:02:44.327Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075135890,
+    "timestamp": "2026-04-24T23:58:55.890Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075135870,
+    "timestamp": "2026-04-24T23:58:55.870Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075135088,
+    "timestamp": "2026-04-24T23:58:55.088Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075135016,
+    "timestamp": "2026-04-24T23:58:55.016Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075134236,
+    "timestamp": "2026-04-24T23:58:54.236Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075134071,
+    "timestamp": "2026-04-24T23:58:54.071Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075133427,
+    "timestamp": "2026-04-24T23:58:53.427Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075133240,
+    "timestamp": "2026-04-24T23:58:53.240Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075131881,
+    "timestamp": "2026-04-24T23:58:51.881Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075131864,
+    "timestamp": "2026-04-24T23:58:51.864Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075130463,
+    "timestamp": "2026-04-24T23:58:50.463Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075130446,
+    "timestamp": "2026-04-24T23:58:50.446Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075128959,
+    "timestamp": "2026-04-24T23:58:48.959Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075128908,
+    "timestamp": "2026-04-24T23:58:48.908Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075107320,
+    "timestamp": "2026-04-24T23:58:27.320Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075107213,
+    "timestamp": "2026-04-24T23:58:27.213Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075104496,
+    "timestamp": "2026-04-24T23:58:24.496Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075104420,
+    "timestamp": "2026-04-24T23:58:24.420Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075104296,
+    "timestamp": "2026-04-24T23:58:24.296Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075104236,
+    "timestamp": "2026-04-24T23:58:24.236Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075104156,
+    "timestamp": "2026-04-24T23:58:24.156Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075104028,
+    "timestamp": "2026-04-24T23:58:24.028Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075103559,
+    "timestamp": "2026-04-24T23:58:23.559Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075103364,
+    "timestamp": "2026-04-24T23:58:23.364Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075102635,
+    "timestamp": "2026-04-24T23:58:22.635Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075101220,
+    "timestamp": "2026-04-24T23:58:21.220Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075101204,
+    "timestamp": "2026-04-24T23:58:21.204Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075100596,
+    "timestamp": "2026-04-24T23:58:20.596Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075100492,
+    "timestamp": "2026-04-24T23:58:20.492Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075099027,
+    "timestamp": "2026-04-24T23:58:19.027Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075098211,
+    "timestamp": "2026-04-24T23:58:18.211Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075097306,
+    "timestamp": "2026-04-24T23:58:17.306Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075097284,
+    "timestamp": "2026-04-24T23:58:17.284Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075097134,
+    "timestamp": "2026-04-24T23:58:17.134Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075097114,
+    "timestamp": "2026-04-24T23:58:17.114Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075096959,
+    "timestamp": "2026-04-24T23:58:16.959Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075096940,
+    "timestamp": "2026-04-24T23:58:16.940Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075096777,
+    "timestamp": "2026-04-24T23:58:16.777Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075096755,
+    "timestamp": "2026-04-24T23:58:16.755Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075096592,
+    "timestamp": "2026-04-24T23:58:16.592Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075096571,
+    "timestamp": "2026-04-24T23:58:16.571Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075096410,
+    "timestamp": "2026-04-24T23:58:16.410Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075096387,
+    "timestamp": "2026-04-24T23:58:16.387Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075095443,
+    "timestamp": "2026-04-24T23:58:15.443Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075095372,
+    "timestamp": "2026-04-24T23:58:15.372Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075095283,
+    "timestamp": "2026-04-24T23:58:15.283Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075095204,
+    "timestamp": "2026-04-24T23:58:15.204Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075095033,
+    "timestamp": "2026-04-24T23:58:15.033Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075095003,
+    "timestamp": "2026-04-24T23:58:15.003Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075094923,
+    "timestamp": "2026-04-24T23:58:14.923Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075094813,
+    "timestamp": "2026-04-24T23:58:14.813Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075093975,
+    "timestamp": "2026-04-24T23:58:13.975Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075093953,
+    "timestamp": "2026-04-24T23:58:13.953Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075093787,
+    "timestamp": "2026-04-24T23:58:13.787Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075093764,
+    "timestamp": "2026-04-24T23:58:13.764Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075093544,
+    "timestamp": "2026-04-24T23:58:13.544Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075093524,
+    "timestamp": "2026-04-24T23:58:13.524Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075093280,
+    "timestamp": "2026-04-24T23:58:13.280Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075093259,
+    "timestamp": "2026-04-24T23:58:13.259Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075092659,
+    "timestamp": "2026-04-24T23:58:12.659Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075092636,
+    "timestamp": "2026-04-24T23:58:12.636Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075091903,
+    "timestamp": "2026-04-24T23:58:11.903Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075091851,
+    "timestamp": "2026-04-24T23:58:11.851Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075090689,
+    "timestamp": "2026-04-24T23:58:10.689Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075090665,
+    "timestamp": "2026-04-24T23:58:10.665Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075085789,
+    "timestamp": "2026-04-24T23:58:05.789Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075085762,
+    "timestamp": "2026-04-24T23:58:05.762Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075085585,
+    "timestamp": "2026-04-24T23:58:05.585Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075085562,
+    "timestamp": "2026-04-24T23:58:05.562Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075085369,
+    "timestamp": "2026-04-24T23:58:05.369Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075085347,
+    "timestamp": "2026-04-24T23:58:05.347Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075085139,
+    "timestamp": "2026-04-24T23:58:05.139Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075085117,
+    "timestamp": "2026-04-24T23:58:05.117Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075084328,
+    "timestamp": "2026-04-24T23:58:04.328Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075084250,
+    "timestamp": "2026-04-24T23:58:04.250Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075080587,
+    "timestamp": "2026-04-24T23:58:00.587Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075080570,
+    "timestamp": "2026-04-24T23:58:00.570Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075080386,
+    "timestamp": "2026-04-24T23:58:00.386Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075080370,
+    "timestamp": "2026-04-24T23:58:00.370Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075080179,
+    "timestamp": "2026-04-24T23:58:00.179Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075080163,
+    "timestamp": "2026-04-24T23:58:00.163Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075079516,
+    "timestamp": "2026-04-24T23:57:59.516Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075079423,
+    "timestamp": "2026-04-24T23:57:59.423Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075078187,
+    "timestamp": "2026-04-24T23:57:58.187Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075078061,
+    "timestamp": "2026-04-24T23:57:58.061Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075076655,
+    "timestamp": "2026-04-24T23:57:56.655Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075076546,
+    "timestamp": "2026-04-24T23:57:56.546Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075071376,
+    "timestamp": "2026-04-24T23:57:51.376Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075068987,
+    "timestamp": "2026-04-24T23:57:48.987Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075063884,
+    "timestamp": "2026-04-24T23:57:43.884Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075032962,
+    "timestamp": "2026-04-24T23:57:12.962Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075030690,
+    "timestamp": "2026-04-24T23:57:10.690Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075029174,
+    "timestamp": "2026-04-24T23:57:09.174Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075029046,
+    "timestamp": "2026-04-24T23:57:09.046Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075028024,
+    "timestamp": "2026-04-24T23:57:08.024Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075027817,
+    "timestamp": "2026-04-24T23:57:07.817Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075026692,
+    "timestamp": "2026-04-24T23:57:06.692Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Sem permissões de Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075026673,
+    "timestamp": "2026-04-24T23:57:06.673Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075025900,
+    "timestamp": "2026-04-24T23:57:05.900Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075025769,
+    "timestamp": "2026-04-24T23:57:05.769Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075022195,
+    "timestamp": "2026-04-24T23:57:02.195Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075019454,
+    "timestamp": "2026-04-24T23:56:59.454Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075019346,
+    "timestamp": "2026-04-24T23:56:59.346Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075018334,
+    "timestamp": "2026-04-24T23:56:58.334Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075018219,
+    "timestamp": "2026-04-24T23:56:58.219Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075016506,
+    "timestamp": "2026-04-24T23:56:56.506Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075015425,
+    "timestamp": "2026-04-24T23:56:55.425Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075013026,
+    "timestamp": "2026-04-24T23:56:53.026Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075012929,
+    "timestamp": "2026-04-24T23:56:52.929Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075009989,
+    "timestamp": "2026-04-24T23:56:49.989Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777075009950,
+    "timestamp": "2026-04-24T23:56:49.950Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075009169,
+    "timestamp": "2026-04-24T23:56:49.169Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075009039,
+    "timestamp": "2026-04-24T23:56:49.039Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075006826,
+    "timestamp": "2026-04-24T23:56:46.826Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Erro ao executar restart: Sem permissões de Admin ou Root",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777075006650,
+    "timestamp": "2026-04-24T23:56:46.650Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075002506,
+    "timestamp": "2026-04-24T23:56:42.506Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777075000906,
+    "timestamp": "2026-04-24T23:56:40.906Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074996332,
+    "timestamp": "2026-04-24T23:56:36.332Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074991761,
+    "timestamp": "2026-04-24T23:56:31.761Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074989212,
+    "timestamp": "2026-04-24T23:56:29.212Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074978668,
+    "timestamp": "2026-04-24T23:56:18.668Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074972359,
+    "timestamp": "2026-04-24T23:56:12.359Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074970457,
+    "timestamp": "2026-04-24T23:56:10.457Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074967281,
+    "timestamp": "2026-04-24T23:56:07.281Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074966717,
+    "timestamp": "2026-04-24T23:56:06.717Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074964500,
+    "timestamp": "2026-04-24T23:56:04.500Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074949413,
+    "timestamp": "2026-04-24T23:55:49.413Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074838583,
+    "timestamp": "2026-04-24T23:53:58.583Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074838294,
+    "timestamp": "2026-04-24T23:53:58.294Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074838291,
+    "timestamp": "2026-04-24T23:53:58.291Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074838245,
+    "timestamp": "2026-04-24T23:53:58.245Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777074751434,
+    "timestamp": "2026-04-24T23:52:31.434Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074746541,
+    "timestamp": "2026-04-24T23:52:26.541Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777074297809,
+    "timestamp": "2026-04-24T23:44:57.809Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074296878,
+    "timestamp": "2026-04-24T23:44:56.878Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074296820,
+    "timestamp": "2026-04-24T23:44:56.820Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777074047260,
+    "timestamp": "2026-04-24T23:40:47.260Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074046470,
+    "timestamp": "2026-04-24T23:40:46.470Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074044044,
+    "timestamp": "2026-04-24T23:40:44.044Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Dispositivo não tem permissões de Admin ou Root para reiniciar",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074043918,
+    "timestamp": "2026-04-24T23:40:43.918Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777074041503,
+    "timestamp": "2026-04-24T23:40:41.503Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Dispositivo não tem permissões de Admin ou Root para reiniciar",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777074041447,
+    "timestamp": "2026-04-24T23:40:41.447Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073949220,
+    "timestamp": "2026-04-24T23:39:09.220Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073949035,
+    "timestamp": "2026-04-24T23:39:09.035Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073948860,
+    "timestamp": "2026-04-24T23:39:08.860Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073948667,
+    "timestamp": "2026-04-24T23:39:08.667Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073948470,
+    "timestamp": "2026-04-24T23:39:08.470Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073948246,
+    "timestamp": "2026-04-24T23:39:08.246Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073947813,
+    "timestamp": "2026-04-24T23:39:07.813Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073947474,
+    "timestamp": "2026-04-24T23:39:07.474Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073946342,
+    "timestamp": "2026-04-24T23:39:06.342Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073944605,
+    "timestamp": "2026-04-24T23:39:04.605Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073943412,
+    "timestamp": "2026-04-24T23:39:03.412Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073942070,
+    "timestamp": "2026-04-24T23:39:02.070Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073940059,
+    "timestamp": "2026-04-24T23:39:00.059Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073938532,
+    "timestamp": "2026-04-24T23:38:58.532Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073937493,
+    "timestamp": "2026-04-24T23:38:57.493Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073935212,
+    "timestamp": "2026-04-24T23:38:55.212Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073933607,
+    "timestamp": "2026-04-24T23:38:53.607Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073927792,
+    "timestamp": "2026-04-24T23:38:47.792Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Dispositivo não tem permissões de Root para desligar",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777073927703,
+    "timestamp": "2026-04-24T23:38:47.703Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073926699,
+    "timestamp": "2026-04-24T23:38:46.699Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar restart: Dispositivo não tem permissões de Admin ou Root para reiniciar",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777073926502,
+    "timestamp": "2026-04-24T23:38:46.502Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073924519,
+    "timestamp": "2026-04-24T23:38:44.519Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073923619,
+    "timestamp": "2026-04-24T23:38:43.619Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073922258,
+    "timestamp": "2026-04-24T23:38:42.258Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073921423,
+    "timestamp": "2026-04-24T23:38:41.423Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073920543,
+    "timestamp": "2026-04-24T23:38:40.543Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073919589,
+    "timestamp": "2026-04-24T23:38:39.589Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073917820,
+    "timestamp": "2026-04-24T23:38:37.820Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073916582,
+    "timestamp": "2026-04-24T23:38:36.582Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073914518,
+    "timestamp": "2026-04-24T23:38:34.518Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073913377,
+    "timestamp": "2026-04-24T23:38:33.377Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Erro ao executar shutdown: Dispositivo não tem permissões de Root para desligar",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777073913268,
+    "timestamp": "2026-04-24T23:38:33.268Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073911765,
+    "timestamp": "2026-04-24T23:38:31.765Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073910665,
+    "timestamp": "2026-04-24T23:38:30.665Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073908232,
+    "timestamp": "2026-04-24T23:38:28.232Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073906855,
+    "timestamp": "2026-04-24T23:38:26.855Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073905572,
+    "timestamp": "2026-04-24T23:38:25.572Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073903540,
+    "timestamp": "2026-04-24T23:38:23.540Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073902319,
+    "timestamp": "2026-04-24T23:38:22.319Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073900424,
+    "timestamp": "2026-04-24T23:38:20.424Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073898883,
+    "timestamp": "2026-04-24T23:38:18.883Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073885362,
+    "timestamp": "2026-04-24T23:38:05.362Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073881194,
+    "timestamp": "2026-04-24T23:38:01.194Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777073736405,
+    "timestamp": "2026-04-24T23:35:36.405Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777073328898,
+    "timestamp": "2026-04-24T23:28:48.898Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073327150,
+    "timestamp": "2026-04-24T23:28:47.150Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073284231,
+    "timestamp": "2026-04-24T23:28:04.231Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777073245917,
+    "timestamp": "2026-04-24T23:27:25.917Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073245353,
+    "timestamp": "2026-04-24T23:27:25.353Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073245139,
+    "timestamp": "2026-04-24T23:27:25.139Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073243989,
+    "timestamp": "2026-04-24T23:27:23.989Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073242035,
+    "timestamp": "2026-04-24T23:27:22.035Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073239270,
+    "timestamp": "2026-04-24T23:27:19.270Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073229254,
+    "timestamp": "2026-04-24T23:27:09.254Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073228244,
+    "timestamp": "2026-04-24T23:27:08.244Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073226887,
+    "timestamp": "2026-04-24T23:27:06.887Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073223486,
+    "timestamp": "2026-04-24T23:27:03.486Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073222789,
+    "timestamp": "2026-04-24T23:27:02.789Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073221693,
+    "timestamp": "2026-04-24T23:27:01.693Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073220900,
+    "timestamp": "2026-04-24T23:27:00.900Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073219838,
+    "timestamp": "2026-04-24T23:26:59.838Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073217710,
+    "timestamp": "2026-04-24T23:26:57.710Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073216269,
+    "timestamp": "2026-04-24T23:26:56.269Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073191170,
+    "timestamp": "2026-04-24T23:26:31.170Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073191073,
+    "timestamp": "2026-04-24T23:26:31.073Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777073146092,
+    "timestamp": "2026-04-24T23:25:46.092Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073141360,
+    "timestamp": "2026-04-24T23:25:41.360Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073114010,
+    "timestamp": "2026-04-24T23:25:14.010Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073113627,
+    "timestamp": "2026-04-24T23:25:13.627Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073113427,
+    "timestamp": "2026-04-24T23:25:13.427Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073113139,
+    "timestamp": "2026-04-24T23:25:13.139Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073112195,
+    "timestamp": "2026-04-24T23:25:12.195Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073110739,
+    "timestamp": "2026-04-24T23:25:10.739Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073086563,
+    "timestamp": "2026-04-24T23:24:46.563Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073085723,
+    "timestamp": "2026-04-24T23:24:45.723Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073085411,
+    "timestamp": "2026-04-24T23:24:45.411Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777073083963,
+    "timestamp": "2026-04-24T23:24:43.963Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073082026,
+    "timestamp": "2026-04-24T23:24:42.026Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073080336,
+    "timestamp": "2026-04-24T23:24:40.336Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073052648,
+    "timestamp": "2026-04-24T23:24:12.648Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073052236,
+    "timestamp": "2026-04-24T23:24:12.236Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073050220,
+    "timestamp": "2026-04-24T23:24:10.220Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073044713,
+    "timestamp": "2026-04-24T23:24:04.713Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777073040475,
+    "timestamp": "2026-04-24T23:24:00.475Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777072937197,
+    "timestamp": "2026-04-24T23:22:17.197Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072937023,
+    "timestamp": "2026-04-24T23:22:17.023Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072936855,
+    "timestamp": "2026-04-24T23:22:16.855Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072936662,
+    "timestamp": "2026-04-24T23:22:16.662Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072936473,
+    "timestamp": "2026-04-24T23:22:16.473Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072935859,
+    "timestamp": "2026-04-24T23:22:15.859Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072935658,
+    "timestamp": "2026-04-24T23:22:15.658Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072934985,
+    "timestamp": "2026-04-24T23:22:14.985Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072934594,
+    "timestamp": "2026-04-24T23:22:14.594Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072934302,
+    "timestamp": "2026-04-24T23:22:14.302Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072933105,
+    "timestamp": "2026-04-24T23:22:13.105Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072931029,
+    "timestamp": "2026-04-24T23:22:11.029Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777072925061,
+    "timestamp": "2026-04-24T23:22:05.061Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777072921596,
+    "timestamp": "2026-04-24T23:22:01.596Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777072041643,
+    "timestamp": "2026-04-24T23:07:21.643Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777072022671,
+    "timestamp": "2026-04-24T23:07:02.671Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777071997403,
+    "timestamp": "2026-04-24T23:06:37.403Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071996862,
+    "timestamp": "2026-04-24T23:06:36.862Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071996676,
+    "timestamp": "2026-04-24T23:06:36.676Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071996010,
+    "timestamp": "2026-04-24T23:06:36.010Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071995842,
+    "timestamp": "2026-04-24T23:06:35.842Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071995650,
+    "timestamp": "2026-04-24T23:06:35.650Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071995444,
+    "timestamp": "2026-04-24T23:06:35.444Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071995153,
+    "timestamp": "2026-04-24T23:06:35.153Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071993947,
+    "timestamp": "2026-04-24T23:06:33.947Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071993707,
+    "timestamp": "2026-04-24T23:06:33.707Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071993477,
+    "timestamp": "2026-04-24T23:06:33.477Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071993282,
+    "timestamp": "2026-04-24T23:06:33.282Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071993082,
+    "timestamp": "2026-04-24T23:06:33.082Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071992876,
+    "timestamp": "2026-04-24T23:06:32.876Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071991945,
+    "timestamp": "2026-04-24T23:06:31.945Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071988709,
+    "timestamp": "2026-04-24T23:06:28.709Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071988531,
+    "timestamp": "2026-04-24T23:06:28.531Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071988338,
+    "timestamp": "2026-04-24T23:06:28.338Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071988130,
+    "timestamp": "2026-04-24T23:06:28.130Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071987939,
+    "timestamp": "2026-04-24T23:06:27.939Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071987737,
+    "timestamp": "2026-04-24T23:06:27.737Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071987546,
+    "timestamp": "2026-04-24T23:06:27.546Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071987321,
+    "timestamp": "2026-04-24T23:06:27.321Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071987123,
+    "timestamp": "2026-04-24T23:06:27.123Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071984995,
+    "timestamp": "2026-04-24T23:06:24.995Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071984804,
+    "timestamp": "2026-04-24T23:06:24.804Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071984602,
+    "timestamp": "2026-04-24T23:06:24.602Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071984411,
+    "timestamp": "2026-04-24T23:06:24.411Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071984201,
+    "timestamp": "2026-04-24T23:06:24.201Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071983331,
+    "timestamp": "2026-04-24T23:06:23.331Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071983121,
+    "timestamp": "2026-04-24T23:06:23.121Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071982274,
+    "timestamp": "2026-04-24T23:06:22.274Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071982082,
+    "timestamp": "2026-04-24T23:06:22.082Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071981885,
+    "timestamp": "2026-04-24T23:06:21.885Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071981498,
+    "timestamp": "2026-04-24T23:06:21.498Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071981291,
+    "timestamp": "2026-04-24T23:06:21.291Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071981017,
+    "timestamp": "2026-04-24T23:06:21.017Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071979331,
+    "timestamp": "2026-04-24T23:06:19.331Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071977884,
+    "timestamp": "2026-04-24T23:06:17.884Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071974953,
+    "timestamp": "2026-04-24T23:06:14.953Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071973203,
+    "timestamp": "2026-04-24T23:06:13.203Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071972218,
+    "timestamp": "2026-04-24T23:06:12.218Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071971146,
+    "timestamp": "2026-04-24T23:06:11.146Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071970012,
+    "timestamp": "2026-04-24T23:06:10.012Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071968636,
+    "timestamp": "2026-04-24T23:06:08.636Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071968153,
+    "timestamp": "2026-04-24T23:06:08.153Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071967979,
+    "timestamp": "2026-04-24T23:06:07.979Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071967763,
+    "timestamp": "2026-04-24T23:06:07.763Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071967308,
+    "timestamp": "2026-04-24T23:06:07.308Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071964516,
+    "timestamp": "2026-04-24T23:06:04.516Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071963396,
+    "timestamp": "2026-04-24T23:06:03.396Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071962355,
+    "timestamp": "2026-04-24T23:06:02.355Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071956712,
+    "timestamp": "2026-04-24T23:05:56.712Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071955033,
+    "timestamp": "2026-04-24T23:05:55.033Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071953601,
+    "timestamp": "2026-04-24T23:05:53.601Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071953107,
+    "timestamp": "2026-04-24T23:05:53.107Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071952836,
+    "timestamp": "2026-04-24T23:05:52.836Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071952637,
+    "timestamp": "2026-04-24T23:05:52.637Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071951754,
+    "timestamp": "2026-04-24T23:05:51.754Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071951570,
+    "timestamp": "2026-04-24T23:05:51.570Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071951392,
+    "timestamp": "2026-04-24T23:05:51.392Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071951200,
+    "timestamp": "2026-04-24T23:05:51.200Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071950993,
+    "timestamp": "2026-04-24T23:05:50.993Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071950801,
+    "timestamp": "2026-04-24T23:05:50.801Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071950603,
+    "timestamp": "2026-04-24T23:05:50.603Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071950410,
+    "timestamp": "2026-04-24T23:05:50.410Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071950194,
+    "timestamp": "2026-04-24T23:05:50.194Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071949992,
+    "timestamp": "2026-04-24T23:05:49.992Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071949777,
+    "timestamp": "2026-04-24T23:05:49.777Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071949541,
+    "timestamp": "2026-04-24T23:05:49.541Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071948692,
+    "timestamp": "2026-04-24T23:05:48.692Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071947235,
+    "timestamp": "2026-04-24T23:05:47.235Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071947030,
+    "timestamp": "2026-04-24T23:05:47.030Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071946492,
+    "timestamp": "2026-04-24T23:05:46.492Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071946292,
+    "timestamp": "2026-04-24T23:05:46.292Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071944713,
+    "timestamp": "2026-04-24T23:05:44.713Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071943569,
+    "timestamp": "2026-04-24T23:05:43.569Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071941261,
+    "timestamp": "2026-04-24T23:05:41.261Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071940028,
+    "timestamp": "2026-04-24T23:05:40.028Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071938851,
+    "timestamp": "2026-04-24T23:05:38.851Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071938602,
+    "timestamp": "2026-04-24T23:05:38.602Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071938196,
+    "timestamp": "2026-04-24T23:05:38.196Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071937369,
+    "timestamp": "2026-04-24T23:05:37.369Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071935985,
+    "timestamp": "2026-04-24T23:05:35.985Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071934651,
+    "timestamp": "2026-04-24T23:05:34.651Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071933051,
+    "timestamp": "2026-04-24T23:05:33.051Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071931171,
+    "timestamp": "2026-04-24T23:05:31.171Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071927980,
+    "timestamp": "2026-04-24T23:05:27.980Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071926918,
+    "timestamp": "2026-04-24T23:05:26.918Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071924740,
+    "timestamp": "2026-04-24T23:05:24.740Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071915930,
+    "timestamp": "2026-04-24T23:05:15.930Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071912529,
+    "timestamp": "2026-04-24T23:05:12.529Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071912354,
+    "timestamp": "2026-04-24T23:05:12.354Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071912154,
+    "timestamp": "2026-04-24T23:05:12.154Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071911793,
+    "timestamp": "2026-04-24T23:05:11.793Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071910905,
+    "timestamp": "2026-04-24T23:05:10.905Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071908756,
+    "timestamp": "2026-04-24T23:05:08.756Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071907866,
+    "timestamp": "2026-04-24T23:05:07.866Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071906515,
+    "timestamp": "2026-04-24T23:05:06.515Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071903466,
+    "timestamp": "2026-04-24T23:05:03.466Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071902930,
+    "timestamp": "2026-04-24T23:05:02.930Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071902641,
+    "timestamp": "2026-04-24T23:05:02.641Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071901602,
+    "timestamp": "2026-04-24T23:05:01.602Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071901376,
+    "timestamp": "2026-04-24T23:05:01.376Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071900218,
+    "timestamp": "2026-04-24T23:05:00.218Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071898433,
+    "timestamp": "2026-04-24T23:04:58.433Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071896196,
+    "timestamp": "2026-04-24T23:04:56.196Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071894433,
+    "timestamp": "2026-04-24T23:04:54.433Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777071873680,
+    "timestamp": "2026-04-24T23:04:33.680Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777071739268,
+    "timestamp": "2026-04-24T23:02:19.268Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777071739264,
+    "timestamp": "2026-04-24T23:02:19.264Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777071727051,
+    "timestamp": "2026-04-24T23:02:07.051Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777071721279,
+    "timestamp": "2026-04-24T23:02:01.279Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070746649,
+    "timestamp": "2026-04-24T22:45:46.649Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070691933,
+    "timestamp": "2026-04-24T22:44:51.933Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777070667372,
+    "timestamp": "2026-04-24T22:44:27.372Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070667182,
+    "timestamp": "2026-04-24T22:44:27.182Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666980,
+    "timestamp": "2026-04-24T22:44:26.980Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666799,
+    "timestamp": "2026-04-24T22:44:26.799Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666607,
+    "timestamp": "2026-04-24T22:44:26.607Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666425,
+    "timestamp": "2026-04-24T22:44:26.425Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666236,
+    "timestamp": "2026-04-24T22:44:26.236Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070666050,
+    "timestamp": "2026-04-24T22:44:26.050Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070665847,
+    "timestamp": "2026-04-24T22:44:25.847Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070665270,
+    "timestamp": "2026-04-24T22:44:25.270Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070664237,
+    "timestamp": "2026-04-24T22:44:24.237Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070662153,
+    "timestamp": "2026-04-24T22:44:22.153Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070661857,
+    "timestamp": "2026-04-24T22:44:21.857Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070661243,
+    "timestamp": "2026-04-24T22:44:21.243Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070661036,
+    "timestamp": "2026-04-24T22:44:21.036Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070660833,
+    "timestamp": "2026-04-24T22:44:20.833Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070660619,
+    "timestamp": "2026-04-24T22:44:20.619Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070659996,
+    "timestamp": "2026-04-24T22:44:19.996Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070633061,
+    "timestamp": "2026-04-24T22:43:53.061Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070621919,
+    "timestamp": "2026-04-24T22:43:41.919Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070536761,
+    "timestamp": "2026-04-24T22:42:16.761Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070536579,
+    "timestamp": "2026-04-24T22:42:16.579Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070535093,
+    "timestamp": "2026-04-24T22:42:15.093Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070529808,
+    "timestamp": "2026-04-24T22:42:09.808Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070505845,
+    "timestamp": "2026-04-24T22:41:45.845Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070418212,
+    "timestamp": "2026-04-24T22:40:18.212Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070389390,
+    "timestamp": "2026-04-24T22:39:49.390Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070366120,
+    "timestamp": "2026-04-24T22:39:26.120Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070361940,
+    "timestamp": "2026-04-24T22:39:21.940Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070287696,
+    "timestamp": "2026-04-24T22:38:07.696Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070287109,
+    "timestamp": "2026-04-24T22:38:07.109Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070285767,
+    "timestamp": "2026-04-24T22:38:05.767Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070283906,
+    "timestamp": "2026-04-24T22:38:03.906Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777070203178,
+    "timestamp": "2026-04-24T22:36:43.178Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070113390,
+    "timestamp": "2026-04-24T22:35:13.390Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777070060525,
+    "timestamp": "2026-04-24T22:34:20.525Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069909085,
+    "timestamp": "2026-04-24T22:31:49.085Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777069904580,
+    "timestamp": "2026-04-24T22:31:44.580Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777069784374,
+    "timestamp": "2026-04-24T22:29:44.374Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777069713005,
+    "timestamp": "2026-04-24T22:28:33.005Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777069686700,
+    "timestamp": "2026-04-24T22:28:06.700Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777069656127,
+    "timestamp": "2026-04-24T22:27:36.127Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069655936,
+    "timestamp": "2026-04-24T22:27:35.936Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069655737,
+    "timestamp": "2026-04-24T22:27:35.737Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069654590,
+    "timestamp": "2026-04-24T22:27:34.590Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069652206,
+    "timestamp": "2026-04-24T22:27:32.206Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069648405,
+    "timestamp": "2026-04-24T22:27:28.405Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069645507,
+    "timestamp": "2026-04-24T22:27:25.507Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777069517575,
+    "timestamp": "2026-04-24T22:25:17.575Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069516423,
+    "timestamp": "2026-04-24T22:25:16.423Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069513050,
+    "timestamp": "2026-04-24T22:25:13.050Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069480737,
+    "timestamp": "2026-04-24T22:24:40.737Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069480226,
+    "timestamp": "2026-04-24T22:24:40.226Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069478286,
+    "timestamp": "2026-04-24T22:24:38.286Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069445760,
+    "timestamp": "2026-04-24T22:24:05.760Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069437168,
+    "timestamp": "2026-04-24T22:23:57.168Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777069428741,
+    "timestamp": "2026-04-24T22:23:48.741Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777068031561,
+    "timestamp": "2026-04-24T22:00:31.577Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067896544,
+    "timestamp": "2026-04-24T21:58:16.544Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067881975,
+    "timestamp": "2026-04-24T21:58:01.975Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067877729,
+    "timestamp": "2026-04-24T21:57:57.729Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: shutdown",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067876035,
+    "timestamp": "2026-04-24T21:57:56.035Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067873761,
+    "timestamp": "2026-04-24T21:57:53.761Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067872085,
+    "timestamp": "2026-04-24T21:57:52.085Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067870754,
+    "timestamp": "2026-04-24T21:57:50.754Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067814108,
+    "timestamp": "2026-04-24T21:56:54.109Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067811802,
+    "timestamp": "2026-04-24T21:56:51.802Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067809957,
+    "timestamp": "2026-04-24T21:56:49.957Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067807942,
+    "timestamp": "2026-04-24T21:56:47.942Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067801618,
+    "timestamp": "2026-04-24T21:56:41.618Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067773981,
+    "timestamp": "2026-04-24T21:56:13.981Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067771409,
+    "timestamp": "2026-04-24T21:56:11.409Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067770558,
+    "timestamp": "2026-04-24T21:56:10.558Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067767593,
+    "timestamp": "2026-04-24T21:56:07.593Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067765538,
+    "timestamp": "2026-04-24T21:56:05.538Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067764746,
+    "timestamp": "2026-04-24T21:56:04.746Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067763593,
+    "timestamp": "2026-04-24T21:56:03.593Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067762239,
+    "timestamp": "2026-04-24T21:56:02.239Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067761852,
+    "timestamp": "2026-04-24T21:56:01.852Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067756667,
+    "timestamp": "2026-04-24T21:55:56.667Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067675677,
+    "timestamp": "2026-04-24T21:54:35.677Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067605873,
+    "timestamp": "2026-04-24T21:53:25.873Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067593054,
+    "timestamp": "2026-04-24T21:53:13.054Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067592797,
+    "timestamp": "2026-04-24T21:53:12.797Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067591826,
+    "timestamp": "2026-04-24T21:53:11.826Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067575203,
+    "timestamp": "2026-04-24T21:52:55.203Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067574659,
+    "timestamp": "2026-04-24T21:52:54.659Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067574489,
+    "timestamp": "2026-04-24T21:52:54.489Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067574268,
+    "timestamp": "2026-04-24T21:52:54.268Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067573395,
+    "timestamp": "2026-04-24T21:52:53.395Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067571605,
+    "timestamp": "2026-04-24T21:52:51.605Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067568114,
+    "timestamp": "2026-04-24T21:52:48.114Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067564221,
+    "timestamp": "2026-04-24T21:52:44.221Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067563230,
+    "timestamp": "2026-04-24T21:52:43.230Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067561987,
+    "timestamp": "2026-04-24T21:52:41.987Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777067560914,
+    "timestamp": "2026-04-24T21:52:40.914Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777067544559,
+    "timestamp": "2026-04-24T21:52:24.559Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777067539382,
+    "timestamp": "2026-04-24T21:52:19.382Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777067437034,
+    "timestamp": "2026-04-24T21:50:37.034Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067246230,
+    "timestamp": "2026-04-24T21:47:26.231Z",
+    "tipo": "desconexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "D2s",
+    "ip": null
+  },
+  {
+    "id": 1777067218623,
+    "timestamp": "2026-04-24T21:46:58.623Z",
+    "tipo": "desconexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067079757,
+    "timestamp": "2026-04-24T21:44:39.757Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777067050215,
+    "timestamp": "2026-04-24T21:44:10.215Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066986038,
+    "timestamp": "2026-04-24T21:43:06.038Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066985846,
+    "timestamp": "2026-04-24T21:43:05.846Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066985647,
+    "timestamp": "2026-04-24T21:43:05.647Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066985382,
+    "timestamp": "2026-04-24T21:43:05.382Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066984167,
+    "timestamp": "2026-04-24T21:43:04.167Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066983310,
+    "timestamp": "2026-04-24T21:43:03.310Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066981874,
+    "timestamp": "2026-04-24T21:43:01.874Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066945293,
+    "timestamp": "2026-04-24T21:42:25.293Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066943893,
+    "timestamp": "2026-04-24T21:42:23.893Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066942963,
+    "timestamp": "2026-04-24T21:42:22.963Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066940764,
+    "timestamp": "2026-04-24T21:42:20.764Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066938585,
+    "timestamp": "2026-04-24T21:42:18.585Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777066934546,
+    "timestamp": "2026-04-24T21:42:14.546Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777066928445,
+    "timestamp": "2026-04-24T21:42:08.445Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777066926369,
+    "timestamp": "2026-04-24T21:42:06.369Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777065944670,
+    "timestamp": "2026-04-24T21:25:44.670Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065942658,
+    "timestamp": "2026-04-24T21:25:42.658Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777065931776,
+    "timestamp": "2026-04-24T21:25:31.776Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065905875,
+    "timestamp": "2026-04-24T21:25:05.875Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065904112,
+    "timestamp": "2026-04-24T21:25:04.112Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065901869,
+    "timestamp": "2026-04-24T21:25:01.869Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065898426,
+    "timestamp": "2026-04-24T21:24:58.426Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065897516,
+    "timestamp": "2026-04-24T21:24:57.516Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065895912,
+    "timestamp": "2026-04-24T21:24:55.912Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065893569,
+    "timestamp": "2026-04-24T21:24:53.569Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065892547,
+    "timestamp": "2026-04-24T21:24:52.547Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065891742,
+    "timestamp": "2026-04-24T21:24:51.742Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065891501,
+    "timestamp": "2026-04-24T21:24:51.501Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065890792,
+    "timestamp": "2026-04-24T21:24:50.792Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065889601,
+    "timestamp": "2026-04-24T21:24:49.601Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065888449,
+    "timestamp": "2026-04-24T21:24:48.449Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065887188,
+    "timestamp": "2026-04-24T21:24:47.188Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065886985,
+    "timestamp": "2026-04-24T21:24:46.985Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065886564,
+    "timestamp": "2026-04-24T21:24:46.564Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065886362,
+    "timestamp": "2026-04-24T21:24:46.362Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065885449,
+    "timestamp": "2026-04-24T21:24:45.449Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065884422,
+    "timestamp": "2026-04-24T21:24:44.422Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065883100,
+    "timestamp": "2026-04-24T21:24:43.100Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065881267,
+    "timestamp": "2026-04-24T21:24:41.267Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065722291,
+    "timestamp": "2026-04-24T21:22:02.291Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777065691950,
+    "timestamp": "2026-04-24T21:21:31.950Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777065647138,
+    "timestamp": "2026-04-24T21:20:47.138Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065642820,
+    "timestamp": "2026-04-24T21:20:42.820Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065641019,
+    "timestamp": "2026-04-24T21:20:41.019Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065637718,
+    "timestamp": "2026-04-24T21:20:37.718Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065635364,
+    "timestamp": "2026-04-24T21:20:35.364Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065632397,
+    "timestamp": "2026-04-24T21:20:32.397Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777065621928,
+    "timestamp": "2026-04-24T21:20:21.928Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777065619945,
+    "timestamp": "2026-04-24T21:20:19.945Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777065616881,
+    "timestamp": "2026-04-24T21:20:16.881Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777064187978,
+    "timestamp": "2026-04-24T20:56:27.978Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777064152130,
+    "timestamp": "2026-04-24T20:55:52.130Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777064149788,
+    "timestamp": "2026-04-24T20:55:49.788Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777064147093,
+    "timestamp": "2026-04-24T20:55:47.093Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777064145386,
+    "timestamp": "2026-04-24T20:55:45.386Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777064143020,
+    "timestamp": "2026-04-24T20:55:43.020Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777064044701,
+    "timestamp": "2026-04-24T20:54:04.701Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777064042926,
+    "timestamp": "2026-04-24T20:54:02.926Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063967422,
+    "timestamp": "2026-04-24T20:52:47.422Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063934351,
+    "timestamp": "2026-04-24T20:52:14.351Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063931863,
+    "timestamp": "2026-04-24T20:52:11.863Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063927309,
+    "timestamp": "2026-04-24T20:52:07.309Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063925714,
+    "timestamp": "2026-04-24T20:52:05.714Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063922474,
+    "timestamp": "2026-04-24T20:52:02.474Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063854868,
+    "timestamp": "2026-04-24T20:50:54.868Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063826315,
+    "timestamp": "2026-04-24T20:50:26.315Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063823944,
+    "timestamp": "2026-04-24T20:50:23.944Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063822719,
+    "timestamp": "2026-04-24T20:50:22.719Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063821193,
+    "timestamp": "2026-04-24T20:50:21.193Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063820296,
+    "timestamp": "2026-04-24T20:50:20.296Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063818984,
+    "timestamp": "2026-04-24T20:50:18.984Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063817478,
+    "timestamp": "2026-04-24T20:50:17.478Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063815286,
+    "timestamp": "2026-04-24T20:50:15.286Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063812134,
+    "timestamp": "2026-04-24T20:50:12.134Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063809964,
+    "timestamp": "2026-04-24T20:50:09.964Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063767630,
+    "timestamp": "2026-04-24T20:49:27.630Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063741225,
+    "timestamp": "2026-04-24T20:49:01.225Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063739398,
+    "timestamp": "2026-04-24T20:48:59.398Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063736948,
+    "timestamp": "2026-04-24T20:48:56.948Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063734793,
+    "timestamp": "2026-04-24T20:48:54.793Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063733080,
+    "timestamp": "2026-04-24T20:48:53.080Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063732030,
+    "timestamp": "2026-04-24T20:48:52.030Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063722675,
+    "timestamp": "2026-04-24T20:48:42.675Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063687263,
+    "timestamp": "2026-04-24T20:48:07.263Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063685590,
+    "timestamp": "2026-04-24T20:48:05.590Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063676281,
+    "timestamp": "2026-04-24T20:47:56.281Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063645929,
+    "timestamp": "2026-04-24T20:47:25.929Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063644313,
+    "timestamp": "2026-04-24T20:47:24.313Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063643173,
+    "timestamp": "2026-04-24T20:47:23.173Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063641977,
+    "timestamp": "2026-04-24T20:47:21.977Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063640979,
+    "timestamp": "2026-04-24T20:47:20.979Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063640036,
+    "timestamp": "2026-04-24T20:47:20.036Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063636649,
+    "timestamp": "2026-04-24T20:47:16.649Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063617547,
+    "timestamp": "2026-04-24T20:46:57.547Z",
+    "tipo": "desconexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Dispositivo desconectado",
+    "usuario": "P2-B",
+    "ip": null
+  },
+  {
+    "id": 1777063598684,
+    "timestamp": "2026-04-24T20:46:38.684Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063597155,
+    "timestamp": "2026-04-24T20:46:37.155Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063595259,
+    "timestamp": "2026-04-24T20:46:35.259Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063594091,
+    "timestamp": "2026-04-24T20:46:34.091Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063593875,
+    "timestamp": "2026-04-24T20:46:33.875Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063592564,
+    "timestamp": "2026-04-24T20:46:32.564Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063592372,
+    "timestamp": "2026-04-24T20:46:32.372Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063591764,
+    "timestamp": "2026-04-24T20:46:31.764Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063591556,
+    "timestamp": "2026-04-24T20:46:31.556Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063591339,
+    "timestamp": "2026-04-24T20:46:31.339Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063591135,
+    "timestamp": "2026-04-24T20:46:31.135Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063590412,
+    "timestamp": "2026-04-24T20:46:30.412Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063590181,
+    "timestamp": "2026-04-24T20:46:30.181Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063588901,
+    "timestamp": "2026-04-24T20:46:28.901Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063588093,
+    "timestamp": "2026-04-24T20:46:28.093Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063587507,
+    "timestamp": "2026-04-24T20:46:27.507Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063587319,
+    "timestamp": "2026-04-24T20:46:27.319Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063586811,
+    "timestamp": "2026-04-24T20:46:26.811Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063586611,
+    "timestamp": "2026-04-24T20:46:26.611Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063585891,
+    "timestamp": "2026-04-24T20:46:25.891Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063584286,
+    "timestamp": "2026-04-24T20:46:24.286Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063583197,
+    "timestamp": "2026-04-24T20:46:23.197Z",
+    "tipo": "mudanca_status",
+    "deviceId": "TC04209140208",
+    "deviceName": "D2s",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063579932,
+    "timestamp": "2026-04-24T20:46:19.932Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063576404,
+    "timestamp": "2026-04-24T20:46:16.404Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063571981,
+    "timestamp": "2026-04-24T20:46:11.981Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: restart",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063569501,
+    "timestamp": "2026-04-24T20:46:09.501Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063566301,
+    "timestamp": "2026-04-24T20:46:06.301Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063505973,
+    "timestamp": "2026-04-24T20:45:05.973Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063498732,
+    "timestamp": "2026-04-24T20:44:58.732Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063497274,
+    "timestamp": "2026-04-24T20:44:57.274Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063311780,
+    "timestamp": "2026-04-24T20:41:51.780Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063310249,
+    "timestamp": "2026-04-24T20:41:50.249Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: close_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063309076,
+    "timestamp": "2026-04-24T20:41:49.076Z",
+    "tipo": "mudanca_status",
+    "deviceId": "PB59237K70640",
+    "deviceName": "P2-B",
+    "detalhes": "Comando de controle enviado: open_app",
+    "usuario": "dashboard",
+    "ip": null
+  },
+  {
+    "id": 1777063302058,
+    "timestamp": "2026-04-24T20:41:42.058Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063302035,
+    "timestamp": "2026-04-24T20:41:42.035Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063301421,
+    "timestamp": "2026-04-24T20:41:41.421Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063143300,
+    "timestamp": "2026-04-24T20:39:03.300Z",
+    "tipo": "conexao",
+    "deviceId": "PB59237K70640",
+    "deviceName": "PB59237K70640",
+    "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063142202,
+    "timestamp": "2026-04-24T20:39:02.202Z",
+    "tipo": "conexao",
+    "deviceId": "TC04209140208",
+    "deviceName": "TC04209140208",
+    "detalhes": "Dispositivo conectado - Android (TC04209140208)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
+    "id": 1777063136014,
+    "timestamp": "2026-04-24T20:38:56.014Z",
+    "tipo": "conexao",
+    "deviceId": "PBF921CE70402",
+    "deviceName": "PBF921CE70402",
+    "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
+    "usuario": "Sistema",
+    "ip": null
+  },
+  {
     "id": 1777056957826,
     "timestamp": "2026-04-24T18:55:57.826Z",
     "tipo": "bloqueio",

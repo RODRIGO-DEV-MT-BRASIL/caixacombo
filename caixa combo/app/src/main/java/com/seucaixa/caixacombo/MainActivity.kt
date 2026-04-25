@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowManager
@@ -83,6 +84,14 @@ class MainActivity : ComponentActivity() {
         val deviceName = android.os.Build.MODEL
         WebSocketService.setDeviceInfo(deviceId, deviceName, serialNumber)
         
+        // Configurar Admin para reboot sem root
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
+        val cn = android.content.ComponentName(this, AdminReceiver::class.java)
+        WebSocketService.setAdminInfo(dpm, cn)
+
+        // Verificar e solicitar ativação automática do Device Admin
+        checkAndRequestDeviceAdmin(dpm, cn)
+
         // Configurar callbacks do WebSocket para bloqueio/desbloqueio
         WebSocketService.setCallbacks(
             onConnectionChange = { isConnected ->
@@ -350,6 +359,57 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * Verifica se o app está ativo como Device Admin e solicita ativação se necessário.
+     * Necessário para usar comandos de reiniciar/desligar dispositivo.
+     */
+    private fun checkAndRequestDeviceAdmin(dpm: DevicePolicyManager, admin: ComponentName) {
+        val isDeviceOwner = dpm.isDeviceOwnerApp(packageName)
+        val isAdminActive = dpm.isAdminActive(admin)
+
+        android.util.Log.d("MainActivity", "Device Owner: $isDeviceOwner, Admin Active: $isAdminActive")
+
+        if (!isDeviceOwner && !isAdminActive) {
+            android.util.Log.w("MainActivity", "Device Admin não ativo. Solicitando ativação...")
+
+            // Solicitar ativação do Device Admin
+            val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
+                putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                    "Ative para permitir:\n• Bloquear tela remotamente\n• Reiniciar dispositivo\n• Desligar dispositivo")
+            }
+
+            try {
+                startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN)
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Erro ao solicitar Device Admin: ${e.message}")
+            }
+        } else {
+            android.util.Log.d("MainActivity", "✅ Permissões de Device Admin já ativas")
+        }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_ENABLE_ADMIN = 1001
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
+            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val admin = ComponentName(this, AdminReceiver::class.java)
+            val isAdminActive = dpm.isAdminActive(admin)
+
+            if (resultCode == RESULT_OK && isAdminActive) {
+                android.util.Log.d("MainActivity", "✅ Device Admin ativado com sucesso")
+            } else {
+                android.util.Log.w("MainActivity", "⚠️ Device Admin não foi ativado. Botões reiniciar/desligar não funcionarão.")
+            }
+        }
+    }
+
+    /**
      * Trata comandos recebidos do Dashboard via WebSocket
      */
     private fun handleWebSocketCommand(command: String, params: org.json.JSONObject?) {
@@ -367,7 +427,33 @@ class MainActivity : ComponentActivity() {
                 val minutes = params?.optInt("minutes", 0) ?: 0
                 startUsageTimer(minutes)
             }
-            // Removidos comandos shutdown e restart para evitar fechamento do app
+            "close_app" -> {
+                android.util.Log.d("MainActivity", "Fechando o aplicativo via comando remoto")
+                stopLockTaskMode() // Parar modo quiosque antes de fechar
+                finishAndRemoveTask()
+            }
+            "shutdown" -> {
+                // Desligar o dispositivo (requer permissões de root)
+                try {
+                    val process = Runtime.getRuntime().exec("su")
+                    val os = process.outputStream
+                    os.write("reboot -p\n".toByteArray())
+                    os.flush()
+                    os.close()
+                    process.waitFor()
+                    android.util.Log.d("MainActivity", "Comando de desligamento enviado")
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "Erro ao desligar dispositivo (pode requerer root)", e)
+                    // Alternativa sem root: mostrar tela de desligamento do sistema
+                    try {
+                        val intent = Intent(Intent.ACTION_SHUTDOWN)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        startActivity(intent)
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MainActivity", "Erro ao mostrar tela de desligamento", ex)
+                    }
+                }
+            }
         }
     }
     

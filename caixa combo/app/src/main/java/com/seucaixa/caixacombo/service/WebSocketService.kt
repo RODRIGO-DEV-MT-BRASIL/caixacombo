@@ -1,9 +1,11 @@
 package com.seucaixa.caixacombo.service
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -39,6 +41,10 @@ class WebSocketService : Service() {
         private var wsDeviceName: String? = null
         private var wsSerialNumber: String? = null
         
+        // Admin para reboot sem root
+        private var devicePolicyManager: android.app.admin.DevicePolicyManager? = null
+        private var adminComponentName: android.content.ComponentName? = null
+        
         // Instância do socket
         private var socket: Socket? = null
         
@@ -47,6 +53,14 @@ class WebSocketService : Service() {
         private var onCommandReceived: ((String, JSONObject?) -> Unit)? = null
         private var onDataRequested: (() -> Unit)? = null
         private var onLockPasswordReceived: ((String) -> Unit)? = null
+        
+        /**
+         * Configura o Admin para permitir reboot sem root
+         */
+        fun setAdminInfo(dpm: android.app.admin.DevicePolicyManager, cn: android.content.ComponentName) {
+            devicePolicyManager = dpm
+            adminComponentName = cn
+        }
         
         /**
          * Configura a URL do servidor WebSocket
@@ -193,6 +207,7 @@ class WebSocketService : Service() {
 
             // Eventos de controle de app
             socket?.on("app_control", onAppControl)
+            socket?.on("control_command", onControlCommand)
 
             // Eventos de bloqueio e tempo de uso
             socket?.on("device_locked", onDeviceLocked)
@@ -382,8 +397,54 @@ class WebSocketService : Service() {
         }
     }
     
-    // ==================== MÉTODOS DE ENVIO ====================
+    private val onControlCommand = Emitter.Listener { args ->
+        if (args.isNotEmpty()) {
+            try {
+                val data = args[0] as JSONObject
+                val action = data.getString("action")
+                Log.d(TAG, "Comando de controle: $action para $wsDeviceId")
+
+                when (action) {
+                    "restart" -> {
+                        Log.d(TAG, "Reiniciando dispositivo")
+                        val success = restartDevice()
+                        sendControlResult(action, success, if (!success) "Sem permissões de Admin ou Root" else null)
+                    }
+                    "shutdown" -> {
+                        Log.d(TAG, "Desligando dispositivo")
+                        val success = shutdownDevice()
+                        sendControlResult(action, success, if (!success) "Sem permissões de Root" else null)
+                    }
+                    "open_app" -> {
+                        Log.d(TAG, "Abrindo app")
+                        val intent = packageManager.getLaunchIntentForPackage(packageName)
+                        if (intent != null) {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                            startActivity(intent)
+                            sendControlResult(action, true, null)
+                        } else {
+                            sendControlResult(action, false, "Intent não encontrado")
+                        }
+                    }
+                    "close_app" -> {
+                        Log.d(TAG, "Fechando app")
+                        onCommandReceived?.invoke("close_app", null)
+                        sendControlResult(action, true, null)
+                    }
+                    else -> {
+                        Log.w(TAG, "Comando desconhecido: $action")
+                        sendControlResult(action, false, "Comando desconhecido")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao processar comando", e)
+                sendControlResult("unknown", false, "Erro: ${e.message}")
+            }
+        }
+    }
     
+    // ==================== MÉTODOS DE ENVIO ====================
+
     fun sendLockConfirmed() {
         val deviceId = wsDeviceId ?: return
         if (deviceId.isNotEmpty() && socket?.connected() == true) {
@@ -391,12 +452,29 @@ class WebSocketService : Service() {
             Log.d(TAG, "Confirmação de bloqueio enviada: $deviceId")
         }
     }
-    
+
     fun sendUnlockConfirmed() {
         val deviceId = wsDeviceId ?: return
         if (deviceId.isNotEmpty() && socket?.connected() == true) {
             socket?.emit("unlock_confirmed", JSONObject().put("deviceId", deviceId))
             Log.d(TAG, "Confirmação de desbloqueio enviada: $deviceId")
+        }
+    }
+
+    /**
+     * Envia resultado de execução de comando de controle para o dashboard
+     */
+    private fun sendControlResult(action: String, success: Boolean, error: String? = null) {
+        val deviceId = wsDeviceId ?: return
+        if (deviceId.isNotEmpty() && socket?.connected() == true) {
+            val data = JSONObject().apply {
+                put("deviceId", deviceId)
+                put("action", action)
+                put("success", success)
+                error?.let { put("error", it) }
+            }
+            socket?.emit("control_result", data)
+            Log.d(TAG, "Resultado de controle enviado: $action - sucesso=$success ${error?.let { "- erro: $it" } ?: ""}")
         }
     }
     
@@ -422,5 +500,210 @@ class WebSocketService : Service() {
                 Log.w(TAG, "Comando desconhecido: $command")
             }
         }
+    }
+
+    /**
+     * Tenta reiniciar o hardware do dispositivo de verdade.
+     * 1. DevicePolicyManager (Requer que o app seja Administrador do Dispositivo)
+     * 2. APIs de fabricantes POS (Gertec, PAX, SUNMI)
+     * 3. Intent de sistema ACTION_REBOOT
+     * 4. Comando su (Requer Root)
+     * @return true se o comando foi enviado com sucesso, false caso contrário
+     */
+    private fun restartDevice(): Boolean {
+        try {
+            // Método 1: DevicePolicyManager (Funciona sem root se for Admin)
+            if (devicePolicyManager != null && adminComponentName != null) {
+                try {
+                    Log.d(TAG, "SOLICITANDO REBOOT VIA ADMIN API: $adminComponentName")
+                    devicePolicyManager?.reboot(adminComponentName!!)
+                    return true
+                } catch (e: Exception) {
+                    Log.w(TAG, "Erro ao usar Admin API para reboot: ${e.message}")
+                }
+            }
+
+            // Método 2: Intent de sistema para reiniciar (funciona em alguns dispositivos com permissão REBOOT)
+            try {
+                Log.d(TAG, "SOLICITANDO REBOOT VIA INTENT DE SISTEMA")
+                val intent = Intent("android.intent.action.REBOOT")
+                intent.putExtra("nowait", 1)
+                intent.putExtra("interval", 1)
+                intent.putExtra("window", 0)
+                sendBroadcast(intent)
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "Intent de reboot não suportado: ${e.message}")
+            }
+
+            // Método 3: APIs de fabricantes POS
+            if (restartViaPOSAPIs()) {
+                return true
+            }
+
+            // Método 4: Comando su (Para dispositivos com root)
+            try {
+                Log.d(TAG, "SOLICITANDO REBOOT VIA COMANDO SU (ROOT)")
+                val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "reboot"))
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "Dispositivo sem root ou permissão negada para comando su: ${e.message}")
+            }
+
+            Log.e(TAG, "ERRO CRÍTICO: NÃO FOI POSSÍVEL REINICIAR O HARDWARE. SEM PRIVILÉGIOS DE ADMIN OU ROOT.")
+            return false
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro geral ao tentar reiniciar dispositivo", e)
+            return false
+        }
+    }
+
+    /**
+     * Tenta reiniciar usando APIs específicas de fabricantes POS
+     * (Gertec, PAX, SUNMI, etc.)
+     */
+    private fun restartViaPOSAPIs(): Boolean {
+        // Gertec APIs
+        try {
+            val gertecIntent = Intent("com.gertec.action.REBOOT")
+            sendBroadcast(gertecIntent)
+            Log.d(TAG, "Reboot via API Gertec solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API Gertec não disponível: ${e.message}")
+        }
+
+        // PAX APIs
+        try {
+            val paxIntent = Intent("com.pax.action.REBOOT")
+            sendBroadcast(paxIntent)
+            Log.d(TAG, "Reboot via API PAX solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API PAX não disponível: ${e.message}")
+        }
+
+        // SUNMI APIs
+        try {
+            val sunmiIntent = Intent("com.sunmi.action.REBOOT")
+            sendBroadcast(sunmiIntent)
+            Log.d(TAG, "Reboot via API SUNMI solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API SUNMI não disponível: ${e.message}")
+        }
+
+        // Intent genérico via sistema
+        try {
+            val sysIntent = Intent(Intent.ACTION_REBOOT)
+            sysIntent.putExtra("nowait", 1)
+            sendBroadcast(sysIntent)
+            Log.d(TAG, "Reboot via Intent.ACTION_REBOOT solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "Intent ACTION_REBOOT não permitido: ${e.message}")
+        }
+
+        return false
+    }
+
+    /**
+     * Tenta desligar o dispositivo usando múltiplos métodos
+     * 1. APIs de fabricantes POS (Gertec, PAX, SUNMI)
+     * 2. PowerManager (requer permissões de sistema)
+     * 3. Comando su -c reboot -p (requer root)
+     * @return true se o comando foi enviado com sucesso, false caso contrário
+     */
+    private fun shutdownDevice(): Boolean {
+        try {
+            // Método 1: APIs de fabricantes POS
+            if (shutdownViaPOSAPIs()) {
+                return true
+            }
+
+            // Método 2: PowerManager (funciona em dispositivos com permissões de sistema)
+            try {
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                // shutdown() não é público na API, mas pode funcionar em alguns dispositivos
+                try {
+                    val shutdownMethod = powerManager.javaClass.getMethod("shutdown", Boolean::class.javaPrimitiveType, Boolean::class.javaPrimitiveType)
+                    shutdownMethod.invoke(powerManager, false, true)
+                    Log.d(TAG, "Desligando dispositivo via PowerManager")
+                    return true
+                } catch (e: NoSuchMethodException) {
+                    Log.w(TAG, "Método shutdown não disponível no PowerManager")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "PowerManager não suportado: ${e.message}")
+            }
+
+            // Método 3: Comando su -c reboot -p (requer root)
+            try {
+                val process = Runtime.getRuntime()
+                process.exec(arrayOf("su", "-c", "reboot -p"))
+                Log.d(TAG, "Desligando dispositivo via su -c reboot -p")
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "Comando su não suportado (sem root): ${e.message}")
+            }
+
+            Log.e(TAG, "Não foi possível desligar o dispositivo (requer root ou permissões de sistema)")
+            return false
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao tentar desligar dispositivo", e)
+            return false
+        }
+    }
+
+    /**
+     * Tenta desligar usando APIs específicas de fabricantes POS
+     * (Gertec, PAX, SUNMI, etc.)
+     */
+    private fun shutdownViaPOSAPIs(): Boolean {
+        // Gertec APIs
+        try {
+            val gertecIntent = Intent("com.gertec.action.SHUTDOWN")
+            sendBroadcast(gertecIntent)
+            Log.d(TAG, "Shutdown via API Gertec solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API Gertec shutdown não disponível: ${e.message}")
+        }
+
+        // PAX APIs
+        try {
+            val paxIntent = Intent("com.pax.action.SHUTDOWN")
+            sendBroadcast(paxIntent)
+            Log.d(TAG, "Shutdown via API PAX solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API PAX shutdown não disponível: ${e.message}")
+        }
+
+        // SUNMI APIs
+        try {
+            val sunmiIntent = Intent("com.sunmi.action.SHUTDOWN")
+            sendBroadcast(sunmiIntent)
+            Log.d(TAG, "Shutdown via API SUNMI solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "API SUNMI shutdown não disponível: ${e.message}")
+        }
+
+        // Intent genérico via sistema
+        try {
+            val sysIntent = Intent("android.intent.action.ACTION_REQUEST_SHUTDOWN")
+            sysIntent.putExtra("android.intent.extra.KEY_CONFIRM", false)
+            sysIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(sysIntent)
+            Log.d(TAG, "Shutdown via Intent.ACTION_REQUEST_SHUTDOWN solicitado")
+            return true
+        } catch (e: Exception) {
+            Log.w(TAG, "Intent ACTION_REQUEST_SHUTDOWN não permitido: ${e.message}")
+        }
+
+        return false
     }
 }
