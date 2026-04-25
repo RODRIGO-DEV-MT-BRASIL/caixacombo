@@ -308,7 +308,7 @@ export default function Caixa() {
           Authorization: `Bearer ${token}` 
         },
         body: JSON.stringify(dados)
-      })
+      }))
 
       if (response.ok) {
         const blob = await response.blob()
