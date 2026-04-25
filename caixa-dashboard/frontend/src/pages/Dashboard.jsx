@@ -18,7 +18,7 @@ import Empresas from './Empresas'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
-  { id: 'empresas', label: 'Empresas', icon: Building2 },
+  { id: 'empresas', label: 'Empresas', icon: Building2, permission: 'empresas' },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
