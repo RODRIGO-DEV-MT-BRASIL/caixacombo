@@ -54,10 +54,12 @@ class WebSocketService : Service() {
         
         // Callbacks
         private var onConnectionChange: ((Boolean) -> Unit)? = null
-        private var onCommandReceived: ((String, JSONObject?) -> Unit)? = null
+        private var onCommandReceived: ((String, org.json.JSONObject?) -> Unit)? = null
         private var onDataRequested: (() -> Unit)? = null
+        private var onProdutosReceived: ((org.json.JSONArray) -> Unit)? = null
         private var onLockPasswordReceived: ((String) -> Unit)? = null
-        private var onProdutosReceived: ((JSONArray) -> Unit)? = null
+        private var onUnlockResponse: ((Boolean, String?) -> Unit)? = null
+        private var unlockResponseCallback: ((Boolean, String?) -> Unit)? = null
         
         /**
          * Configura o Admin para permitir reboot sem root
@@ -98,13 +100,16 @@ class WebSocketService : Service() {
             onCommandReceived: ((String, JSONObject?) -> Unit)?,
             onDataRequested: (() -> Unit)?,
             onLockPasswordReceived: ((String) -> Unit)? = null,
-            onProdutosReceived: ((JSONArray) -> Unit)? = null
+            onProdutosReceived: ((JSONArray) -> Unit)? = null,
+            onUnlockResponse: ((Boolean, String?) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
             this.onDataRequested = onDataRequested
             this.onLockPasswordReceived = onLockPasswordReceived
             this.onProdutosReceived = onProdutosReceived
+            this.onUnlockResponse = onUnlockResponse
+            unlockResponseCallback = onUnlockResponse
         }
         
         /**
@@ -323,6 +328,7 @@ class WebSocketService : Service() {
             socket?.on("device_locked", onDeviceLocked)
             socket?.on("device_unlocked", onDeviceUnlocked)
             socket?.on("usage_time_set", onUsageTimeSet)
+            socket?.on("unlock_response", onUnlockResponse)
             
             Log.d(TAG, "Socket inicializado: $SOCKET_URL")
             
@@ -483,6 +489,23 @@ class WebSocketService : Service() {
         }
     }
 
+    private val onUnlockResponse = Emitter.Listener { args ->
+        if (args.isNotEmpty()) {
+            try {
+                val data: JSONObject = args[0] as JSONObject
+                val success: Boolean = data.optBoolean("success", false)
+                val message: String = data.optString("message", "")
+                Log.d(TAG, "Resposta de desbloqueio: success=$success, message=$message")
+
+                // Notificar MainActivity sobre a resposta do servidor
+                unlockResponseCallback?.invoke(success, message)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao processar resposta de desbloqueio", e)
+            }
+        }
+    }
+
     private val onAppControl = Emitter.Listener { args ->
         if (args.isNotEmpty()) {
             try {
@@ -581,6 +604,14 @@ class WebSocketService : Service() {
         if (deviceId.isNotEmpty() && socket?.connected() == true) {
             socket?.emit("unlock_confirmed", JSONObject().put("deviceId", deviceId))
             Log.d(TAG, "Confirmação de desbloqueio enviada: $deviceId")
+        }
+    }
+
+    fun sendUnlockAttempt(password: String) {
+        val deviceId = wsDeviceId ?: return
+        if (deviceId.isNotEmpty() && socket?.connected() == true) {
+            socket?.emit("unlock_attempt", JSONObject().put("deviceId", deviceId).put("password", password))
+            Log.d(TAG, "Tentativa de desbloqueio enviada: $deviceId")
         }
     }
 

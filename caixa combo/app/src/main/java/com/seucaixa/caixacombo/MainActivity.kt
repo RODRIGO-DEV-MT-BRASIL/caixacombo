@@ -130,6 +130,18 @@ class MainActivity : ComponentActivity() {
                     currentLockPassword = password
                     android.util.Log.d("MainActivity", "Senha de bloqueio recebida: $password")
                 }
+            },
+            onUnlockResponse = { success, message ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Resposta de desbloqueio do servidor: success=$success, message=$message")
+                    if (success) {
+                        // Senha validada com sucesso pelo servidor
+                        hideLockScreen()
+                    } else {
+                        // Senha incorreta no servidor
+                        android.util.Log.w("MainActivity", "Senha rejeitada pelo servidor: $message")
+                    }
+                }
             }
         )
         
@@ -667,9 +679,11 @@ class MainActivity : ComponentActivity() {
                 setOnClickListener {
                     val password = passwordInput.text.toString()
                     if (password.isNotEmpty()) {
-                        // Validar senha localmente
+                        // Validar senha localmente e enviar para servidor
                         if (password == currentLockPassword) {
                             android.util.Log.d("MainActivity", "Senha correta, desbloqueando")
+                            // Enviar confirmação para servidor
+                            webSocketService?.sendUnlockAttempt(password)
                             hideLockScreen()
                         } else {
                             android.util.Log.w("MainActivity", "Senha incorreta")
