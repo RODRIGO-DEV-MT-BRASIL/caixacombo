@@ -19,6 +19,9 @@ app.use(express.json());
 // Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Servir arquivos estáticos do frontend (após build)
+app.use(express.static(path.join(__dirname, 'frontend/dist')));
+
 // Criar pasta uploads se não existir
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
