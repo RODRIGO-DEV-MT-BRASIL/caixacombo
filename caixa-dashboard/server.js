@@ -1239,31 +1239,15 @@ io.on('connection', (socket) => {
     
     console.log(`🖥️ Dashboard conectado: ${usuario}`);
     
-    // Enviar lista de dispositivos conectados + dispositivos salvos (offline)
-    const connectedList = Array.from(connectedDevices.entries()).map(([id, d]) => ({
+    // Enviar APENAS dispositivos conectados via WebSocket (em tempo real)
+    const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
       deviceId: id, ...d, online: d.socketId !== null
     }));
     
-    // Adicionar dispositivos salvos que não estão conectados
-    const savedDevices = db.dispositivos || [];
-    const savedOffline = savedDevices.filter(d => !connectedDevices.has(d.deviceId));
-    const offlineList = savedOffline.map(d => ({
-      deviceId: d.deviceId,
-      deviceName: d.deviceName,
-      deviceType: d.deviceType,
-      serialNumber: d.serialNumber,
-      status: d.status || 'offline',
-      online: false,
-      lockPassword: d.lockPassword
-    }));
+    console.log(`📊 [DEBUG] Dispositivos conectados: ${list.length}`);
+    console.log(`📊 [DEBUG] DeviceIds:`, list.map(d => d.deviceId));
     
-    console.log(`📊 [DEBUG] Dispositivos conectados: ${connectedList.length}`);
-    console.log(`📊 [DEBUG] Dispositivos offline salvos: ${offlineList.length}`);
-    console.log(`📊 [DEBUG] Total dispositivos enviados: ${connectedList.length + offlineList.length}`);
-    console.log(`📊 [DEBUG] DeviceIds conectados:`, connectedList.map(d => d.deviceId));
-    console.log(`📊 [DEBUG] DeviceIds offline:`, offlineList.map(d => d.deviceId));
-    
-    socket.emit('devices_list', [...connectedList, ...offlineList]);
+    socket.emit('devices_list', list);
   });
 
   socket.on('lock_device', (data) => {
