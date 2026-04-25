@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { useToastContext } from '../contexts/ToastContext'
+import { apiUrl } from '../utils/api'
 import ProdutoModal from '../components/ProdutoModal'
 import { Package, Plus, Pencil, Trash2, Search, Image as ImageIcon, ShoppingCart } from 'lucide-react'
 
@@ -19,7 +20,7 @@ export default function Produtos() {
 
   const fetchProdutos = async () => {
     try {
-      const res = await fetch('/api/produtos', {
+      const res = await fetch(apiUrl('/api/produtos'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
@@ -34,7 +35,7 @@ export default function Produtos() {
 
   const fetchCategorias = async () => {
     try {
-      const res = await fetch('/api/categorias', {
+      const res = await fetch(apiUrl('/api/categorias'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
@@ -47,7 +48,7 @@ export default function Produtos() {
 
   const fetchVendas = async () => {
     try {
-      const res = await fetch('/api/vendas', {
+      const res = await fetch(apiUrl('/api/vendas'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -107,7 +108,7 @@ export default function Produtos() {
         })
         toast.success('Produto atualizado com sucesso!')
       } else {
-        await fetch('/api/produtos', {
+        await fetch(apiUrl('/api/produtos'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(produtoData)
@@ -124,7 +125,7 @@ export default function Produtos() {
   const handleDelete = async (id) => {
     if (!confirm('Excluir este produto?')) return
     try {
-      await fetch(`/api/produtos/${id}`, {
+      await fetch(apiUrl(`/api/produtos/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })

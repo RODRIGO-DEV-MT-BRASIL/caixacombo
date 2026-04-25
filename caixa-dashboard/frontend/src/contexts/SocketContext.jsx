@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { io } from 'socket.io-client'
+import Pusher from 'pusher-js'
 import { useAuth } from './AuthContext'
 
 const SocketContext = createContext(null)
@@ -10,56 +10,53 @@ export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false)
   const [vendas, setVendas] = useState([])
   const [timeUpdates, setTimeUpdates] = useState({})
-  const socketRef = useRef(null)
+  const pusherRef = useRef(null)
+  const channelRef = useRef(null)
 
   useEffect(() => {
     if (!token) return
 
-    const socket = io('/', {
-      auth: { token },
-      transports: ['polling']
-    })
-    socketRef.current = socket
-
-    socket.on('connect', () => {
-      setConnected(true)
-      socket.emit('dashboard_connect', { token })
-      
-      // Forçar atualização completa a cada 30 segundos para garantir sincronismo
-      const syncInterval = setInterval(() => {
-        if (socket.connected) {
-          socket.emit('dashboard_connect', { token })
+    // Inicializar Pusher
+    const pusher = new Pusher(import.meta.env.VITE_PUSHER_APP_KEY || 'your-pusher-key', {
+      cluster: import.meta.env.VITE_PUSHER_CLUSTER || 'us2',
+      auth: {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      }, 30000)
-      
-      // Salvar referência para limpar quando desconectar
-      socket.syncInterval = syncInterval
-    })
-
-    socket.on('disconnect', () => {
-      setConnected(false)
-      // Limpar intervalo de sincronização
-      if (socket.syncInterval) {
-        clearInterval(socket.syncInterval)
       }
     })
+    pusherRef.current = pusher
 
-    socket.on('devices_list', (list) => setDevices(list))
+    // Conectar ao canal do dashboard
+    const channel = pusher.subscribe('private-dashboard')
+    channelRef.current = channel
 
-    socket.on('device_connected', (device) => {
+    channel.bind('pusher:subscription_succeeded', () => {
+      setConnected(true)
+      console.log('Conectado ao Pusher')
+    })
+
+    channel.bind('pusher:subscription_error', (err) => {
+      console.error('Erro ao conectar ao Pusher:', err)
+      setConnected(false)
+    })
+
+    channel.bind('devices_list', (list) => setDevices(list))
+
+    channel.bind('device_connected', (device) => {
       setDevices(prev => {
         const filtered = prev.filter(d => d.deviceId !== device.deviceId)
         return [...filtered, { ...device, online: true }]
       })
     })
 
-    socket.on('device_disconnected', ({ deviceId, status }) => {
+    channel.bind('device_disconnected', ({ deviceId, status }) => {
       setDevices(prev => prev.map(d => 
         d.deviceId === deviceId ? { ...d, online: false, status: status || 'offline' } : d
       ))
     })
 
-    socket.on('device_status_update', ({ deviceId, status, lockReason, lockedAt, lockPassword, usageTimeLimit, usageStartTime }) => {
+    channel.bind('device_status_update', ({ deviceId, status, lockReason, lockedAt, lockPassword, usageTimeLimit, usageStartTime }) => {
       setDevices(prev => {
         const updatedDevices = prev.map(d => 
           d.deviceId === deviceId 
@@ -98,7 +95,7 @@ export function SocketProvider({ children }) {
           
           // Detectar bloqueio
           if (oldDevice.status !== 'locked' && device.status === 'locked') {
-            console.log(`� Dispositivo ${device.deviceName || deviceId} bloqueado!`)
+            console.log(`🔒 Dispositivo ${device.deviceName || deviceId} bloqueado!`)
             
             // Emitir evento customizado para notificação
             const event = new CustomEvent('device_locked', {
@@ -117,25 +114,25 @@ export function SocketProvider({ children }) {
       })
     })
 
-    socket.on('time_update', ({ deviceId, elapsed, remaining, total }) => {
+    channel.bind('time_update', ({ deviceId, elapsed, remaining, total }) => {
       setTimeUpdates(prev => ({ ...prev, [deviceId]: { elapsed, remaining, total } }))
     })
 
-    socket.on('sale_update', ({ sale }) => {
+    channel.bind('sale_update', ({ sale }) => {
       setVendas(prev => [sale, ...prev])
     })
 
-    socket.on('venda_added', (venda) => {
+    channel.bind('venda_added', (venda) => {
       setVendas(prev => [venda, ...prev])
     })
 
-    socket.on('device_password_updated', ({ deviceId, lockPassword }) => {
+    channel.bind('device_password_updated', ({ deviceId, lockPassword }) => {
       setDevices(prev => prev.map(d =>
         d.deviceId === deviceId ? { ...d, lockPassword } : d
       ))
     })
 
-    socket.on('control_result', ({ deviceId, action, success, error }) => {
+    channel.bind('control_result', ({ deviceId, action, success, error }) => {
       console.log(`🎮 [CONTROL_RESULT] ${deviceId} - ${action} - sucesso=${success} ${error ? `- erro: ${error}` : ''}`)
 
       // Emitir evento customizado para notificação no Dashboard
@@ -152,44 +149,85 @@ export function SocketProvider({ children }) {
     })
 
     return () => {
-      // Limpar intervalo de sincronização
-      if (socket.syncInterval) {
-        clearInterval(socket.syncInterval)
+      if (channel) {
+        channel.unbind_all()
+        pusher.unsubscribe('private-dashboard')
       }
-      socket.disconnect()
-      socketRef.current = null
+      if (pusher) {
+        pusher.disconnect()
+      }
+      pusherRef.current = null
+      channelRef.current = null
     }
   }, [token])
 
-  const lockDevice = (deviceId, reason) => {
-    socketRef.current?.emit('lock_device', { deviceId, reason })
+  const lockDevice = async (deviceId, reason) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/lock`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ reason })
+    })
   }
 
-  const unlockDevice = (deviceId) => {
-    socketRef.current?.emit('unlock_device', { deviceId })
+  const unlockDevice = async (deviceId) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/unlock`, {
+      method: 'POST',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      }
+    })
   }
 
-  const forceUnlockDevice = (deviceId) => {
-    socketRef.current?.emit('force_unlock', { deviceId })
+  const forceUnlockDevice = async (deviceId) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/force-unlock`, {
+      method: 'POST',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      }
+    })
   }
 
-  const setUsageTime = (deviceId, minutes) => {
-    socketRef.current?.emit('set_usage_time', { deviceId, minutes })
+  const setUsageTime = async (deviceId, minutes) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/usage-time`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ minutes })
+    })
   }
 
-  const commandDevice = (deviceId, command, params) => {
-    socketRef.current?.emit('command_device', { deviceId, command, params })
+  const commandDevice = async (deviceId, command, params) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/command`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ command, params })
+    })
   }
 
-  const controlApp = (deviceId, action) => {
-    socketRef.current?.emit('control_app', { deviceId, action })
+  const controlApp = async (deviceId, action) => {
+    await fetch(`${import.meta.env.VITE_API_URL || ''}/api/devices/${deviceId}/control-app`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ action })
+    })
   }
 
   return (
     <SocketContext.Provider value={{
       devices, connected, vendas, setVendas, timeUpdates,
       lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, commandDevice, controlApp,
-      socket: socketRef.current
+      pusher: pusherRef.current
     }}>
       {children}
     </SocketContext.Provider>

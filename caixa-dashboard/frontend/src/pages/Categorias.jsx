@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
+import { apiUrl } from '../utils/api'
 import { Tags, Plus, Pencil, Trash2, Search, X, Loader2 } from 'lucide-react'
 
 export default function Categorias() {
@@ -15,7 +16,7 @@ export default function Categorias() {
 
   const fetchCategorias = async () => {
     try {
-      const res = await fetch('/api/categorias', {
+      const res = await fetch(apiUrl('/api/categorias'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
@@ -46,13 +47,13 @@ export default function Categorias() {
     const body = { nome: form.nome, descricao: form.descricao }
 
     if (editing) {
-      await fetch(`/api/categorias/${editing.id}`, {
+      await fetch(apiUrl(`/api/categorias/${editing.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body)
       })
     } else {
-      await fetch('/api/categorias', {
+      await fetch(apiUrl('/api/categorias'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body)
@@ -66,7 +67,7 @@ export default function Categorias() {
 
   const handleDelete = async (id) => {
     if (!confirm('Excluir esta categoria?')) return
-    await fetch(`/api/categorias/${id}`, {
+    await fetch(apiUrl(`/api/categorias/${id}`), {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     })

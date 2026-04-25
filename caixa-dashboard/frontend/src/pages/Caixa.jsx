@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
+import { apiUrl } from '../utils/api'
 import { DollarSign, Search, Loader2, TrendingUp, Monitor, ChevronDown, ChevronUp, Plus, ArrowUpCircle, ArrowDownCircle, Lock, LockOpen, Wallet, CreditCard, Smartphone, PiggyBank } from 'lucide-react'
 
 export default function Caixa() {
@@ -19,17 +20,17 @@ export default function Caixa() {
   const [selectedTab, setSelectedTab] = useState(0)
 
   useEffect(() => {
-    fetch('/api/operacoes', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => { setOperacoes(data); setLoading(false) })
       .catch(() => setLoading(false))
     
-    fetch('/api/vendas', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setVendas(data))
       .catch(() => setVendas([]))
 
-    fetch('/api/dispositivos', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/dispositivos'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setDispositivosConectados(data))
       .catch(() => setDispositivosConectados([]))
@@ -215,14 +216,14 @@ export default function Caixa() {
       observacao: form.observacao || ''
     }
 
-    await fetch('/api/operacoes', {
+    await fetch(apiUrl('/api/operacoes'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body)
     })
     setShowModal(false)
     setForm({ tipo: 'abertura', valor: '', deviceId: '' })
-    fetch('/api/operacoes', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setOperacoes(data))
   }
@@ -261,7 +262,7 @@ export default function Caixa() {
       observacao: `Fechamento geral - Vendas: R$ ${totalVendas.toFixed(2)}`
     }
 
-    const response = await fetch('/api/operacoes', {
+    const response = await fetch(apiUrl('/api/operacoes'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body)
@@ -292,7 +293,7 @@ export default function Caixa() {
     }
 
     setShowFechamentoModal(false)
-    fetch('/api/operacoes', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setOperacoes(data))
   }
@@ -300,7 +301,7 @@ export default function Caixa() {
   // Função para gerar PDF do fechamento
   const gerarPDFFechamento = async (dados) => {
     try {
-      const response = await fetch('/api/fechamento-pdf', {
+      const response = await fetch(apiUrl('/api/fechamento-pdf', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 

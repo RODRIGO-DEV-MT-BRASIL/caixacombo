@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
+import { apiUrl } from '../utils/api'
 import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monitor, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function Vendas() {
@@ -11,7 +12,7 @@ export default function Vendas() {
   const [expandedDevice, setExpandedDevice] = useState(null)
 
   useEffect(() => {
-    fetch('/api/vendas', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => { setVendas(data); setLoading(false) })
       .catch(() => setLoading(false))

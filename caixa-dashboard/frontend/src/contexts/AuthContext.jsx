@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      fetch('/api/auth/verify', {
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/verify`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.ok ? res.json() : Promise.reject())
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async (username, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })

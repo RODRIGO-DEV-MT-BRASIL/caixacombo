@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Package, ImageIcon, Loader2 } from 'lucide-react'
+import { apiUrl } from '../utils/api'
 
 export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, token }) {
   const [form, setForm] = useState({
@@ -63,7 +64,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         const formData = new FormData()
         formData.append('imagem', imagemFile)
 
-        const res = await fetch('/api/upload', {
+        const res = await fetch(apiUrl('/api/upload'), {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
