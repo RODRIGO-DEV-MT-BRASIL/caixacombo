@@ -586,20 +586,23 @@ app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => 
 app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) => {
   const { deviceId } = req.params;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
-  
+
+  console.log(`🔑 [DEBUG] Solicitação para mudar senha do dispositivo: ${deviceId}`);
+
   // Encontrar dispositivo nos dados persistidos
   const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
   if (deviceIndex === -1) {
+    console.log(`❌ [DEBUG] Dispositivo não encontrado: ${deviceId}`);
     return res.status(404).json({ error: 'Dispositivo não encontrado' });
   }
-  
+
   // Gerar nova senha de 6 dígitos
   const newPassword = Math.floor(100000 + Math.random() * 900000).toString();
-  
+
   // Atualizar senha no banco de dados
   db.dispositivos[deviceIndex].lockPassword = newPassword;
   saveData(); // Salvar imediatamente
-  
+
   // Atualizar também no mapa de dispositivos conectados
   const connectedDevice = connectedDevices.get(deviceId);
   if (connectedDevice) {
@@ -616,13 +619,13 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) =>
 
   // Notificar dashboards sobre nova senha
   io.emit('device_password_updated', { deviceId, lockPassword: newPassword });
-  
+
   // Auditoria
   addAuditoria('mudanca_status', deviceId, 'Senha de bloqueio atualizada', dashboardInfo?.usuario);
-  
+
   console.log(`🔑 Nova senha gerada para ${deviceId}: ${newPassword}`);
-  
-  res.json({ 
+
+  res.json({
     message: 'Senha de bloqueio atualizada com sucesso',
     deviceId,
     lockPassword: newPassword
