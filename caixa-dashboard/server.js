@@ -551,6 +551,37 @@ app.delete('/api/empresas/:id', authenticateToken, (req, res) => {
   res.json(deleted);
 });
 
+// Rota para associar dispositivo a empresa
+app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => {
+  const { deviceId } = req.params;
+  const { empresaId } = req.body;
+  const dashboardInfo = connectedDashboards.get(req.socket?.id);
+
+  // Verificar se é admin
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Apenas admin pode associar dispositivos a empresas' });
+  }
+
+  const device = connectedDevices.get(deviceId);
+  if (device) {
+    device.empresaId = empresaId;
+  }
+
+  // Atualizar no banco de dados
+  const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+  if (deviceIndex !== -1) {
+    db.dispositivos[deviceIndex].empresaId = empresaId;
+    saveData();
+  }
+
+  io.emit('device_status_update', { deviceId, empresaId });
+
+  // Auditoria
+  addAuditoria('mudanca_status', deviceId, `Dispositivo associado à empresa ${empresaId}`, dashboardInfo?.usuario);
+
+  res.json({ success: true, empresaId });
+});
+
 // ==================== ROTAS DE DISPOSITIVOS ====================
 app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) => {
   const { deviceId } = req.params;
@@ -950,7 +981,8 @@ io.on('connection', (socket) => {
       status: (existing && existing.status === 'locked') ? 'locked' : 'online',
       lockPassword: (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString(),
       usageTimeLimit: existing ? existing.usageTimeLimit : null,
-      usageStartTime: existing ? existing.usageStartTime : null
+      usageStartTime: existing ? existing.usageStartTime : null,
+      empresaId: existing ? existing.empresaId : null
     });
 
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);

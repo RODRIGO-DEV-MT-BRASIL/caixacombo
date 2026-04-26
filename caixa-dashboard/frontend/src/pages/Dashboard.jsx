@@ -15,9 +15,11 @@ import Vendas from './Vendas'
 import Caixa from './Caixa'
 import Auditoria from './Auditoria'
 import Empresas from './Empresas'
+import Terminais from './Terminais'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
+  { id: 'terminais', label: 'Terminais', icon: Monitor, permission: 'dashboard' },
   { id: 'empresas', label: 'Empresas', icon: Building2, permission: 'empresas' },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
@@ -566,6 +568,7 @@ export default function Dashboard() {
             </div>
           )}
 
+          {page === 'terminais' && <Terminais />}
           {page === 'empresas' && <Empresas />}
           {page === 'produtos' && <Produtos />}
           {page === 'categorias' && <Categorias />}
