@@ -677,31 +677,44 @@ class MainActivity : ComponentActivity() {
                     setMargins(0, 0, 0, 0)
                 }
                 setOnClickListener {
-                    val password = passwordInput.text.toString()
-                    if (password.isNotEmpty()) {
-                        // Validar senha localmente e enviar para servidor
-                        if (password == currentLockPassword) {
-                            android.util.Log.d("MainActivity", "Senha correta, desbloqueando")
-                            // Enviar confirmação para servidor
-                            webSocketService?.sendUnlockAttempt(password)
-                            hideLockScreen()
-                        } else {
-                            android.util.Log.w("MainActivity", "Senha incorreta")
-                            passwordInput.error = "Senha incorreta"
-                            passwordInput.text?.clear()
-                            passwordInput.requestFocus()
-                            // Vibrar para feedback
-                            val vibrator = context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                    try {
+                        val password = passwordInput.text.toString()
+                        if (password.isNotEmpty()) {
+                            // Validar senha localmente e enviar para servidor
+                            if (password == currentLockPassword) {
+                                android.util.Log.d("MainActivity", "Senha correta, desbloqueando")
+                                // Enviar confirmação para servidor
+                                try {
+                                    webSocketService?.sendUnlockAttempt(password)
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "Erro ao enviar tentativa de desbloqueio", e)
+                                }
+                                hideLockScreen()
                             } else {
-                                @Suppress("DEPRECATION")
-                                vibrator.vibrate(200)
+                                android.util.Log.w("MainActivity", "Senha incorreta")
+                                passwordInput.error = "Senha incorreta"
+                                passwordInput.text?.clear()
+                                passwordInput.requestFocus()
+                                // Vibrar para feedback
+                                try {
+                                    val vibrator = context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        vibrator.vibrate(200)
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e("MainActivity", "Erro ao vibrar", e)
+                                }
                             }
+                        } else {
+                            passwordInput.error = "Digite a senha"
+                            passwordInput.requestFocus()
                         }
-                    } else {
-                        passwordInput.error = "Digite a senha"
-                        passwordInput.requestFocus()
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "Erro ao validar senha", e)
+                        passwordInput.error = "Erro ao validar senha"
                     }
                 }
             })
