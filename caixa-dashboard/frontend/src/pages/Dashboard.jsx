@@ -484,7 +484,7 @@ export default function Dashboard() {
                                 </button>
                               </>
                             )}
-                            {status === 'locked' && (
+                            {status === 'locked' && !isTimeExpired(device.deviceId) && (
                               <>
                                 <button
                                   onClick={() => unlockDevice(device.deviceId)}
