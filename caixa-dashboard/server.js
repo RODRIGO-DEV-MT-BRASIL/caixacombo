@@ -1244,6 +1244,51 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Comando de controle do app vindo do dashboard via WebSocket
+  socket.on('control_app', async (data) => {
+    const { deviceId, action } = data;
+    const dashboardInfo = connectedDashboards.get(socket.id);
+    console.log(`🎮 [CONTROL_APP] Comando via WebSocket: ${deviceId} - ${action} de ${dashboardInfo?.usuario || 'desconhecido'}`);
+
+    const requiresSpecialPermissions = ['restart', 'shutdown'].includes(action);
+
+    // Se comando reiniciar/desligar, tentar via ADB primeiro
+    if (requiresSpecialPermissions) {
+      try {
+        const result = await sendAdbCommand(action, deviceId);
+        if (result.success) {
+          addAuditoria('mudanca_status', deviceId, `Comando ${action} enviado via ADB`, dashboardInfo?.usuario);
+          socket.emit('control_app_result', { success: true, message: `Comando ${action} enviado via ADB`, deviceId, action, method: 'adb' });
+          return;
+        }
+      } catch (error) {
+        console.error(`❌ [CONTROL_APP] Erro ADB:`, error.message);
+      }
+    }
+
+    // Fallback: enviar via WebSocket para o dispositivo
+    const device = connectedDevices.get(deviceId);
+    if (!device) {
+      console.log(`❌ [CONTROL_APP] Dispositivo ${deviceId} não encontrado`);
+      socket.emit('control_app_result', { success: false, error: 'Dispositivo não encontrado ou desconectado', deviceId, action });
+      return;
+    }
+
+    if (device.socketId) {
+      io.to(device.socketId).emit('control_command', { action });
+      console.log(`📤 [CONTROL_APP] Comando '${action}' enviado para ${device.socketId}`);
+      addAuditoria('mudanca_status', deviceId, `Comando de controle enviado: ${action}`, dashboardInfo?.usuario);
+      socket.emit('control_app_result', {
+        success: true,
+        message: requiresSpecialPermissions ? 'Comando enviado. Pode não funcionar sem permissões de Admin ou Root' : 'Comando enviado com sucesso',
+        deviceId,
+        action
+      });
+    } else {
+      socket.emit('control_app_result', { success: false, error: 'Dispositivo não está conectado', deviceId, action });
+    }
+  });
+
   // Resultado de comando de controle do dispositivo
   socket.on('control_result', (data) => {
     const { deviceId, action, success, error } = data;
