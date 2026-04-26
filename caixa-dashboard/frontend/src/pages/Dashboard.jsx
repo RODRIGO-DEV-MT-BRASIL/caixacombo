@@ -66,7 +66,7 @@ export default function Dashboard() {
     }
 
     const handleControlResult = (event) => {
-      const { deviceId, action, success, error } = event.detail
+      const { deviceId, action, success: isSuccess, error } = event.detail
       const device = devices.find(d => d.deviceId === deviceId)
       const deviceName = device?.deviceName || deviceId
 
@@ -77,7 +77,7 @@ export default function Dashboard() {
         'shutdown': 'Desligar dispositivo'
       }
 
-      if (success) {
+      if (isSuccess) {
         success(`✅ ${actionNames[action] || action} executado com sucesso em ${deviceName}`, 3000)
       } else {
         success(`❌ Erro ao ${actionNames[action] || action} em ${deviceName}: ${error}`, 5000)
