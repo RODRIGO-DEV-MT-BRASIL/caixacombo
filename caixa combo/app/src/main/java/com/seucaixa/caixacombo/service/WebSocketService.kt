@@ -552,13 +552,18 @@ class WebSocketService : Service() {
 
                 when (action) {
                     "restart" -> {
-                        Log.d(TAG, "Reiniciando dispositivo")
+                        Log.d(TAG, "🔄 Comando RESTART recebido")
+                        Log.d(TAG, "🔄 Device Admin disponível: ${devicePolicyManager != null}")
+                        Log.d(TAG, "🔄 Admin Component disponível: ${adminComponentName != null}")
                         val success = restartDevice()
+                        Log.d(TAG, "🔄 Resultado restart: $success")
                         sendControlResult(action, success, if (!success) "Sem permissões de Admin ou Root" else null)
                     }
                     "shutdown" -> {
-                        Log.d(TAG, "Desligando dispositivo")
+                        Log.d(TAG, "🔌 Comando SHUTDOWN recebido")
+                        Log.d(TAG, "🔌 Device Admin disponível: ${devicePolicyManager != null}")
                         val success = shutdownDevice()
+                        Log.d(TAG, "🔌 Resultado shutdown: $success")
                         sendControlResult(action, success, if (!success) "Sem permissões de Root" else null)
                     }
                     "open_app" -> {
