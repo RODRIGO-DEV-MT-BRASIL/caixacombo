@@ -954,34 +954,36 @@ io.on('connection', (socket) => {
 
   socket.on('device_connect', (data) => {
     const { deviceId, deviceName, deviceType, serialNumber } = data;
-    
+
     const existing = connectedDevices.get(deviceId);
-    
+
     // Detectar se dispositivo estava bloqueado e está reconectando (possível desbloqueio)
     if (existing && existing.status === 'locked') {
       console.log(`🔓 [AUTO-UNLOCK] Dispositivo ${deviceId} reconectando - possível desbloqueio via terminal`);
-      
+
       // Marcar como online se estava bloqueado e reconectou
       existing.status = 'online';
       delete existing.lockReason;
       delete existing.lockedAt;
       delete existing.usageTimeLimit;
       delete existing.usageStartTime;
-      
+
       // Auditoria: Desbloqueio detectado por reconexão
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (reconexão detectada)');
-      
+
       // Notificar dashboards sobre desbloqueio
       io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     }
-    
+
     // Auditoria: Conexão
     addAuditoria('conexao', deviceId, `Dispositivo conectado - ${deviceType} (${serialNumber})`);
-    
+
     if (existing && existing.socketId && existing.socketId !== socket.id) {
       const oldSocket = io.sockets.sockets.get(existing.socketId);
       if (oldSocket) oldSocket.disconnect();
     }
+
+    const lockPassword = (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString();
 
     connectedDevices.set(deviceId, {
       socketId: socket.id,
@@ -990,15 +992,37 @@ io.on('connection', (socket) => {
       serialNumber: serialNumber || deviceId,
       connectedAt: new Date(),
       status: (existing && existing.status === 'locked') ? 'locked' : 'online',
-      lockPassword: (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString(),
+      lockPassword: lockPassword,
       usageTimeLimit: existing ? existing.usageTimeLimit : null,
       usageStartTime: existing ? existing.usageStartTime : null,
       empresaId: existing ? existing.empresaId : null
     });
 
+    // Salvar dispositivo no banco de dados se não existir
+    const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+    if (deviceIndex === -1) {
+      db.dispositivos.push({
+        deviceId,
+        deviceName: deviceName || 'Dispositivo',
+        deviceType: deviceType || 'Android',
+        serialNumber: serialNumber || deviceId,
+        status: (existing && existing.status === 'locked') ? 'locked' : 'online',
+        lockPassword: lockPassword,
+        empresaId: existing ? existing.empresaId : null
+      });
+      saveData();
+      console.log(`💾 Dispositivo ${deviceId} salvo no banco de dados`);
+    } else {
+      // Atualizar dispositivo existente
+      db.dispositivos[deviceIndex].status = connectedDevices.get(deviceId).status;
+      db.dispositivos[deviceIndex].lockPassword = lockPassword;
+      db.dispositivos[deviceIndex].connectedAt = new Date();
+      saveData();
+    }
+
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);
     io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
-    
+
     // Enviar produtos para o dispositivo recém-conectado
     socket.emit('produtos_sync', {
       produtos: db.produtos,
