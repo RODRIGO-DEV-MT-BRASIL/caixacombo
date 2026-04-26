@@ -604,8 +604,16 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) =>
   const connectedDevice = connectedDevices.get(deviceId);
   if (connectedDevice) {
     connectedDevice.lockPassword = newPassword;
+
+    // Enviar nova senha para o dispositivo
+    if (connectedDevice.socketId) {
+      io.to(connectedDevice.socketId).emit('device_locked', {
+        reason: 'Senha de bloqueio atualizada',
+        lockPassword: newPassword
+      });
+    }
   }
-  
+
   // Notificar dashboards sobre nova senha
   io.emit('device_password_updated', { deviceId, lockPassword: newPassword });
   
