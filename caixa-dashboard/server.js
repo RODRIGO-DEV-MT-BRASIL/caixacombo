@@ -1559,8 +1559,10 @@ io.on('connection', (socket) => {
         // Auditoria: Desconexão
         addAuditoria('desconexao', id, `Dispositivo desconectado`);
         
-        d.socketId = null;
+        // Remover completamente do mapa para limpar dashboard
+        connectedDevices.delete(id);
         io.emit('device_disconnected', { deviceId: id });
+        console.log(`📱 Dispositivo ${id} removido do mapa de conectados`);
         break;
       }
     }
