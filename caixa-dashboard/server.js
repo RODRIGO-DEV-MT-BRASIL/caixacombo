@@ -213,8 +213,14 @@ process.on('SIGINT', () => {
 // ==================== CRIAR SERVER E IO ====================
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: true, credentials: true },
-  transports: ["websocket", "polling"]
+  cors: { 
+    origin: process.env.NODE_ENV === 'production' ? '*' : true,
+    credentials: true 
+  },
+  transports: ["websocket", "polling"],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  allowEIO3: true
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'caixacombo-secret-key';

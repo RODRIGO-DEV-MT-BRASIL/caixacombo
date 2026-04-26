@@ -15,9 +15,12 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!token) return
 
-    const socket = io('/', {
+    const socket = io(import.meta.env.PROD ? window.location.origin : '/', {
       auth: { token },
-      transports: ['polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     })
     socketRef.current = socket
 
