@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-import { put } from '@vercel/blob';
+const fs = require('fs');
+const path = require('path');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -21,11 +22,18 @@ export default async function handler(req, res) {
     // Converter base64 para buffer
     const buffer = Buffer.from(base64.split(',')[1], 'base64');
     
-    const blob = await put(`produtos/${Date.now()}.jpg`, buffer, {
-      access: 'public',
-    });
+    // Criar diretório uploads se não existir
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
     
-    res.json({ url: blob.url });
+    // Salvar arquivo localmente
+    const filename = `produto-${Date.now()}.jpeg`;
+    const filepath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filepath, buffer);
+    
+    res.json({ url: `/uploads/${filename}` });
   } catch (err) {
     console.error('Erro ao fazer upload:', err);
     return res.status(500).json({ error: 'Erro ao fazer upload' });
