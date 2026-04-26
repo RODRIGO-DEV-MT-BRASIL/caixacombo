@@ -484,7 +484,7 @@ export default function Dashboard() {
                                 </button>
                               </>
                             )}
-                            {status === 'locked' && !isTimeExpired(device.deviceId) && (
+                            {status === 'locked' && (
                               <>
                                 <button
                                   onClick={() => unlockDevice(device.deviceId)}
@@ -500,24 +500,6 @@ export default function Dashboard() {
                                   <AlertTriangle size={12} /> Forçar
                                 </button>
                               </>
-                            )}
-                            {/* Botão "Forçar Bloqueio" quando tempo expirou */}
-                            {device.usageTimeLimit && isTimeExpired(device.deviceId) && status !== 'locked' && (
-                              <button
-                                onClick={() => lockDevice(device.deviceId, 'Tempo expirado - forçando bloqueio')}
-                                className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1 animate-pulse"
-                              >
-                                <AlertTriangle size={12} /> Bloquear
-                              </button>
-                            )}
-                            {/* Botão de desbloquear quando tempo expirou e dispositivo já está bloqueado */}
-                            {device.usageTimeLimit && isTimeExpired(device.deviceId) && status === 'locked' && (
-                              <button
-                                onClick={() => unlockDevice(device.deviceId)}
-                                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1 animate-pulse"
-                              >
-                                <Unlock size={12} /> Desbloquear
-                              </button>
                             )}
                             {status === 'in_use' && (
                               <button
