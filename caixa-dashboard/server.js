@@ -175,9 +175,22 @@ const execPromise = util.promisify(exec);
 async function sendAdbCommand(action, deviceId) {
   console.log(`🔌 [ADB] Enviando comando ${action} para ${deviceId}`);
 
+  const ADB_TIMEOUT = 5000; // 5 segundos de timeout para comandos ADB
+
+  // Helper para executar com timeout
+  const execWithTimeout = (cmd) => {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Timeout: comando ADB excedeu 5s')), ADB_TIMEOUT);
+      execPromise(cmd).then(
+        (result) => { clearTimeout(timer); resolve(result); },
+        (err) => { clearTimeout(timer); reject(err); }
+      );
+    });
+  };
+
   // Verificar se dispositivo está conectado
   try {
-    const { stdout } = await execPromise('adb devices');
+    const { stdout } = await execWithTimeout('adb devices');
     const isConnected = stdout.includes(deviceId);
 
     if (!isConnected) {
@@ -192,7 +205,7 @@ async function sendAdbCommand(action, deviceId) {
 
     console.log(`🔌 [ADB] Executando: ${adbCommand}`);
 
-    await execPromise(adbCommand);
+    await execWithTimeout(adbCommand);
     console.log(`✅ [ADB] Comando ${action} enviado com sucesso para ${deviceId}`);
 
     return { success: true, method: 'adb' };
