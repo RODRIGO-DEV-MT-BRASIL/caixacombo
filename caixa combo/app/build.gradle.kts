@@ -159,6 +159,9 @@ dependencies {
     
     // Sunmi Printer SDK para V1/V2 compatibilidade
     implementation("com.sunmi:printerx:latest.release")
+    
+    // Sunmi Device SDK para controle de hardware (reboot/shutdown)
+    implementation("com.sunmi:sunmiui:latest.release")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

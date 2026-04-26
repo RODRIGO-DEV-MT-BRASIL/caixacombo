@@ -16,6 +16,9 @@ import org.json.JSONObject
 import org.json.JSONArray
 import org.json.JSONException
 
+// SUNMI SDK para controle de hardware
+import com.sunmi.device.DeviceManager
+
 /**
  * Serviço WebSocket para comunicação em tempo real com o Dashboard CaixaCombo.
  * 
@@ -666,7 +669,17 @@ class WebSocketService : Service() {
      */
     private fun restartDevice(): Boolean {
         try {
-            // Método 1: DevicePolicyManager (Funciona sem root se for Admin)
+            // Método 0: SUNMI SDK (funciona em terminais SUNMI sem root)
+            try {
+                Log.d(TAG, "SOLICITANDO REBOOT VIA SUNMI SDK")
+                DeviceManager.getInstance().reboot()
+                Log.d(TAG, "Reboot solicitado via SUNMI SDK")
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "SUNMI SDK não disponível: ${e.message}")
+            }
+
+            // Método 1: DevicePolicyManager (Funciona sem root se for Device Owner)
             if (devicePolicyManager != null && adminComponentName != null) {
                 try {
                     Log.d(TAG, "SOLICITANDO REBOOT VIA ADMIN API: $adminComponentName")
@@ -771,6 +784,16 @@ class WebSocketService : Service() {
      */
     private fun shutdownDevice(): Boolean {
         try {
+            // Método 0: SUNMI SDK (funciona em terminais SUNMI sem root)
+            try {
+                Log.d(TAG, "SOLICITANDO SHUTDOWN VIA SUNMI SDK")
+                DeviceManager.getInstance().shutdown()
+                Log.d(TAG, "Shutdown solicitado via SUNMI SDK")
+                return true
+            } catch (e: Exception) {
+                Log.w(TAG, "SUNMI SDK shutdown não disponível: ${e.message}")
+            }
+
             // Método 1: APIs de fabricantes POS
             if (shutdownViaPOSAPIs()) {
                 return true
