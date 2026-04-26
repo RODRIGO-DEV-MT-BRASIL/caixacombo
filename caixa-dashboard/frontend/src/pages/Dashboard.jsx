@@ -512,28 +512,28 @@ export default function Dashboard() {
                             {/* Botões de controle do app */}
                             <div className="flex gap-2">
                               <button
-                                onClick={() => handleControlDevice(device.deviceId, 'open_app')}
+                                onClick={() => controlApp(device.deviceId, 'open_app')}
                                 className="px-2 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 title="Abrir App"
                               >
                                 <PlayIcon size={12} />
                               </button>
                               <button
-                                onClick={() => handleControlDevice(device.deviceId, 'close_app')}
+                                onClick={() => controlApp(device.deviceId, 'close_app')}
                                 className="px-2 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/20 text-purple-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 title="Fechar App"
                               >
                                 <CloseIcon size={12} />
                               </button>
                               <button
-                                onClick={() => handleControlDevice(device.deviceId, 'restart')}
+                                onClick={() => controlApp(device.deviceId, 'restart')}
                                 className="px-2 py-1.5 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/20 text-orange-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 title="Reiniciar"
                               >
                                 <RotateCw size={12} />
                               </button>
                               <button
-                                onClick={() => handleControlDevice(device.deviceId, 'shutdown')}
+                                onClick={() => controlApp(device.deviceId, 'shutdown')}
                                 className="px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
                                 title="Desligar"
                               >
