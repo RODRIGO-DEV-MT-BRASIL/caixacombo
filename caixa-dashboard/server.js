@@ -1371,15 +1371,17 @@ io.on('connection', (socket) => {
     for (const [deviceId, device] of connectedDevices.entries()) {
       if (device.usageTimeLimit && device.usageStartTime) {
         const elapsed = Math.floor((Date.now() - new Date(device.usageStartTime).getTime()) / 1000); // segundos
-        const remaining = device.usageTimeLimit * 60 - elapsed; // segundos restantes
+        const remaining = Math.max(0, device.usageTimeLimit * 60 - elapsed); // segundos restantes (nunca negativo)
         
-        // Notificar tempo restante a cada segundo
-        io.emit('time_update', { 
-          deviceId, 
-          elapsed, 
-          remaining, 
-          total: device.usageTimeLimit * 60 
-        });
+        // Notificar tempo restante a cada segundo (apenas se dispositivo não estiver bloqueado por tempo expirado)
+        if (device.status !== 'locked' || remaining > 0) {
+          io.emit('time_update', { 
+            deviceId, 
+            elapsed, 
+            remaining, 
+            total: device.usageTimeLimit * 60 
+          });
+        }
         
         // Bloquear quando tempo expirar
         if (remaining <= 0 && device.status !== 'locked') {

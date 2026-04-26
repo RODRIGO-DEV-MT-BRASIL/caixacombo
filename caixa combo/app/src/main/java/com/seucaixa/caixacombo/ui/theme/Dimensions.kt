@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.seucaixa.caixacombo.BuildConfig
 
 /**
  * Sistema de dimensões adaptativas para diferentes dispositivos:
@@ -26,7 +27,12 @@ fun rememberDeviceType(): DeviceType {
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
     
+    // Se for flavor checkoutpos (D2S), usa dimensões menores
+    val isCheckoutpos = BuildConfig.FLAVOR == "checkoutpos"
+    
     return when {
+        // D2S (checkoutpos): Usa dimensões menores mesmo em telas grandes
+        isCheckoutpos && screenWidth >= 800.dp -> DeviceType.TABLET
         // SUNMI V1/V2: Telas grandes (mais de 1000dp de largura)
         screenWidth >= 1000.dp -> DeviceType.POS
         // Tablets/P2B: 400dp a 999dp (ajustado para incluir P2B)
