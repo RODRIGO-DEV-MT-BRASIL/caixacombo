@@ -821,6 +821,54 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
   // Salvar no banco local
   if (!db.operacoes) db.operacoes = [];
   db.operacoes.push(operacao);
+  
+  // Se for fechamento, salvar sessão de caixa no histórico
+  if (tipo === 'fechamento') {
+    if (!db.caixaSessoes) db.caixaSessoes = [];
+    
+    // Encontrar a última abertura do mesmo dispositivo
+    const aberturas = db.operacoes.filter(o => 
+      o.tipo === 'abertura' && (o.deviceId === deviceId || (!o.deviceId && !deviceId))
+    );
+    const ultimaAbertura = aberturas[aberturas.length - 1];
+    
+    if (ultimaAbertura) {
+      // Operações da sessão (entre abertura e este fechamento)
+      const opsSessao = db.operacoes.filter(o => 
+        o.timestamp >= ultimaAbertura.timestamp && o.timestamp <= operacao.timestamp &&
+        (o.deviceId === deviceId || (!o.deviceId && !deviceId) || o.tipo === 'fechamento')
+      );
+      
+      // Vendas da sessão
+      const vendasSessao = (db.vendas || []).filter(v => {
+        const vTime = new Date(v.createdAt || v.dataHora).getTime();
+        return vTime >= ultimaAbertura.timestamp && vTime <= operacao.timestamp &&
+        (v.deviceId === deviceId || !deviceId);
+      });
+      
+      const sessao = {
+        id: Date.now(),
+        deviceId: deviceId || 'geral',
+        aberturaEm: ultimaAbertura.dataHora,
+        fechamentoEm: operacao.dataHora,
+        operadorAbertura: ultimaAbertura.nomeOperador,
+        operadorFechamento: nomeOperador || 'dashboard',
+        totalAbertura: opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0),
+        totalSuprimento: opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0),
+        totalSangria: opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0),
+        totalFechamento: opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0),
+        totalVendas: vendasSessao.reduce((s, v) => s + (v.total || 0), 0),
+        vendasDinheiro: vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        vendasPix: vendasSessao.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        vendasCredito: vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        vendasDebito: vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasSessao.length
+      };
+      
+      db.caixaSessoes.push(sessao);
+    }
+  }
+  
   saveData();
   
   // Broadcast para dashboards
@@ -861,6 +909,111 @@ app.delete('/api/operacoes/:id', authenticateToken, (req, res) => {
   addAuditoria('operacao_caixa', 'dashboard', `Operação removida: ${operacaoRemovida.tipo} R$ ${operacaoRemovida.valor}`, 'dashboard');
   
   res.json({ message: 'Operação removida com sucesso', operacao: operacaoRemovida });
+});
+
+// ==================== HISTÓRICO DE CAIXA E FATURAMENTO ====================
+app.get('/api/caixa-sessoes', authenticateToken, (req, res) => {
+  res.json(db.caixaSessoes || []);
+});
+
+app.get('/api/faturamento', authenticateToken, (req, res) => {
+  const periodo = req.query.periodo || 'diario'; // diario, semanal, mensal, anual
+  const sessoes = db.caixaSessoes || [];
+  const vendas = db.vendas || [];
+  const now = new Date();
+  
+  let resultado = [];
+  
+  if (periodo === 'diario') {
+    // Últimos 30 dias
+    for (let i = 0; i < 30; i++) {
+      const dia = new Date(now);
+      dia.setDate(dia.getDate() - i);
+      const diaStr = dia.toDateString();
+      
+      const vendasDia = vendas.filter(v => {
+        const d = new Date(v.createdAt || v.dataHora);
+        return d.toDateString() === diaStr;
+      });
+      
+      resultado.push({
+        label: dia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        date: dia.toISOString().split('T')[0],
+        totalVendas: vendasDia.reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasDia.length,
+        dinheiro: vendasDia.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        pix: vendasDia.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        credito: vendasDia.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        debito: vendasDia.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+      });
+    }
+  } else if (periodo === 'semanal') {
+    // Últimas 12 semanas
+    for (let i = 0; i < 12; i++) {
+      const inicioSemana = new Date(now);
+      inicioSemana.setDate(inicioSemana.getDate() - (i * 7) - inicioSemana.getDay());
+      inicioSemana.setHours(0, 0, 0, 0);
+      const fimSemana = new Date(inicioSemana);
+      fimSemana.setDate(fimSemana.getDate() + 7);
+      
+      const vendasSemana = vendas.filter(v => {
+        const d = new Date(v.createdAt || v.dataHora);
+        return d >= inicioSemana && d < fimSemana;
+      });
+      
+      resultado.push({
+        label: `Sem ${i === 0 ? 'atual' : i}`,
+        date: inicioSemana.toISOString().split('T')[0],
+        totalVendas: vendasSemana.reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasSemana.length,
+        dinheiro: vendasSemana.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        pix: vendasSemana.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        credito: vendasSemana.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        debito: vendasSemana.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+      });
+    }
+  } else if (periodo === 'mensal') {
+    // Últimos 12 meses
+    for (let i = 0; i < 12; i++) {
+      const mes = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mesFim = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+      
+      const vendasMes = vendas.filter(v => {
+        const d = new Date(v.createdAt || v.dataHora);
+        return d.getMonth() === mes.getMonth() && d.getFullYear() === mes.getFullYear();
+      });
+      
+      resultado.push({
+        label: mes.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+        date: mes.toISOString().split('T')[0],
+        totalVendas: vendasMes.reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasMes.length,
+        dinheiro: vendasMes.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        pix: vendasMes.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        credito: vendasMes.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        debito: vendasMes.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+      });
+    }
+  } else if (periodo === 'anual') {
+    // Últimos 5 anos
+    for (let i = 0; i < 5; i++) {
+      const ano = now.getFullYear() - i;
+      const vendasAno = vendas.filter(v => new Date(v.createdAt || v.dataHora).getFullYear() === ano);
+      
+      resultado.push({
+        label: ano.toString(),
+        date: `${ano}-01-01`,
+        totalVendas: vendasAno.reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasAno.length,
+        dinheiro: vendasAno.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        pix: vendasAno.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        credito: vendasAno.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        debito: vendasAno.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+      });
+    }
+  }
+  
+  res.json(resultado);
 });
 
 // ==================== GERAÇÃO DE PDF ====================
