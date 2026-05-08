@@ -869,7 +869,7 @@ private fun RodapePDV(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp),
+                        .height(64.dp),
                     horizontalArrangement = Arrangement.spacedBy(1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -882,7 +882,7 @@ private fun RodapePDV(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(58.dp),
+                        .height(64.dp),
                     horizontalArrangement = Arrangement.spacedBy(1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -979,14 +979,13 @@ private fun FuncaoBotao(
         modifier = modifier
             .fillMaxHeight()
             .clickable(onClick = onClick)
-            .padding(horizontal = 1.dp, vertical = if (isSmallScreen) 4.dp else 4.dp),
+            .padding(horizontal = 2.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(codigo, color = textColor.copy(alpha = 0.7f), fontSize = if (isSmallScreen) 13.sp else 11.sp, fontWeight = FontWeight.Bold)
-        Icon(icon, null, tint = textColor.copy(alpha = 0.9f), modifier = Modifier.size(if (isSmallScreen) 28.dp else 22.dp))
+        Icon(icon, null, tint = textColor, modifier = Modifier.size(if (isSmallScreen) 22.dp else 24.dp))
         if (label.isNotBlank()) {
-            Text(label, color = textColor.copy(alpha = 0.8f), fontSize = if (isSmallScreen) 12.sp else 10.sp, maxLines = 1)
+            Text(label, color = textColor, fontSize = if (isSmallScreen) 9.sp else 10.sp, maxLines = 1, fontWeight = FontWeight.Medium)
         }
     }
 }
