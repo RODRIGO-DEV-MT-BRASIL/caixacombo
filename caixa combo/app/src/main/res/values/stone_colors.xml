@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cores White Label para o app da Stone (deeplink)
+     Documentação: https://sdkandroid.stone.com.br/reference/cores-white-label
+     Estas cores são usadas pelo app Stone quando third_party_theme_enabled=true
+     content_brand = cor primária do CaixaCombo -->
+<resources>
+    <!-- Cor principal da marca (botões, headers, destaques) - mesma do app -->
+    <color name="content_brand">#FF6200EE</color>
+    <!-- Cor do texto sobre a cor da marca (branco para contraste) -->
+    <color name="content_on_brand">#FFFFFFFF</color>
+    <!-- Cor da marca em modo dark -->
+    <color name="content_brand_dark">#FFBB86FC</color>
+    <!-- Cor de fundo principal -->
+    <color name="stone_background">#FFFFFFFF</color>
+    <!-- Cor de fundo secundária (cards, superfícies) -->
+    <color name="stone_surface">#FFF5F5F5</color>
+    <!-- Cor do texto primário -->
+    <color name="stone_text_primary">#FF1C1B1F</color>
+    <!-- Cor do texto secundário -->
+    <color name="stone_text_secondary">#FF49454F</color>
+    <!-- Cor de erro -->
+    <color name="stone_error">#FFB3261E</color>
+    <!-- Cor de sucesso -->
+    <color name="stone_success">#FF386A20</color>
+</resources>
