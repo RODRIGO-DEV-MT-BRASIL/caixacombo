@@ -47,7 +47,19 @@ export function SocketProvider({ children }) {
       }
     })
 
-    socket.on('devices_list', (list) => setDevices(list))
+    socket.on('devices_list', (list) => {
+      setDevices(prev => {
+        // Manter ordem estável: dispositivos existentes mantêm posição, novos vão ao final
+        const existingIds = new Set(prev.map(d => d.deviceId))
+        const updated = prev.map(d => {
+          const updatedDevice = list.find(nd => nd.deviceId === d.deviceId)
+          return updatedDevice ? { ...d, ...updatedDevice } : d
+        })
+        // Adicionar novos dispositivos que não existiam antes
+        const newDevices = list.filter(d => !existingIds.has(d.deviceId))
+        return [...updated, ...newDevices]
+      })
+    })
     
     socket.on('device_connected', (device) => {
       setDevices(prev => {
