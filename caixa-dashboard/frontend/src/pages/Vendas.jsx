@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
-import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monitor, ChevronDown, ChevronUp } from 'lucide-react'
+import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monitor, ChevronDown, ChevronUp, Printer, XCircle, Ban } from 'lucide-react'
+import SenhaConfirmModal from '../components/SenhaConfirmModal'
 
 export default function Vendas() {
   const { token } = useAuth()
@@ -11,6 +12,8 @@ export default function Vendas() {
   const [search, setSearch] = useState('')
   const [expandedDevice, setExpandedDevice] = useState(null)
   const [expandedVenda, setExpandedVenda] = useState(null)
+  const [senhaModal, setSenhaModal] = useState(null) // { action: 'reimprimir'|'cancelar', vendaId, venda }
+  const [cancelarMotivo, setCancelarMotivo] = useState('')
 
   useEffect(() => {
     fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
@@ -54,6 +57,33 @@ export default function Vendas() {
   })
   const totalHoje = vendasHoje.reduce((sum, v) => sum + (v.total || 0), 0)
 
+  const handleReimprimir = async (vendaId) => {
+    try {
+      const res = await fetch(apiUrl(`/api/vendas/${vendaId}/reimprimir`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) alert('✅ Comando de reimpressão enviado ao terminal')
+      else alert('❌ Erro: ' + data.error)
+    } catch { alert('❌ Erro ao enviar reimpressão') }
+  }
+
+  const handleCancelar = async (vendaId) => {
+    try {
+      const res = await fetch(apiUrl(`/api/vendas/${vendaId}/cancelar`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ motivo: cancelarMotivo })
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert('✅ Venda cancelada com sucesso')
+        setVendas(prev => prev.map(v => v.id == vendaId ? { ...v, cancelada: true, canceladaEm: new Date().toISOString(), motivoCancelamento: cancelarMotivo } : v))
+        setCancelarMotivo('')
+      } else alert('❌ Erro: ' + data.error)
+    } catch { alert('❌ Erro ao cancelar venda') }
+  }
   const paymentColors = {
     DINHEIRO: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     PIX: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -158,8 +188,11 @@ export default function Vendas() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-medium text-white">Venda #{venda.id?.toString().slice(-6)}</p>
-                            {venda.formaPagamento && (
+                            <p className={`text-sm font-medium ${venda.cancelada ? 'text-red-400 line-through' : 'text-white'}`}>Venda #{venda.id?.toString().slice(-6)}</p>
+                            {venda.cancelada && (
+                              <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">CANCELADA</span>
+                            )}
+                            {venda.formaPagamento && !venda.cancelada && (
                               <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${paymentColors[venda.formaPagamento] || 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>
                                 {venda.formaPagamento}
                               </span>
@@ -202,6 +235,33 @@ export default function Vendas() {
                             <span></span>
                             <span className="text-emerald-400 font-bold text-right">R$ {(venda.total || 0).toFixed(2)}</span>
                           </div>
+                          {/* Ações da venda */}
+                          {!venda.cancelada && (
+                            <div className="flex gap-2 mt-2 pt-2 border-t border-white/10">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSenhaModal({ action: 'reimprimir', vendaId: venda.id, venda }) }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                              >
+                                <Printer size={12} /> Reimprimir
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSenhaModal({ action: 'cancelar', vendaId: venda.id, venda }) }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                              >
+                                <XCircle size={12} /> Cancelar Venda
+                              </button>
+                            </div>
+                          )}
+                          {venda.cancelada && (
+                            <div className="mt-2 pt-2 border-t border-red-500/20">
+                              <div className="flex items-center gap-2 text-xs text-red-400">
+                                <Ban size={12} />
+                                <span className="font-medium">Venda Cancelada</span>
+                              </div>
+                              {venda.motivoCancelamento && <p className="text-xs text-gray-500 mt-1">Motivo: {venda.motivoCancelamento}</p>}
+                              {venda.canceladaPor && <p className="text-xs text-gray-500">Por: {venda.canceladaPor} em {new Date(venda.canceladaEm).toLocaleString('pt-BR')}</p>}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -212,6 +272,24 @@ export default function Vendas() {
           ))}
         </div>
       )}
+      {/* Modal de confirmação de senha para ações sensíveis */}
+      <SenhaConfirmModal
+        open={!!senhaModal}
+        onClose={() => { setSenhaModal(null); setCancelarMotivo('') }}
+        onConfirm={() => {
+          if (senhaModal?.action === 'reimprimir') {
+            handleReimprimir(senhaModal.vendaId)
+          } else if (senhaModal?.action === 'cancelar') {
+            handleCancelar(senhaModal.vendaId)
+          }
+          setSenhaModal(null)
+        }}
+        title={senhaModal?.action === 'reimprimir' ? 'Reimprimir Venda' : 'Cancelar Venda'}
+        description={senhaModal?.action === 'reimprimir'
+          ? `Confirme para reimprimir a venda #${senhaModal?.vendaId?.toString().slice(-6)}`
+          : `Confirme para cancelar a venda #${senhaModal?.vendaId?.toString().slice(-6)}`
+        }
+      />
     </div>
   )
 }

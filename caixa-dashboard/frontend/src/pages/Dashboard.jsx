@@ -7,6 +7,7 @@ import {
   LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play, 
   ChevronRight, Activity, TrendingUp, AlertTriangle, CheckCircle2,
   Search, RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
+  Settings,
   Play as PlayIcon, X as CloseIcon, Power, History, Building2
 } from 'lucide-react'
 import Produtos from './Produtos'
@@ -16,6 +17,7 @@ import Caixa from './Caixa'
 import Auditoria from './Auditoria'
 import Empresas from './Empresas'
 import Terminais from './Terminais'
+import Configuracoes from './Configuracoes'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
@@ -26,6 +28,7 @@ const navItems = [
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
   { id: 'caixa', label: 'Caixa', icon: DollarSign, permission: 'caixa' },
   { id: 'auditoria', label: 'Auditoria', icon: History, permission: 'auditoria' },
+  { id: 'config', label: 'Config', icon: Settings, permission: 'config' },
 ]
 
 export default function Dashboard() {
@@ -522,6 +525,7 @@ export default function Dashboard() {
           {page === 'vendas' && <Vendas />}
           {page === 'caixa' && <Caixa />}
           {page === 'auditoria' && <Auditoria />}
+          {page === 'config' && <Configuracoes />}
         </div>
       </main>
 
