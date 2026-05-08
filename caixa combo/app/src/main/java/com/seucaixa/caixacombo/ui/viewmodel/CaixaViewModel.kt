@@ -8,7 +8,7 @@ import com.seucaixa.caixacombo.data.repository.ConfiguracaoImpressaoRepository
 import com.seucaixa.caixacombo.data.repository.OperacaoCaixaRepository
 import com.seucaixa.caixacombo.data.repository.VendaRepository
 import com.seucaixa.caixacombo.service.SunmiPrintService
-import com.seucaixa.caixacombo.service.WebSocketService
+import com.seucaixa.caixacombo.service.PollingService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -249,7 +249,7 @@ class CaixaViewModel(
                 
                 // Enviar operação para o servidor/dashboard
                 android.util.Log.d("CaixaViewModel", "🔓 Enviando abertura para servidor...")
-                WebSocketService.sendOperacaoCaixa(
+                PollingService.sendOperacaoCaixa(
                     tipo = "abertura",
                     valor = valorInicial,
                     nomeOperador = nomeOperador
@@ -257,7 +257,9 @@ class CaixaViewModel(
                 android.util.Log.d("CaixaViewModel", "🔓 Abertura enviada com sucesso!")
 
                 // Imprimir comprovante
-                val configuracaoAbertura = configuracaoRepository.getConfiguracao().firstOrNull() ?: ConfiguracaoImpressao()
+                val configuracaoAberturaSemLogo = configuracaoRepository.getConfiguracaoSemLogo()
+                val logoBase64 = configuracaoRepository.getLogoBase64() ?: ""
+                val configuracaoAbertura = configuracaoAberturaSemLogo?.toConfiguracaoImpressao(logoBase64)
                 printService.imprimirAberturaCaixa(
                     nomeOperador = nomeOperador,
                     dataHora = System.currentTimeMillis(),
@@ -317,7 +319,7 @@ class CaixaViewModel(
 
                 // Enviar operação para o servidor/dashboard
                 android.util.Log.d("CaixaViewModel", "🔒 Enviando fechamento para servidor...")
-                WebSocketService.sendOperacaoCaixa(
+                PollingService.sendOperacaoCaixa(
                     tipo = "fechamento",
                     valor = totalVendas,
                     nomeOperador = nomeOperador
@@ -327,7 +329,8 @@ class CaixaViewModel(
                 val valorInicial = abertura.valorInicial ?: 0.0
                 val totalSangrias = _totalSangrias.value
 
-                val configuracao = configuracaoRepository.getConfiguracao().firstOrNull() ?: ConfiguracaoImpressao()
+                val configuracaoSemLogo = configuracaoRepository.getConfiguracaoSemLogo()
+                val configuracao = if (configuracaoSemLogo != null) configuracaoSemLogo.toConfiguracaoImpressao(configuracaoRepository.getLogoBase64() ?: "") else ConfiguracaoImpressao()
                 printService.imprimirFechamentoCaixa(
                     nomeOperador = nomeOperador,
                     dataAbertura = dataAbertura,
@@ -395,7 +398,7 @@ class CaixaViewModel(
 
             // Enviar operação para o servidor/dashboard
             android.util.Log.d("CaixaViewModel", "💸 Enviando sangria para servidor...")
-            WebSocketService.sendOperacaoCaixa(
+            PollingService.sendOperacaoCaixa(
                 tipo = "sangria",
                 valor = valor,
                 nomeOperador = nomeOperador,
@@ -411,7 +414,8 @@ class CaixaViewModel(
             _saldoAtual.value = novoSaldo
 
             // Imprimir comprovante com o saldo restante
-            val configuracaoSangria = configuracaoRepository.getConfiguracao().firstOrNull() ?: ConfiguracaoImpressao()
+            val configuracaoSangriaSemLogo = configuracaoRepository.getConfiguracaoSemLogo()
+            val configuracaoSangria = if (configuracaoSangriaSemLogo != null) configuracaoSangriaSemLogo.toConfiguracaoImpressao(configuracaoRepository.getLogoBase64() ?: "") else ConfiguracaoImpressao()
             printService.imprimirSangria(
                 nomeOperador = nomeOperador,
                 valor = valor,
@@ -450,7 +454,7 @@ class CaixaViewModel(
             operacaoRepository.insert(operacao)
             
             // Enviar operação para o servidor/dashboard
-            WebSocketService.sendOperacaoCaixa(
+            PollingService.sendOperacaoCaixa(
                 tipo = "suprimento",
                 valor = valor,
                 nomeOperador = nomeOperador,
@@ -462,7 +466,8 @@ class CaixaViewModel(
             _saldoAtual.value = novoSaldo
 
             // Imprimir comprovante com o novo saldo
-            val configuracaoSuprimento = configuracaoRepository.getConfiguracao().firstOrNull() ?: ConfiguracaoImpressao()
+            val configuracaoSuprimentoSemLogo = configuracaoRepository.getConfiguracaoSemLogo()
+            val configuracaoSuprimento = if (configuracaoSuprimentoSemLogo != null) configuracaoSuprimentoSemLogo.toConfiguracaoImpressao(configuracaoRepository.getLogoBase64() ?: "") else ConfiguracaoImpressao()
             printService.imprimirSuprimento(
                 nomeOperador = nomeOperador,
                 valor = valor,

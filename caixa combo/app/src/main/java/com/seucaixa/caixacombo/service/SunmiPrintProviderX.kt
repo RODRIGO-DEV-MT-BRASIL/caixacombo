@@ -921,6 +921,7 @@ class SunmiPrintProviderX(private val context: Context) {
         valorRecebido: Double,
         troco: Double,
         configuracao: com.seucaixa.caixacombo.data.model.ConfiguracaoImpressao? = null,
+        nomeCliente: String? = null,
         callback: (Boolean) -> Unit = {}
     ) {
         Log.d(TAG, "Iniciando impressão de comprovante de venda (PrinterSdk)...")
@@ -958,6 +959,13 @@ class SunmiPrintProviderX(private val context: Context) {
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+
+                // Cliente identificado
+                if (!nomeCliente.isNullOrBlank()) {
+                    addText("CLIENTE: $nomeCliente", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                }
 
                 // Informações
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))

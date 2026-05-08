@@ -67,6 +67,7 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
         release {
             isMinifyEnabled = true
@@ -152,10 +153,8 @@ dependencies {
     // Gson for JSON
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // Socket.io para WebSocket
-    implementation("io.socket:socket.io-client:2.1.0") {
-        exclude(group = "org.json", module = "json")
-    }
+    // EncryptedSharedPreferences para dados sensíveis (Stone compliance)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     
     // Sunmi Printer SDK para V1/V2 compatibilidade
     implementation("com.sunmi:printerx:latest.release")

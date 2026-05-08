@@ -150,7 +150,7 @@ class SunmiPrintService(private val context: Context) {
         }
     }
 
-    fun imprimirVenda(venda: com.seucaixa.caixacombo.data.model.Venda, configuracao: ConfiguracaoImpressao? = null) {
+    fun imprimirVenda(venda: com.seucaixa.caixacombo.data.model.Venda, configuracao: ConfiguracaoImpressao? = null, nomeCliente: String? = null) {
         Log.d(TAG, "Iniciando impressão de venda - Nº: ${venda.numero}")
 
         val itens = venda.itens.map { item ->
@@ -167,7 +167,8 @@ class SunmiPrintService(private val context: Context) {
             formaPagamento = venda.formaPagamento.name.replace("_", " "),
             valorRecebido = venda.valorRecebido,
             troco = venda.troco,
-            configuracao = configuracao
+            configuracao = configuracao,
+            nomeCliente = nomeCliente
         ) { success ->
             if (success) {
                 Log.d(TAG, "Comprovante de venda impresso com sucesso")

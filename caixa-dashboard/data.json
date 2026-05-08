@@ -1037,6 +1037,15 @@
       "lockPassword": "847638",
       "lockReason": null,
       "lockedAt": null
+    },
+    {
+      "deviceId": "test-local",
+      "deviceName": "TestDevice",
+      "deviceType": "Android",
+      "serialNumber": null,
+      "status": "online",
+      "lockPassword": "718771",
+      "lastPoll": "2026-05-08T06:22:22.523Z"
     }
   ],
   "auditoria": [

@@ -50,6 +50,7 @@ class ConfiguracaoImpressaoViewModel(
             logoSangria = false,
             logoSuprimento = false,
             logoFicha = false,
+            logoCheckoutPDV = false,
             logoAltura = 80f,
             logoLargura = 300f,
             logoEspacamentoAcima = 16f,
@@ -73,11 +74,13 @@ class ConfiguracaoImpressaoViewModel(
     
     private fun loadConfiguracao() {
         viewModelScope.launch {
-            repository.getConfiguracao().collect { config ->
-                if (config != null) {
-                    _configuracao.value = config
+            try {
+                val semLogo = repository.getConfiguracaoSemLogo()
+                if (semLogo != null) {
+                    val logo = repository.getLogoBase64() ?: ""
+                    _configuracao.value = semLogo.toConfiguracaoImpressao(logo)
                 }
-            }
+            } catch (_: Exception) {}
         }
     }
     
@@ -163,6 +166,10 @@ class ConfiguracaoImpressaoViewModel(
     
     fun updateLogoFicha(enabled: Boolean) {
         _configuracao.value = _configuracao.value?.copy(logoFicha = enabled)
+    }
+    
+    fun updateLogoCheckoutPDV(enabled: Boolean) {
+        _configuracao.value = _configuracao.value?.copy(logoCheckoutPDV = enabled)
     }
     
     fun updateLogoAltura(altura: Float) {

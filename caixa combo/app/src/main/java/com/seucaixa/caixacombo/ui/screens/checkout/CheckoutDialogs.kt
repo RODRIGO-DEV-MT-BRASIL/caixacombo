@@ -6,6 +6,7 @@ package com.seucaixa.caixacombo.ui.screens.checkout
  */
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,15 @@ import com.seucaixa.caixacombo.ui.components.CustomKeyboard
 import com.seucaixa.caixacombo.ui.components.KeyboardType
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 
+private fun formatarMoeda(input: String): String {
+    val digitsOnly = input.filter { it.isDigit() || it == '.' || it == ',' }
+    val normalized = digitsOnly.replace(',', '.')
+    val parts = normalized.split('.')
+    val limited = if (parts.size > 2) parts[0] + "." + parts[1] else normalized
+    val dotIndex = limited.indexOf('.')
+    return if (dotIndex >= 0 && limited.length > dotIndex + 3) limited.substring(0, dotIndex + 3) else limited
+}
+
 // ==================== POS DIALOG ====================
 
 @Composable
@@ -37,15 +47,15 @@ fun EscolhaFormaPagamentoDialogPOS(
     Dialog(onDismissRequest = onCancelar) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .padding(24.dp),
-            shape = RoundedCornerShape(20.dp)
+                .fillMaxWidth(0.95f)
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Título
                 Text(
@@ -144,15 +154,15 @@ fun ValorPagamentoDialogPOS(
     Dialog(onDismissRequest = onCancelar) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .padding(24.dp),
-            shape = RoundedCornerShape(20.dp)
+                .fillMaxWidth(0.95f)
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Título com forma selecionada
                 Text(
@@ -194,24 +204,7 @@ fun ValorPagamentoDialogPOS(
                     OutlinedTextField(
                         value = valorRecebido,
                         onValueChange = { newValue ->
-                            // Máscara de moeda
-                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
-                            val normalized = filtered.replace(',', '.')
-                            val parts = normalized.split('.')
-                            val limited = if (parts.size > 2) {
-                                parts[0] + "." + parts[1]
-                            } else {
-                                normalized
-                            }
-                            val finalValue = limited.let { text ->
-                                val dotIndex = text.indexOf('.')
-                                if (dotIndex >= 0 && text.length > dotIndex + 3) {
-                                    text.substring(0, dotIndex + 3)
-                                } else {
-                                    text
-                                }
-                            }
-                            onValorRecebidoChange(finalValue)
+                            onValorRecebidoChange(formatarMoeda(newValue))
                         },
                         label = {
                             Text(
@@ -425,24 +418,7 @@ fun FinalizarVendaDialogPOS(
                     OutlinedTextField(
                         value = valorRecebido,
                         onValueChange = { newValue ->
-                            // Máscara de moeda
-                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
-                            val normalized = filtered.replace(',', '.')
-                            val parts = normalized.split('.')
-                            val limited = if (parts.size > 2) {
-                                parts[0] + "." + parts[1]
-                            } else {
-                                normalized
-                            }
-                            val finalValue = limited.let { text ->
-                                val dotIndex = text.indexOf('.')
-                                if (dotIndex >= 0 && text.length > dotIndex + 3) {
-                                    text.substring(0, dotIndex + 3)
-                                } else {
-                                    text
-                                }
-                            }
-                            onValorRecebidoChange(finalValue)
+                            onValorRecebidoChange(formatarMoeda(newValue))
                         },
                         label = {
                             Text(
@@ -1116,4 +1092,163 @@ fun FormaPagamentoChipMobile(
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer
         )
     )
+}
+
+@Composable
+fun BuscarClienteDialog(
+    onClienteSelecionado: (com.seucaixa.caixacombo.data.model.Cliente?) -> Unit,
+    onEmpresaSelecionada: (com.seucaixa.caixacombo.data.model.Empresa?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val clienteDao = remember { com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).clienteDao() }
+    val empresaDao = remember { com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).empresaDao() }
+
+    var busca by remember { mutableStateOf("") }
+    var selectedTab by remember { mutableStateOf(0) } // 0 = Cliente, 1 = Empresa
+    var clientes by remember { mutableStateOf<List<com.seucaixa.caixacombo.data.model.Cliente>>(emptyList()) }
+    var empresa by remember { mutableStateOf<com.seucaixa.caixacombo.data.model.Empresa?>(null) }
+
+    LaunchedEffect(Unit) {
+        empresa = empresaDao.getEmpresaOnce()
+    }
+
+    LaunchedEffect(busca, selectedTab) {
+        if (selectedTab == 0) {
+            if (busca.isBlank()) {
+                clienteDao.getAllClientes().collect { clientes = it }
+            } else {
+                clienteDao.searchClientes(busca).collect { clientes = it }
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "🔍 IDENTIFICAR CLIENTE",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Abas Cliente / Empresa
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
+                        Text("Cliente", fontWeight = FontWeight.Bold)
+                    }
+                    Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
+                        Text("Empresa", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (selectedTab == 0) {
+                    // Busca
+                    OutlinedTextField(
+                        value = busca,
+                        onValueChange = { busca = it },
+                        label = { Text("Buscar cliente...") },
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = ComposeKeyboardType.Text),
+                        singleLine = true
+                    )
+
+                    // Lista de clientes
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.height(250.dp)
+                    ) {
+                        items(clientes.size) { index ->
+                            val cliente = clientes[index]
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                                    .clickable {
+                                        onClienteSelecionado(cliente)
+                                        onDismiss()
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(cliente.nome, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    if (cliente.cpfCnpj.isNotBlank()) {
+                                        Text("CPF/CNPJ: ${cliente.cpfCnpj}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Empresa cadastrada
+                    if (empresa != null && empresa!!.razaoSocial.isNotBlank()) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onEmpresaSelecionada(empresa)
+                                    onDismiss()
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(empresa!!.nomeFantasia.ifBlank { empresa!!.razaoSocial }, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                if (empresa!!.cnpj.isNotBlank()) {
+                                    Text("CNPJ: ${empresa!!.cnpj}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                if (empresa!!.telefone.isNotBlank()) {
+                                    Text("Tel: ${empresa!!.telefone}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    } else {
+                        Text(
+                            "Nenhuma empresa cadastrada",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
+                // Botão limpar seleção + cancelar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            onClienteSelecionado(null)
+                            onDismiss()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Sem identificação")
+                    }
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            }
+        }
+    }
 }

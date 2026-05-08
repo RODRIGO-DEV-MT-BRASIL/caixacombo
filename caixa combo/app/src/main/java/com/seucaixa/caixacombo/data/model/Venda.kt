@@ -97,6 +97,16 @@ class Converters {
     fun toStatusVenda(value: String): StatusVenda {
         return StatusVenda.valueOf(value)
     }
+
+    @TypeConverter
+    fun fromCargoUsuario(value: CargoUsuario): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toCargoUsuario(value: String): CargoUsuario {
+        return CargoUsuario.valueOf(value)
+    }
 }
 
 // Extensions

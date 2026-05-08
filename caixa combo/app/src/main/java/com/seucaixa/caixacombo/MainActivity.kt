@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +25,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import com.seucaixa.caixacombo.ui.screens.HomeScreen
+import com.seucaixa.caixacombo.ui.screens.AcessosScreen
+import com.seucaixa.caixacombo.ui.screens.CadastroScreen
 import com.seucaixa.caixacombo.ui.screens.ProdutosScreen
 import com.seucaixa.caixacombo.ui.screens.VendasScreen
 import com.seucaixa.caixacombo.ui.screens.caixa.CaixaOperacoesScreen
@@ -42,7 +45,10 @@ import com.seucaixa.caixacombo.ui.viewmodel.ProdutosViewModel
 import com.seucaixa.caixacombo.data.model.Produto
 import com.seucaixa.caixacombo.ui.viewmodel.VendasViewModel
 import com.seucaixa.caixacombo.data.backup.BackupScheduler
-import com.seucaixa.caixacombo.service.WebSocketService
+import com.seucaixa.caixacombo.service.PollingService
+import com.seucaixa.caixacombo.service.StoneDeeplinkService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -50,10 +56,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var produtosViewModel: ProdutosViewModel
     private lateinit var vendasViewModel: VendasViewModel
     private lateinit var caixaViewModel: CaixaViewModel
-    private var webSocketService: WebSocketService? = null
+    private var pollingService: PollingService? = null
     private lateinit var configuracaoImpressaoViewModel: ConfiguracaoImpressaoViewModel
 
     private lateinit var lockPrefs: android.content.SharedPreferences
+
+    // Callback para resultado do Stone deeplink
+    private var stonePaymentCallback: ((StoneDeeplinkService.PaymentResult?) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,7 +87,7 @@ class MainActivity : ComponentActivity() {
             showLockScreen(lockReason)
         }
 
-        // Iniciar WebSocket Service para comunicação com Dashboard
+        // Iniciar Polling Service REST para comunicação com Dashboard (Stone compliance)
         // Usar ANDROID_ID como ID principal (funciona sem modo desenvolvedor)
         val androidId = android.provider.Settings.Secure.getString(
             contentResolver,
@@ -91,18 +100,18 @@ class MainActivity : ComponentActivity() {
         val model = android.os.Build.MODEL
         val deviceName = "${manufacturer.capitalize()} $model"
         val serialNumber = android.os.Build.SERIAL ?: "UNKNOWN"
-        WebSocketService.setDeviceInfo(deviceId, deviceName, serialNumber)
+        PollingService.setDeviceInfo(deviceId, deviceName, serialNumber)
         
         // Configurar Admin para reboot sem root
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
         val cn = android.content.ComponentName(this, AdminReceiver::class.java)
-        WebSocketService.setAdminInfo(dpm, cn)
+        PollingService.setAdminInfo(dpm, cn)
 
         // Verificar e solicitar ativação automática do Device Admin
         checkAndRequestDeviceAdmin(dpm, cn)
 
         // Configurar callbacks do WebSocket para bloqueio/desbloqueio
-        WebSocketService.setCallbacks(
+        PollingService.setCallbacks(
             onConnectionChange = { isConnected ->
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "WebSocket conexão: $isConnected")
@@ -145,8 +154,11 @@ class MainActivity : ComponentActivity() {
             }
         )
         
-        val webSocketIntent = Intent(this, WebSocketService::class.java)
+        val webSocketIntent = Intent(this, PollingService::class.java)
         startService(webSocketIntent)
+
+        // Garantir que existe pelo menos um usuário admin no banco
+        ensureAdminUserExists()
 
         // Obter repositórios da Application
         val app = application as CaixaApplication
@@ -222,8 +234,8 @@ class MainActivity : ComponentActivity() {
                         composable("checkout") {
                             // Seleciona layout baseado no dispositivo
                             when (deviceType) {
-                                DeviceType.POS -> {
-                                    // SUNMI V1/V2 - Layout POS
+                                DeviceType.POS, DeviceType.TABLET -> {
+                                    // SUNMI V1/V2 e D2S/VI/V2 - Layout POS (tela grande)
                                     CheckoutScreenPOS(
                                         viewModel = checkoutViewModel,
                                         caixaAberto = caixaAberto,
@@ -239,11 +251,24 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onNavigateToCaixa = {
                                             navController.navigate("caixa")
+                                        },
+                                        onNavigateToConfiguracaoTipoImpressao = {
+                                            navController.navigate("configuracao_tipo_impressao")
+                                        },
+                                        onNavigateToAcessos = {
+                                            navController.navigate("acessos")
+                                        },
+                                        onNavigateToCadastro = {
+                                            navController.navigate("cadastro")
+                                        },
+                                        onSendStonePayment = { amount, type, installmentCount, orderId, callback ->
+                                            stonePaymentCallback = callback
+                                            StoneDeeplinkService.sendPayment(this@MainActivity, amount, type, installmentCount, orderId)
                                         }
                                     )
                                 }
                                 else -> {
-                                    // Tablet/Mobile - Layout compacto
+                                    // Mobile - Layout compacto
                                     CheckoutScreenMobile(
                                         viewModel = checkoutViewModel,
                                         caixaAberto = caixaAberto,
@@ -321,6 +346,22 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+
+                        composable("acessos") {
+                            AcessosScreen(
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("cadastro") {
+                            CadastroScreen(
+                                onBack = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -386,6 +427,71 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * Desprovisiona o Device Owner, permitindo desinstalação do app.
+     * Chamado via: adb shell am broadcast -a com.seucaixa.caixacombo.UNPROVISION
+     */
+    private fun unprovisionDeviceOwner() {
+        try {
+            val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val admin = ComponentName(this, AdminReceiver::class.java)
+
+            // Parar lock task primeiro
+            stopLockTaskMode()
+
+            // Remover Device Owner (permite desinstalação)
+            if (dpm.isDeviceOwnerApp(packageName)) {
+                dpm.clearDeviceOwnerApp(packageName)
+                android.util.Log.d("MainActivity", "Device Owner removido com sucesso")
+                android.widget.Toast.makeText(this, "Device Owner removido. App pode ser desinstalado.", android.widget.Toast.LENGTH_LONG).show()
+            } else if (dpm.isAdminActive(admin)) {
+                dpm.removeActiveAdmin(admin)
+                android.util.Log.d("MainActivity", "Device Admin removido com sucesso")
+                android.widget.Toast.makeText(this, "Device Admin removido. App pode ser desinstalado.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao desprovisionar: ${e.message}", e)
+            android.widget.Toast.makeText(this, "Erro ao remover admin: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Garante que existe pelo menos um usuário admin no banco.
+     * Código padrão: 1234
+     */
+    private fun ensureAdminUserExists() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
+                val dao = db.usuarioDao()
+                val admin = dao.getUsuarioByCodigo("1234")
+                if (admin == null) {
+                    val id = dao.insert(com.seucaixa.caixacombo.data.model.Usuario(
+                        nome = "Admin",
+                        codigo = "1234",
+                        cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN,
+                        ativo = true,
+                        permVender = true,
+                        permCaixa = true,
+                        permProdutos = true,
+                        permVendas = true,
+                        permRelatorios = true,
+                        permConfiguracoes = true,
+                        permSangria = true,
+                        permSuprimento = true,
+                        permFechamento = true,
+                        permAcessos = true
+                    ))
+                    android.util.Log.d("MainActivity", "Usuário admin padrão criado (código: 1234, id: $id)")
+                } else {
+                    android.util.Log.d("MainActivity", "Usuário admin já existe: ${admin.nome}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Erro ao verificar/criar admin: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
      * Verifica se o app está ativo como Device Admin e solicita ativação se necessário.
      * Necessário para usar comandos de reiniciar/desligar dispositivo.
      */
@@ -416,13 +522,20 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val REQUEST_CODE_ENABLE_ADMIN = 1001
+        private const val REQUEST_CODE_ENABLE_ADMIN = 2001
     }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
+        // Stone deeplink result
+        if (requestCode == StoneDeeplinkService.REQUEST_CODE_PAYMENT) {
+            val result = StoneDeeplinkService.parsePaymentResult(data)
+            stonePaymentCallback?.invoke(result)
+        }
+
+        // Device Admin result
         if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
             val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
             val admin = ComponentName(this, AdminReceiver::class.java)
@@ -516,32 +629,10 @@ class MainActivity : ComponentActivity() {
                 android.util.Log.e("MainActivity", "Erro ao verificar permissões de lock task: ${e.message}", e)
             }
             
-            // Fechar diálogo anterior se existir
-            try {
-                lockDialog?.dismiss()
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "Erro ao fechar diálogo anterior: ${e.message}", e)
-            }
-            
-            // Criar diálogo de bloqueio moderno
-            try {
-                lockDialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen).apply {
-                    setContentView(createLockView(reason))
-                    setCancelable(false)
-                    // Removido setType para evitar crash de permissão
-                    window?.setBackgroundDrawableResource(android.R.color.black)
-                }
-                
-                lockDialog?.show()
-                android.util.Log.d("MainActivity", "Dialog de bloqueio exibido com sucesso")
-                
-                // Notificar servidor que o bloqueio foi aplicado no terminal
-                webSocketService?.sendLockConfirmed()
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "Erro ao exibir diálogo de bloqueio: ${e.message}", e)
-                // Fallback: mostrar toast se o diálogo falhar
-                android.widget.Toast.makeText(this, "Dispositivo bloqueado: $reason", android.widget.Toast.LENGTH_LONG).show()
-            }
+            // Usar LockActivity em vez de diálogo overlay (Stone compliance - sem SYSTEM_ALERT_WINDOW)
+            val lockPassword = currentLockPassword ?: ""
+            LockActivity.start(this, reason, lockPassword)
+            PollingService.sendLockConfirmed()
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro crítico ao bloquear dispositivo: ${e.message}", e)
         }
@@ -685,7 +776,7 @@ class MainActivity : ComponentActivity() {
                                 android.util.Log.d("MainActivity", "Senha correta, desbloqueando")
                                 // Enviar confirmação para servidor
                                 try {
-                                    webSocketService?.sendUnlockAttempt(password)
+                                    PollingService.sendUnlockAttempt(password)
                                 } catch (e: Exception) {
                                     android.util.Log.e("MainActivity", "Erro ao enviar tentativa de desbloqueio", e)
                                 }
@@ -734,7 +825,7 @@ class MainActivity : ComponentActivity() {
             .apply()
         
         // Notificar servidor que o dispositivo foi desbloqueado
-        webSocketService?.sendUnlockConfirmed()
+        PollingService.sendUnlockConfirmed()
         
         lockDialog?.dismiss()
         lockDialog = null
@@ -845,7 +936,7 @@ class MainActivity : ComponentActivity() {
                 )
                 setOnClickListener {
                     // Enviar solicitação de cancelamento para o servidor
-                    WebSocketService.sendDeviceStatus("cancel_usage_time")
+                    PollingService.sendDeviceStatus("cancel_usage_time")
                     usageTimer?.cancel()
                     usageTimeDialog?.dismiss()
                 }
@@ -896,7 +987,7 @@ class MainActivity : ComponentActivity() {
                 put("vendas", caixaViewModel.totalVendas.value ?: 0.0)
                 put("status", "aberto")
             }
-            WebSocketService.sendCaixaData(caixaData)
+            PollingService.sendCaixaData(caixaData)
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao enviar dados do caixa", e)
         }

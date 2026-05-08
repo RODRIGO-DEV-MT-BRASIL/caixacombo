@@ -16,19 +16,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import com.seucaixa.caixacombo.data.model.FormaPagamento
 import com.seucaixa.caixacombo.data.model.OperacaoCaixa
 import com.seucaixa.caixacombo.ui.viewmodel.CaixaViewModel
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
-import com.seucaixa.caixacombo.BuildConfig
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -61,6 +62,12 @@ fun CaixaOperacoesScreen(
     val suprimentos by viewModel.suprimentos.collectAsState()
     var selectedTab by remember { mutableStateOf(0) }
 
+    val context = LocalContext.current
+    val operadorNomeLogado = remember {
+        context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
+            .getString("operador_nome", null)
+    }
+
     var showAberturaDialog by remember { mutableStateOf(false) }
     var showFechamentoDialog by remember { mutableStateOf(false) }
     var showSangriaDialog by remember { mutableStateOf(false) }
@@ -69,89 +76,34 @@ fun CaixaOperacoesScreen(
     var showSenhaAberturaDialog by remember { mutableStateOf(false) }
     var showSenhaFechamentoDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    val SENHA_CORRETA = "1985"
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val senhaAdmin = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).getString("senha_admin", "1985") ?: "1985" }
 
-    // Dialog de senha
+    // Dialog de senha unificado
     if (showSenhaAberturaDialog) {
-        var senha by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showSenhaAberturaDialog = false },
-            title = { Text("Senha Necessária") },
-            text = {
-                Column {
-                    Text("Digite a senha para abrir o caixa")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = senha,
-                        onValueChange = { senha = it },
-                        label = { Text("Senha") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        singleLine = true
-                    )
-                }
+        SenhaAdminDialog(
+            motivo = "abrir o caixa",
+            senhaCorreta = senhaAdmin,
+            onSenhaCorreta = {
+                showSenhaAberturaDialog = false
+                showAberturaDialog = true
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (senha == SENHA_CORRETA) {
-                            showSenhaAberturaDialog = false
-                            showAberturaDialog = true
-                        } else {
-                            errorMessage = "Senha incorreta!"
-                            showSenhaAberturaDialog = false
-                        }
-                    }
-                ) {
-                    Text("Confirmar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSenhaAberturaDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
+            onDismiss = { showSenhaAberturaDialog = false },
+            onErro = { errorMessage = it }
         )
     }
 
     if (showSenhaFechamentoDialog) {
-        var senha by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showSenhaFechamentoDialog = false },
-            title = { Text("Senha Necessária") },
-            text = {
-                Column {
-                    Text("Digite a senha para fechar o caixa")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = senha,
-                        onValueChange = { senha = it },
-                        label = { Text("Senha") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        singleLine = true
-                    )
-                }
+        SenhaAdminDialog(
+            motivo = "fechar o caixa",
+            senhaCorreta = senhaAdmin,
+            onSenhaCorreta = {
+                showSenhaFechamentoDialog = false
+                showFechamentoDialog = true
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (senha == SENHA_CORRETA) {
-                            showSenhaFechamentoDialog = false
-                            showFechamentoDialog = true
-                        } else {
-                            errorMessage = "Senha incorreta!"
-                            showSenhaFechamentoDialog = false
-                        }
-                    }
-                ) {
-                    Text("Confirmar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSenhaFechamentoDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
+            onDismiss = { showSenhaFechamentoDialog = false },
+            onErro = { errorMessage = it }
         )
     }
 
@@ -170,6 +122,7 @@ fun CaixaOperacoesScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Operações de Caixa") },
@@ -213,14 +166,14 @@ fun CaixaOperacoesScreen(
                     Icon(
                         if (caixaAberto) Icons.Default.LockOpen else Icons.Default.Lock,
                         null,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                         tint = if (caixaAberto)
                             MaterialTheme.colorScheme.tertiary
                         else
                             MaterialTheme.colorScheme.error
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
                         if (caixaAberto) "CAIXA ABERTO" else "CAIXA FECHADO",
@@ -231,7 +184,7 @@ fun CaixaOperacoesScreen(
                     ultimaAbertura?.let { abertura ->
                         val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                         Text(
-                            "Última abertura: ${dateFormat.format(Date(abertura.dataHora))}",
+                            "Abertura: ${dateFormat.format(Date(abertura.dataHora))}",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
@@ -248,119 +201,47 @@ fun CaixaOperacoesScreen(
                     // Mostrar saldo atual se caixa estiver aberto
                     if (caixaAberto) {
                         Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        Card(
+                        Text(
+                            "SALDO ATUAL",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "R$ %.2f".format(saldoAtual),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Vendas por forma de pagamento
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    "SALDO ATUAL",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "R$ %.2f".format(saldoAtual),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                            FormaPagamentoItem("Dinheiro", vendasDinheiro, Color(0xFF4CAF50))
+                            FormaPagamentoItem("Crédito", vendasCredito, Color(0xFF2196F3))
+                            FormaPagamentoItem("Débito", vendasDebito, Color(0xFFFF9800))
+                            FormaPagamentoItem("Pix", vendasPix, Color(0xFF9C27B0))
+                        }
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                                // Detalhes - vendas por forma
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Dinheiro",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "R$ %.2f".format(vendasDinheiro),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Crédito",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "R$ %.2f".format(vendasCredito),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Débito",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "R$ %.2f".format(vendasDebito),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Pix",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "R$ %.2f".format(vendasPix),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                // Totais
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Vendas",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "+R$ %.2f".format(totalVendas),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(
-                                            "Sangrias",
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            "-R$ %.2f".format(totalSangrias),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.error,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
+                        // Totais de operações
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            FormaPagamentoItem("Vendas", totalVendas, MaterialTheme.colorScheme.tertiary, prefix = "+")
+                            FormaPagamentoItem("Sangrias", totalSangrias, MaterialTheme.colorScheme.error, prefix = "-")
+                            FormaPagamentoItem("Supr.", totalSuprimentos, Color(0xFF10B981), prefix = "+")
                         }
                     }
                 }
@@ -379,14 +260,14 @@ fun CaixaOperacoesScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(80.dp),
+                        .height(56.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.LockOpen, null, modifier = Modifier.size(32.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(Icons.Default.LockOpen, null, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         "ABRIR CAIXA",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -406,7 +287,7 @@ fun CaixaOperacoesScreen(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(80.dp),
+                                .height(52.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFDC2626)
@@ -425,7 +306,7 @@ fun CaixaOperacoesScreen(
                             onClick = { showSangriaDialog = true },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(80.dp),
+                                .height(52.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFF59E0B)
@@ -444,7 +325,7 @@ fun CaixaOperacoesScreen(
                             onClick = { showSuprimentoDialog = true },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(80.dp),
+                                .height(52.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF10B981)
@@ -520,7 +401,7 @@ fun CaixaOperacoesScreen(
                         )
                     }
 
-                    Divider()
+                    HorizontalDivider()
 
                     when (selectedTab) {
                         0 -> AberturasTab(aberturas)
@@ -552,13 +433,13 @@ fun CaixaOperacoesScreen(
                     }
                 )
             },
-            onDismiss = { showAberturaDialog = false }
+            onDismiss = { showAberturaDialog = false },
+            operadorNome = operadorNomeLogado
         )
     }
 
     // Dialog de Fechamento
     if (showFechamentoDialog) {
-        android.util.Log.d("CaixaOperacoesScreen", "Exibindo FechamentoCaixaDialog")
         FechamentoCaixaDialog(
             vendasDinheiro = vendasDinheiro,
             vendasCredito = vendasCredito,
@@ -566,29 +447,23 @@ fun CaixaOperacoesScreen(
             vendasPix = vendasPix,
             sangrias = sangrias,
             onConfirm = { nome, valores, valorContado ->
-                android.util.Log.e("CaixaOperacoesScreen", "=== ONCONFIRM DO FECHAMENTODIALOG CHAMADO ===")
-                android.util.Log.e("CaixaOperacoesScreen", "Nome: $nome, Valores: $valores, Contado: $valorContado")
-                // Fechar o dialog imediatamente para não dar a sensação de botão travado.
-                // Se houver erro no fechamento, o AlertDialog de erro será exibido.
                 showFechamentoDialog = false
-                android.util.Log.e("CaixaOperacoesScreen", "Dialog fechado, chamando viewModel.fecharCaixa...")
                 viewModel.fecharCaixa(
                     nomeOperador = nome,
                     valoresInformados = valores,
                     valorContado = valorContado,
                     onSuccess = {
-                        android.util.Log.d("CaixaOperacoesScreen", "fecharCaixa onSuccess")
+                        // Caixa fechado com sucesso
                     },
                     onError = { error ->
-                        android.util.Log.e("CaixaOperacoesScreen", "fecharCaixa onError: $error")
                         errorMessage = error
                     }
                 )
             },
-            onDismiss = { 
-                android.util.Log.d("CaixaOperacoesScreen", "FechamentoCaixaDialog onDismiss")
-                showFechamentoDialog = false 
-            }
+            onDismiss = {
+                showFechamentoDialog = false
+            },
+            operadorNome = operadorNomeLogado
         )
     }
 
@@ -606,7 +481,8 @@ fun CaixaOperacoesScreen(
                     }
                 )
             },
-            onDismiss = { showSangriaDialog = false }
+            onDismiss = { showSangriaDialog = false },
+            operadorNome = operadorNomeLogado
         )
     }
 
@@ -623,7 +499,8 @@ fun CaixaOperacoesScreen(
                     }
                 )
             },
-            onDismiss = { showSuprimentoDialog = false }
+            onDismiss = { showSuprimentoDialog = false },
+            operadorNome = operadorNomeLogado
         )
     }
 
@@ -650,20 +527,11 @@ fun CaixaOperacoesScreen(
 @Composable
 fun AberturaCaixaDialog(
     onConfirm: (String, Double) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    operadorNome: String? = null
 ) {
-    var nome by remember { mutableStateOf("") }
-    // Usar TextFieldValue para controlar posição do cursor - iniciar vazio para forçar digitação
+    var nome by remember { mutableStateOf(operadorNome ?: "") }
     var valorField by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
-
-    // Função para formatar valor monetário
-    fun formatarValor(input: String): String {
-        val digitsOnly = input.filter { it.isDigit() }
-        val valorCentavos = digitsOnly.toLongOrNull() ?: 0L
-        val reais = valorCentavos / 100
-        val centavos = valorCentavos % 100
-        return String.format("%d.%02d", reais, centavos)
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -681,24 +549,14 @@ fun AberturaCaixaDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Valor com máscara - cursor sempre no final
                 val valorFormatado = formatarValor(valorField.text)
-                val valorDisplay = if (valorFormatado.isBlank() || valorFormatado == "0.00") "" 
-                    else String.format("R$ %.2f", valorFormatado.toDoubleSafe()).replace(".", ",")
+                val valorDisplay = formatarDisplay(valorFormatado)
 
                 OutlinedTextField(
-                    value = valorField.copy(
-                        text = valorFormatado,
-                        selection = TextRange(valorFormatado.length) // Cursor no final
-                    ),
+                    value = criarTextFieldValue(valorFormatado),
                     onValueChange = { newValue ->
-                        // Pegar apenas os dígitos do novo valor
                         val digitsOnly = newValue.text.filter { it.isDigit() }
-                        val formatado = formatarValor(digitsOnly)
-                        valorField = newValue.copy(
-                            text = formatado,
-                            selection = TextRange(formatado.length) // Forçar cursor no final
-                        )
+                        valorField = criarTextFieldValue(formatarValor(digitsOnly))
                     },
                     label = { Text("Valor Inicial") },
                     leadingIcon = { Icon(Icons.Default.AttachMoney, null) },
@@ -738,9 +596,10 @@ fun FechamentoCaixaDialog(
     vendasPix: Double = 0.0,
     sangrias: List<OperacaoCaixa> = emptyList(),
     onConfirm: (String, Map<FormaPagamento, Double>, Double) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    operadorNome: String? = null
 ) {
-    var nome by remember { mutableStateOf("") }
+    var nome by remember { mutableStateOf(operadorNome ?: "") }
 
     // Usar TextFieldValue para controlar posição do cursor
     var dinheiroField by remember { mutableStateOf(TextFieldValue("")) }
@@ -751,7 +610,6 @@ fun FechamentoCaixaDialog(
 
     // Pré-preencher campos com valores das vendas ao abrir o dialog
     LaunchedEffect(vendasDinheiro, vendasCredito, vendasDebito, vendasPix) {
-        android.util.Log.d("FechamentoCaixaDialog", "Pré-preenchendo campos - Dinheiro: $vendasDinheiro, Crédito: $vendasCredito, Débito: $vendasDebito, PIX: $vendasPix")
         dinheiroField = TextFieldValue(
             text = String.format("%.2f", vendasDinheiro),
             selection = TextRange(0)
@@ -767,23 +625,6 @@ fun FechamentoCaixaDialog(
         pixField = TextFieldValue(
             text = String.format("%.2f", vendasPix),
             selection = TextRange(0)
-        )
-    }
-
-    // Função para formatar valor monetário
-    fun formatarValor(input: String): String {
-        val digitsOnly = input.filter { it.isDigit() }
-        val valorCentavos = digitsOnly.toLongOrNull() ?: 0L
-        val reais = valorCentavos / 100
-        val centavos = valorCentavos % 100
-        return String.format("%d.%02d", reais, centavos)
-    }
-
-    // Helper para criar campo com cursor no final
-    fun criarTextFieldValue(texto: String): TextFieldValue {
-        return TextFieldValue(
-            text = texto,
-            selection = TextRange(texto.length)
         )
     }
 
@@ -960,7 +801,7 @@ fun FechamentoCaixaDialog(
 
                         // Campo Dinheiro
                         val dinheiroFormatado = formatarValor(dinheiroField.text)
-                        val dinheiroDisplay = if (dinheiroFormatado.isBlank() || dinheiroFormatado == "0.00") "" else String.format("R$ %.2f", dinheiroFormatado.toDoubleSafe()).replace(".", ",")
+                        val dinheiroDisplay = formatarDisplay(dinheiroFormatado)
                         OutlinedTextField(
                             value = criarTextFieldValue(dinheiroFormatado),
                             onValueChange = { newValue ->
@@ -979,7 +820,7 @@ fun FechamentoCaixaDialog(
 
                         // Campo Cartão Crédito
                         val cartaoCreditoFormatado = formatarValor(cartaoCreditoField.text)
-                        val cartaoCreditoDisplay = if (cartaoCreditoFormatado.isBlank() || cartaoCreditoFormatado == "0.00") "" else String.format("R$ %.2f", cartaoCreditoFormatado.toDoubleSafe()).replace(".", ",")
+                        val cartaoCreditoDisplay = formatarDisplay(cartaoCreditoFormatado)
                         OutlinedTextField(
                             value = criarTextFieldValue(cartaoCreditoFormatado),
                             onValueChange = { newValue ->
@@ -998,7 +839,7 @@ fun FechamentoCaixaDialog(
 
                         // Campo Cartão Débito
                         val cartaoDebitoFormatado = formatarValor(cartaoDebitoField.text)
-                        val cartaoDebitoDisplay = if (cartaoDebitoFormatado.isBlank() || cartaoDebitoFormatado == "0.00") "" else String.format("R$ %.2f", cartaoDebitoFormatado.toDoubleSafe()).replace(".", ",")
+                        val cartaoDebitoDisplay = formatarDisplay(cartaoDebitoFormatado)
                         OutlinedTextField(
                             value = criarTextFieldValue(cartaoDebitoFormatado),
                             onValueChange = { newValue ->
@@ -1017,7 +858,7 @@ fun FechamentoCaixaDialog(
 
                         // Campo PIX
                         val pixFormatado = formatarValor(pixField.text)
-                        val pixDisplay = if (pixFormatado.isBlank() || pixFormatado == "0.00") "" else String.format("R$ %.2f", pixFormatado.toDoubleSafe()).replace(".", ",")
+                        val pixDisplay = formatarDisplay(pixFormatado)
                         OutlinedTextField(
                             value = criarTextFieldValue(pixFormatado),
                             onValueChange = { newValue ->
@@ -1036,7 +877,7 @@ fun FechamentoCaixaDialog(
 
                         // Campo Valor Contado em Caixa
                         val valorContadoFormatado = formatarValor(valorContadoField.text)
-                        val valorContadoDisplay = if (valorContadoFormatado.isBlank() || valorContadoFormatado == "0.00") "" else String.format("R$ %.2f", valorContadoFormatado.toDoubleSafe()).replace(".", ",")
+                        val valorContadoDisplay = formatarDisplay(valorContadoFormatado)
                         OutlinedTextField(
                             value = criarTextFieldValue(valorContadoFormatado),
                             onValueChange = { newValue ->
@@ -1097,29 +938,12 @@ fun FechamentoCaixaDialog(
 fun SangriaDialog(
     saldoAtual: Double,
     onConfirm: (String, Double, String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    operadorNome: String? = null
 ) {
-    var nome by remember { mutableStateOf("") }
-    // Usar TextFieldValue para controlar posição do cursor
+    var nome by remember { mutableStateOf(operadorNome ?: "") }
     var valorField by remember { mutableStateOf(TextFieldValue("")) }
     var motivo by remember { mutableStateOf("") }
-
-    // Função para formatar valor monetário
-    fun formatarValor(input: String): String {
-        val digitsOnly = input.filter { it.isDigit() }
-        val valorCentavos = digitsOnly.toLongOrNull() ?: 0L
-        val reais = valorCentavos / 100
-        val centavos = valorCentavos % 100
-        return String.format("%d.%02d", reais, centavos)
-    }
-
-    // Helper para criar campo com cursor no final
-    fun criarTextFieldValue(texto: String): TextFieldValue {
-        return TextFieldValue(
-            text = texto,
-            selection = TextRange(texto.length)
-        )
-    }
 
     val valorNumerico = valorField.text.toDoubleSafe()
     val saldoSuficiente = valorNumerico <= saldoAtual
@@ -1164,15 +988,13 @@ fun SangriaDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Valor com máscara - cursor sempre no final
                 val valorFormatado = formatarValor(valorField.text)
-                val valorSangriaDisplay = if (valorFormatado.isBlank() || valorFormatado == "0.00") "" else String.format("R$ %.2f", valorFormatado.toDoubleSafe()).replace(".", ",")
+                val valorSangriaDisplay = formatarDisplay(valorFormatado)
                 OutlinedTextField(
                     value = criarTextFieldValue(valorFormatado),
                     onValueChange = { newValue ->
                         val digitsOnly = newValue.text.filter { it.isDigit() }
-                        val formatado = formatarValor(digitsOnly)
-                        valorField = criarTextFieldValue(formatado)
+                        valorField = criarTextFieldValue(formatarValor(digitsOnly))
                     },
                     label = { Text("Valor a Retirar *") },
                     leadingIcon = { Icon(Icons.Default.MoneyOff, null) },
@@ -1218,30 +1040,16 @@ fun SangriaDialog(
 @Composable
 fun SuprimentoDialog(
     onConfirm: (String, Double, String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    operadorNome: String? = null
 ) {
-    var nome by remember { mutableStateOf("") }
+    var nome by remember { mutableStateOf(operadorNome ?: "") }
     var valorField by remember { mutableStateOf(TextFieldValue("")) }
     var motivo by remember { mutableStateOf("") }
 
-    fun formatarValor(input: String): String {
-        val digitsOnly = input.filter { it.isDigit() }
-        val valorCentavos = digitsOnly.toLongOrNull() ?: 0L
-        val reais = valorCentavos / 100
-        val centavos = valorCentavos % 100
-        return String.format("%d.%02d", reais, centavos)
-    }
-
-    fun criarTextFieldValue(texto: String): TextFieldValue {
-        return TextFieldValue(
-            text = texto,
-            selection = TextRange(texto.length)
-        )
-    }
-
     val valorNumerico = valorField.text.toDoubleSafe()
     val valorFormatado = formatarValor(valorField.text)
-    val valorSuprimentoDisplay = if (valorField.text.isBlank() || valorField.text == "0.00") "" else String.format("R$ %.2f", valorFormatado.toDoubleSafe()).replace(".", ",")
+    val valorSuprimentoDisplay = formatarDisplay(valorFormatado)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1260,11 +1068,10 @@ fun SuprimentoDialog(
                 )
 
                 OutlinedTextField(
-                    value = valorField,
+                    value = criarTextFieldValue(valorFormatado),
                     onValueChange = { newValue ->
                         val digitsOnly = newValue.text.filter { it.isDigit() }
-                        val formatado = formatarValor(digitsOnly)
-                        valorField = criarTextFieldValue(formatado)
+                        valorField = criarTextFieldValue(formatarValor(digitsOnly))
                     },
                     label = { Text("Valor a Adicionar *") },
                     leadingIcon = { Icon(Icons.Default.AddCircle, null) },
@@ -1304,8 +1111,8 @@ fun AberturasTab(aberturas: List<OperacaoCaixa>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         if (aberturas.isEmpty()) {
             Text(
@@ -1320,7 +1127,7 @@ fun AberturasTab(aberturas: List<OperacaoCaixa>) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(6.dp)
                     ) {
                         Text(
                             dateFormat.format(Date(abertura.dataHora)),
@@ -1355,8 +1162,8 @@ fun FechamentosTab(fechamentos: List<OperacaoCaixa>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         if (fechamentos.isEmpty()) {
             Text(
@@ -1371,8 +1178,8 @@ fun FechamentosTab(fechamentos: List<OperacaoCaixa>) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         // Data de fechamento
                         Text(
@@ -1462,8 +1269,8 @@ fun SangriasTab(sangrias: List<OperacaoCaixa>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         if (sangrias.isEmpty()) {
             Text(
@@ -1478,7 +1285,7 @@ fun SangriasTab(sangrias: List<OperacaoCaixa>) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(6.dp)
                     ) {
                         Text(
                             dateFormat.format(Date(sangria.dataHora)),
@@ -1516,8 +1323,8 @@ fun SuprimentosTab(suprimentos: List<OperacaoCaixa>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         if (suprimentos.isEmpty()) {
             Text(
@@ -1532,7 +1339,7 @@ fun SuprimentosTab(suprimentos: List<OperacaoCaixa>) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(6.dp)
                     ) {
                         Text(
                             dateFormat.format(Date(suprimento.dataHora)),
@@ -1593,7 +1400,7 @@ fun VendasPorFormaTab(
                         .clickable { selectedVenda = venda }
                 ) {
                     Column(
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(6.dp)
                     ) {
                         Text(
                             "Nº ${venda.numero} - ${dateFormat.format(Date(venda.dataHora))}",
@@ -1731,4 +1538,108 @@ fun DialogVendaPreview(
             }
         }
     )
+}
+
+// ==================== COMPONENTES AUXILIARES ====================
+
+@Composable
+private fun FormaPagamentoItem(
+    label: String,
+    valor: Double,
+    color: Color,
+    prefix: String = ""
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "${prefix}R$ %.2f".format(valor),
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun SenhaAdminDialog(
+    motivo: String,
+    senhaCorreta: String,
+    onSenhaCorreta: () -> Unit,
+    onDismiss: () -> Unit,
+    onErro: (String) -> Unit
+) {
+    var senha by remember { mutableStateOf("") }
+    var tentativas by remember { mutableStateOf(0) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(32.dp)) },
+        title = { Text("Senha Necessária") },
+        text = {
+            Column {
+                Text("Digite a senha de administrador para $motivo")
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = senha,
+                    onValueChange = { senha = it },
+                    label = { Text("Senha") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = tentativas > 0 && senha.isNotBlank() && senha != senhaCorreta,
+                    supportingText = {
+                        if (tentativas > 0 && senha.isNotBlank() && senha != senhaCorreta) {
+                            Text("Senha incorreta! Tente novamente.", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (senha == senhaCorreta) {
+                        onSenhaCorreta()
+                    } else {
+                        tentativas++
+                        onErro("Senha incorreta!")
+                    }
+                },
+                enabled = senha.isNotBlank()
+            ) {
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+// ==================== FUNÇÕES UTILITÁRIAS ====================
+
+private fun formatarValor(input: String): String {
+    val digitsOnly = input.filter { it.isDigit() }
+    val valorCentavos = digitsOnly.toLongOrNull() ?: 0L
+    val reais = valorCentavos / 100
+    val centavos = valorCentavos % 100
+    return String.format("%d.%02d", reais, centavos)
+}
+
+private fun criarTextFieldValue(texto: String): TextFieldValue {
+    return TextFieldValue(
+        text = texto,
+        selection = TextRange(texto.length)
+    )
+}
+
+private fun formatarDisplay(formatado: String): String {
+    return if (formatado.isBlank() || formatado == "0.00") ""
+    else String.format("R$ %.2f", formatado.toDoubleSafe()).replace(".", ",")
 }

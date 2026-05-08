@@ -101,7 +101,7 @@ export default function Produtos() {
   const handleSave = async (produtoData) => {
     try {
       if (editingProduto) {
-        await fetch(`/api/produtos/${editingProduto.id}`, {
+        await fetch(apiUrl(`/api/produtos/${editingProduto.id}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(produtoData)

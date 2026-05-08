@@ -1,8 +1,8 @@
 package com.seucaixa.caixacombo.ui.screens.checkout
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.compose.foundation.BorderStroke
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,22 +17,31 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.platform.LocalDensity
 import com.seucaixa.caixacombo.data.model.*
-import com.seucaixa.caixacombo.ui.components.CustomKeyboard
-import com.seucaixa.caixacombo.ui.components.OutlinedTextFieldWithCustomKeyboard
+import com.seucaixa.caixacombo.service.StoneDeeplinkService
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ItemCarrinho
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,285 +52,404 @@ fun CheckoutScreenPOS(
     onNavigateToHome: () -> Unit,
     onNavigateToProdutos: () -> Unit,
     onNavigateToVendas: () -> Unit,
-    onNavigateToCaixa: () -> Unit
+    onNavigateToCaixa: () -> Unit,
+    onNavigateToConfiguracaoTipoImpressao: () -> Unit = {},
+    onNavigateToAcessos: () -> Unit = {},
+    onNavigateToCadastro: () -> Unit = {},
+    onSendStonePayment: ((Long, String, Int, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
-    
-    // Cores do sistema
-    val primaryColor by remember { 
-        mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) 
+
+    // Usuário logado - carregar permissões
+    var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            val operatorId = com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(context)
+            if (operatorId > 0) {
+                val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).usuarioDao()
+                usuarioLogado = dao.getUsuarioById(operatorId)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CheckoutPOS", "Erro ao carregar usuário", e)
+        }
     }
-    val backgroundColor by remember { 
-        mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFFFFBFE.toInt()))) 
+
+    // Logo carregado do arquivo no disco (evita CursorWindow overflow com base64 grande no Room)
+    var logoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var logoCheckoutPDV by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        try {
+            val logoFile = java.io.File(context.filesDir, "logo.png")
+            if (logoFile.exists()) {
+                logoBitmap = BitmapFactory.decodeFile(logoFile.absolutePath)
+            }
+            val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).configuracaoImpressaoDao()
+            val config = dao.getConfiguracaoSemLogo()
+            logoCheckoutPDV = config?.logoCheckoutPDV ?: false
+        } catch (e: Exception) {
+            android.util.Log.e("CheckoutPOS", "Erro ao carregar logo", e)
+        }
     }
-    
+
+    val primaryColor by remember {
+        mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt())))
+    }
+    val backgroundColor by remember {
+        mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFFFFBFE.toInt())))
+    }
+
     val produtos by viewModel.produtos.collectAsState()
     val carrinho by viewModel.carrinho.collectAsState()
     val total by viewModel.total.collectAsState()
     val busca by viewModel.busca.collectAsState()
     val categorias by viewModel.categorias.collectAsState()
     val categoriaSelecionada by viewModel.categoriaSelecionada.collectAsState()
-    val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
     val vendaFinalizada by viewModel.vendaFinalizada.collectAsState()
     val ultimaVenda by viewModel.ultimaVenda.collectAsState()
-    val precisaSincronizar by viewModel.precisaSincronizar.collectAsState()
-    val produtosPendentes by viewModel.produtosPendentes.collectAsState()
-    
+    val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
+
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var formaPagamentoSelecionada by remember { mutableStateOf<FormaPagamento?>(null) }
     var showValorDialog by remember { mutableStateOf(false) }
     var valorRecebido by remember { mutableStateOf("") }
-    var showSyncAlert by remember { mutableStateOf(false) }
-    
-    // Mostrar alerta de sincronização se necessário
-    LaunchedEffect(precisaSincronizar) {
-        if (precisaSincronizar) {
-            showSyncAlert = true
+    var showProdutoGrid by remember { mutableStateOf(false) }
+    var produtoSelecionado by remember { mutableStateOf<Produto?>(null) }
+    var showBuscarClienteDialog by remember { mutableStateOf(false) }
+    var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
+    var empresaSelecionada by remember { mutableStateOf<Empresa?>(null) }
+
+    // Stone deeplink
+    var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
+    var stonePaymentError by remember { mutableStateOf<String?>(null) }
+    var isStoneProcessing by remember { mutableStateOf(false) }
+
+    // Relógio atualizado
+    var currentTime by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            delay(1000)
         }
     }
-    
-    // Diálogo de sucesso com botões de impressão
+
+    // Diálogo de sucesso
     if (vendaFinalizada && ultimaVenda != null) {
         DialogVendaSucesso(
             venda = ultimaVenda!!,
-            onDismiss = { viewModel.resetVendaFinalizada() }
+            onDismiss = { viewModel.resetVendaFinalizada() },
+            nomeCliente = clienteSelecionado?.nome ?: empresaSelecionada?.nomeFantasia?.ifBlank { empresaSelecionada?.razaoSocial }
         )
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🛒", fontSize = 26.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Caixa Combo", fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = primaryColor
-                ),
-                actions = {
-                    Row {
-                        // Apenas botão Home
-                        TopBarAction("Home", Icons.Default.Home, onNavigateToHome, Color.White)
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    val displayMetrics = LocalContext.current.resources.displayMetrics
+    val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
+    val isSmallScreen = screenWidthDp < 600
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(backgroundColor)
-        ) {
+    Column(modifier = Modifier.fillMaxSize().background(backgroundColor).statusBarsPadding()) {
+        // ==================== TOPO ====================
+        TopBarPDV(
+            primaryColor = primaryColor,
+            currentTime = currentTime,
+            onNavigateToHome = onNavigateToHome,
+            logoBitmap = logoBitmap,
+            operadorNome = sharedPreferences.getString("operador_nome", null),
+            isSmallScreen = isSmallScreen,
+            clienteNome = clienteSelecionado?.nome ?: empresaSelecionada?.nomeFantasia?.ifBlank { empresaSelecionada?.razaoSocial }
+        )
 
-            // PRODUTOS
+        // ==================== NOME PRODUTO + INFO ====================
+        ProdutoNomeBar(
+            produto = produtoSelecionado,
+            primaryColor = primaryColor,
+            isSmallScreen = isSmallScreen
+        )
+
+        // ==================== CONTEÚDO PRINCIPAL ====================
+        if (isSmallScreen) {
+            // P2: Sem card esquerdo, tabela ocupa largura total + botão busca
             Column(
                 modifier = Modifier
-                    .weight(0.7f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
-
-                // Campo de busca moderno
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
+                // Botão buscar produtos compacto
+                Button(
+                    onClick = { showProdutoGrid = true },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                    shape = RoundedCornerShape(6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                    contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = busca,
-                        onValueChange = viewModel::buscarProdutos,
-                        singleLine = true,
-                        placeholder = { Text("Buscar produto...", color = Color.Gray) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = Color.Transparent,
-                            containerColor = Color.Transparent
-                        )
-                    )
+                    Icon(Icons.Default.Search, null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("BUSCAR PRODUTOS", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
 
-                if (categorias.isNotEmpty()) {
-                    ScrollableTabRow(
-                        selectedTabIndex = if (categoriaSelecionada == null) 0 else categorias.indexOf(categoriaSelecionada) + 1,
-                        containerColor = Color.Transparent,
-                        contentColor = primaryColor,
-                        edgePadding = 0.dp
-                    ) {
-                        Tab(
-                            selected = categoriaSelecionada == null,
-                            onClick = { viewModel.selecionarCategoria(null) },
-                            text = { Text("Todos", fontWeight = if (categoriaSelecionada == null) FontWeight.Bold else FontWeight.Normal) }
+                // Header da tabela
+                CarrinhoTableHeader(primaryColor, isSmallScreen)
+
+                // Lista de itens
+                LazyColumn(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(carrinho) { item ->
+                        CarrinhoTableRow(
+                            item = item,
+                            onQuantidadeChange = { novaQtd ->
+                                if (novaQtd > 0) viewModel.atualizarQuantidade(item.produtoId, novaQtd)
+                                else viewModel.removerDoCarrinho(item.produtoId)
+                            },
+                            onRemover = { viewModel.removerDoCarrinho(item.produtoId) },
+                            isSmallScreen = isSmallScreen
                         )
-                        categorias.forEach {
-                            Tab(
-                                selected = categoriaSelecionada?.id == it.id,
-                                onClick = { viewModel.selecionarCategoria(it) },
-                                text = { Text(it.nome, fontWeight = if (categoriaSelecionada?.id == it.id) FontWeight.Bold else FontWeight.Normal) }
-                            )
-                        }
                     }
                 }
 
-                val numColunas = if (deviceType == DeviceType.POS) 4 else 2
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(numColunas),
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(4.dp)
+                // Rodapé da tabela - total de itens
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 4.dp, vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    items(produtos, key = { it.id }) { produto ->
-                        ProdutoCardPOS(
-                            produto = produto,
-                            vendidos = vendidosPorProduto[produto.id] ?: 0,
-                            onClick = { viewModel.adicionarAoCarrinho(produto) }
-                        )
-                    }
+                    Text(
+                        "${carrinho.sumOf { it.quantidade.toInt() }} itens",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
+                    Text(
+                        "R$ %.2f".format(total),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        color = primaryColor
+                    )
                 }
             }
-
-            // CARRINHO - Design moderno
-            Card(
+        } else {
+            // Layout normal: Card esquerdo + Tabela direita
+            Row(
                 modifier = Modifier
-                    .width(360.dp)
-                    .fillMaxHeight()
-                    .padding(16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                )
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
+                // ESQUERDA: Foto do produto + Grid de produtos (quando aberto)
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .weight(0.4f)
+                        .fillMaxHeight()
                 ) {
-                    // Header do carrinho
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    // Foto do produto selecionado
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🛒", fontSize = 24.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Carrinho", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = primaryColor)
-                        }
-                        Text(
-                            "${carrinho.size} itens",
-                            fontSize = 14.sp,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
-
-                    if (carrinho.isEmpty()) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text("🛒", fontSize = 48.sp)
-                                Text("Carrinho vazio", color = Color.Gray, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(carrinho) { item ->
-                                CarrinhoItemPOS(
-                                    item = item,
-                                    onQuantidadeChange = {
-                                        if (it > 0) viewModel.atualizarQuantidade(item.produtoId, it)
-                                        else viewModel.removerDoCarrinho(item.produtoId)
-                                    },
-                                    onRemover = {
-                                        viewModel.removerDoCarrinho(item.produtoId)
+                        if (produtoSelecionado != null) {
+                            Card(
+                                modifier = Modifier.fillMaxSize(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Inventory,
+                                        null,
+                                        modifier = Modifier.size(80.dp),
+                                        tint = primaryColor
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        produtoSelecionado!!.nome,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    if (!produtoSelecionado!!.descricao.isNullOrEmpty()) {
+                                        Text(
+                                            produtoSelecionado!!.descricao!!,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
                                     }
-                                )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val estoqueCor = when {
+                                        produtoSelecionado!!.estoque <= 0 -> MaterialTheme.colorScheme.error
+                                        produtoSelecionado!!.estoque <= 5 -> Color(0xFFFF9800)
+                                        else -> MaterialTheme.colorScheme.tertiary
+                                    }
+                                    val estoqueLabel = if (produtoSelecionado!!.estoque <= 0) "ESGOTADO" else "Estoque: ${produtoSelecionado!!.estoqueFormatado()}"
+                                    Text(
+                                        estoqueLabel,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = estoqueCor
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                if (logoCheckoutPDV && logoBitmap != null) {
+                                    Image(
+                                        painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
+                                        contentDescription = "Logo",
+                                        modifier = Modifier
+                                            .height(340.dp)
+                                            .width(340.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.ShoppingCart,
+                                        null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "Selecione um produto",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        fontSize = 16.sp
+                                    )
+                                }
                             }
                         }
                     }
 
-                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
-
-                    // Total
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = primaryColor.copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                    // Botão para abrir grid de produtos
+                    Button(
+                        onClick = { showProdutoGrid = true },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            Text(
-                                "TOTAL",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                "R$ %.2f".format(total),
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = primaryColor
+                        Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("BUSCAR PRODUTOS", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // DIREITA: Tabela de itens do carrinho
+                Column(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .fillMaxHeight()
+                        .padding(8.dp)
+                ) {
+                    // Header da tabela
+                    CarrinhoTableHeader(primaryColor, isSmallScreen)
+
+                    // Lista de itens
+                    LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(carrinho) { item ->
+                            CarrinhoTableRow(
+                                item = item,
+                                onQuantidadeChange = { novaQtd ->
+                                    if (novaQtd > 0) viewModel.atualizarQuantidade(item.produtoId, novaQtd)
+                                    else viewModel.removerDoCarrinho(item.produtoId)
+                                },
+                                onRemover = { viewModel.removerDoCarrinho(item.produtoId) },
+                                isSmallScreen = isSmallScreen
                             )
                         }
                     }
 
-                    // Botões
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(
-                            onClick = { viewModel.limparCarrinho() },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) {
-                            Text("Limpar", fontWeight = FontWeight.Medium)
-                        }
-
-                        Button(
-                            onClick = {
-                                if (caixaAberto) {
-                                    showFormaPagamentoDialog = true
-                                } else {
-                                    onNavigateToCaixa()
-                                }
-                            },
-                            modifier = Modifier.weight(2f),
-                            enabled = carrinho.isNotEmpty(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-                        ) {
-                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Finalizar", fontWeight = FontWeight.Bold)
-                        }
+                    // Rodapé da tabela - total de itens
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "${carrinho.sumOf { it.quantidade.toInt() }} itens",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "R$ %.2f".format(total),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = primaryColor
+                        )
                     }
                 }
             }
         }
+
+        // ==================== RODAPÉ: Preço + Total + Botões ====================
+        RodapePDV(
+            produtoSelecionado = produtoSelecionado,
+            total = total,
+            carrinho = carrinho,
+            caixaAberto = caixaAberto,
+            primaryColor = primaryColor,
+            isSmallScreen = isSmallScreen,
+            usuarioLogado = usuarioLogado,
+            onFinalizar = {
+                if (caixaAberto) showFormaPagamentoDialog = true
+                else onNavigateToCaixa()
+            },
+            onLimpar = { viewModel.limparCarrinho() },
+            onNavigateToCaixa = onNavigateToCaixa,
+            onNavigateToProdutos = onNavigateToProdutos,
+            onNavigateToVendas = onNavigateToVendas,
+            onNavigateToHome = onNavigateToHome,
+            onNavigateToConfiguracaoTipoImpressao = onNavigateToConfiguracaoTipoImpressao,
+            onNavigateToAcessos = onNavigateToAcessos,
+            onNavigateToCadastro = onNavigateToCadastro,
+            onBuscarCliente = { showBuscarClienteDialog = true }
+        )
     }
-    
+
+    // Grid de produtos (dialog)
+    if (showProdutoGrid) {
+        ProdutoGridDialog(
+            produtos = produtos,
+            categorias = categorias,
+            categoriaSelecionada = categoriaSelecionada,
+            busca = busca,
+            carrinho = carrinho,
+            onBuscaChange = viewModel::buscarProdutos,
+            onCategoriaChange = viewModel::selecionarCategoria,
+            onProdutoClick = { produto ->
+                viewModel.adicionarAoCarrinho(produto)
+                produtoSelecionado = produto
+            },
+            onDismiss = { showProdutoGrid = false },
+            primaryColor = primaryColor,
+            vendidosPorProduto = vendidosPorProduto
+        )
+    }
+
+    // Dialog de busca de cliente/empresa
+    if (showBuscarClienteDialog) {
+        BuscarClienteDialog(
+            onClienteSelecionado = { cliente ->
+                clienteSelecionado = cliente
+                empresaSelecionada = null
+            },
+            onEmpresaSelecionada = { empresa ->
+                empresaSelecionada = empresa
+                clienteSelecionado = null
+            },
+            onDismiss = { showBuscarClienteDialog = false }
+        )
+    }
+
     // Dialog de escolha de forma de pagamento
     if (showFormaPagamentoDialog) {
         EscolhaFormaPagamentoDialogPOS(
@@ -346,10 +474,41 @@ fun CheckoutScreenPOS(
             onValorRecebidoChange = { valorRecebido = it },
             onConfirmar = {
                 val recebido = valorRecebido.toDoubleSafe(total)
-                if (viewModel.finalizarVenda(formaPagamentoSelecionada!!, recebido)) {
-                    showValorDialog = false
-                    valorRecebido = ""
-                    formaPagamentoSelecionada = null
+                val forma = formaPagamentoSelecionada!!
+
+                // Se deve usar Stone deeplink (Cartão/PIX), enviar pagamento primeiro
+                if (onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
+                    val stoneType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
+                    val centavos = StoneDeeplinkService.toCentavos(recebido)
+                    val parcelas = if (forma == FormaPagamento.CARTAO_CREDITO) 1 else 0
+                    isStoneProcessing = true
+                    stonePaymentError = null
+                    stonePaymentResult = null
+
+                    onSendStonePayment?.invoke(centavos, stoneType, parcelas, "") { result ->
+                        isStoneProcessing = false
+                        if (result != null && result.success) {
+                            stonePaymentResult = result
+                            // Stone aprovou -> finalizar venda
+                            if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
+                                showValorDialog = false
+                                valorRecebido = ""
+                                formaPagamentoSelecionada = null
+                                produtoSelecionado = null
+                            }
+                        } else {
+                            // Stone recusou ou erro
+                            stonePaymentError = result?.reason ?: "Pagamento recusado no terminal"
+                        }
+                    }
+                } else {
+                    // Dinheiro / outras formas -> finalizar direto
+                    if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
+                        showValorDialog = false
+                        valorRecebido = ""
+                        formaPagamentoSelecionada = null
+                        produtoSelecionado = null
+                    }
                 }
             },
             onCancelar = {
@@ -359,247 +518,159 @@ fun CheckoutScreenPOS(
             }
         )
     }
-    
-    // Diálogo de alerta de sincronização
-    if (showSyncAlert && precisaSincronizar) {
+
+    // Erro do Stone deeplink
+    if (stonePaymentError != null) {
         AlertDialog(
-            onDismissRequest = { showSyncAlert = false },
-            title = { 
-                Text(
-                    "🔄 Sincronização de Produtos",
-                    fontWeight = FontWeight.Bold
-                ) 
-            },
-            text = { 
-                Column {
-                    Text(
-                        "Existem $produtosPendentes produtos locais que precisam ser sincronizados com o servidor.",
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        "Deseja sincronizar agora?",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
+            onDismissRequest = { stonePaymentError = null },
+            title = { Text("Pagamento Recusado") },
+            text = { Text(stonePaymentError!!) },
             confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.sincronizarProdutos()
-                        showSyncAlert = false
-                    }
+                Button(onClick = { stonePaymentError = null }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    // Indicador de processamento Stone
+    if (isStoneProcessing) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Processando Pagamento") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Sincronizar")
+                    androidx.compose.material3.CircularProgressIndicator()
+                    Text("Aguardando terminal Stone...")
                 }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { showSyncAlert = false }
-                ) {
-                    Text("Depois")
-                }
-            }
+            confirmButton = {}
         )
     }
 }
 
-@Composable
-fun TopBarAction(label: String, icon: ImageVector, onClick: () -> Unit, iconColor: Color = MaterialTheme.colorScheme.onPrimary) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IconButton(onClick = onClick) {
-            Icon(icon, label, tint = iconColor)
-        }
-        Text(label, fontSize = 10.sp, color = iconColor)
-    }
-}
+// ==================== COMPONENTES DO LAYOUT PDV ====================
 
 @Composable
-fun ProdutoCardPOS(
-    produto: Produto,
-    vendidos: Int,
-    onClick: () -> Unit
+private fun TopBarPDV(
+    primaryColor: Color,
+    currentTime: String,
+    onNavigateToHome: () -> Unit,
+    logoBitmap: android.graphics.Bitmap? = null,
+    operadorNome: String? = null,
+    isSmallScreen: Boolean = false,
+    clienteNome: String? = null
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 100.dp, max = 130.dp)
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 8.dp)
-        ) {
-            // Coluna principal com as informações
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                // Linha 1: [📦] Nome Produto
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "📦",
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        produto.nome,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Linha 2: Descrição do produto (indentada)
-                if (!produto.descricao.isNullOrBlank()) {
-                    Text(
-                        produto.descricao,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        modifier = Modifier.padding(start = 22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Linha 3: Estoque
-                Text(
-                    "Estoque: ${produto.estoqueFormatado()}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (produto.estoque > 10) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
-                    maxLines = 1
-                )
-
-                // Linha 4: Vendidos
-                if (vendidos > 0) {
-                    Text(
-                        "Vendidos: $vendidos",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
-                    )
-                }
-            }
-
-            // Código de barras no canto inferior esquerdo
-            Column(
-                modifier = Modifier.align(Alignment.BottomStart)
-            ) {
-                produto.codigoBarras?.let { codigo ->
-                    Text(
-                        codigo,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        maxLines = 1
-                    )
-                }
-            }
-
-            // Preço no canto inferior direito
-            Text(
-                produto.precoFormatado(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                modifier = Modifier.align(Alignment.BottomEnd)
-            )
-        }
-    }
-}
-
-@Composable
-fun CarrinhoItemPOS(
-    item: ItemCarrinho,
-    onQuantidadeChange: (Double) -> Unit,
-    onRemover: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
-    ) {
+    if (isSmallScreen) {
+        // P2: Tudo numa linha
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .height(44.dp)
+                .background(primaryColor)
+                .padding(horizontal = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Info do produto
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            // Esquerda: Logo + Nome
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (logoBitmap != null) {
+                    Image(
+                        painter = BitmapPainter(logoBitmap.asImageBitmap()),
+                        contentDescription = "Logo",
+                        modifier = Modifier.height(28.dp).width(28.dp)
+                    )
+                } else {
+                    Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Caixa Combo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+            // Centro: Cliente + Operador
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    item.produtoNome,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    maxLines = 2
-                )
-                Text(
-                    "R$ %.2f x %.0f".format(item.precoUnitario, item.quantidade),
-                    color = Color.Gray,
-                    fontSize = 13.sp
-                )
-                Text(
-                    "Subtotal: R$ %.2f".format(item.total),
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(if (clienteNome != null) "Cli: $clienteNome" else "Cli: ---", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Badge, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        if (operadorNome != null) "Op: $operadorNome" else "Op: ---",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+            // Direita: Hora + Home
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
+                Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                IconButton(onClick = onNavigateToHome, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    } else {
+        // Layout normal: tudo em uma linha
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(primaryColor)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Logo + Nome
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (logoBitmap != null) {
+                    Image(
+                        painter = BitmapPainter(logoBitmap.asImageBitmap()),
+                        contentDescription = "Logo",
+                        modifier = Modifier.height(40.dp).width(40.dp)
+                    )
+                } else {
+                    Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Caixa Combo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
 
-            // Controles de quantidade
+            // Centro: Cliente / Vendedor
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = {
-                        val nova = item.quantidade - 1
-                        if (nova <= 0) onRemover() else onQuantidadeChange(nova)
-                    },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(Icons.Default.Remove, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Cliente: ---", color = Color.White.copy(alpha = 0.9f), fontSize = 14.sp)
                 }
-
-                Text(
-                    "${item.quantidade}",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    modifier = Modifier.width(32.dp),
-                    textAlign = TextAlign.Center
-                )
-
-                IconButton(
-                    onClick = { onQuantidadeChange(item.quantidade + 1) },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(Icons.Default.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Badge, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        if (operadorNome != null) "Operador: $operadorNome" else "Operador: ---",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 14.sp
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.width(8.dp))
-
-                IconButton(
-                    onClick = onRemover,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(Icons.Default.Delete, null, tint = Color.Red, modifier = Modifier.size(18.dp))
+            // Direita: Hora + Home
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp, fontFamily = FontFamily.Monospace)
+                IconButton(onClick = onNavigateToHome) {
+                    Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
         }
@@ -607,9 +678,463 @@ fun CarrinhoItemPOS(
 }
 
 @Composable
+private fun ProdutoNomeBar(
+    produto: Produto?,
+    primaryColor: Color,
+    isSmallScreen: Boolean = false
+) {
+    if (isSmallScreen) {
+        // P2: Nome + preço + estoque inline
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .background(primaryColor.copy(alpha = 0.1f))
+                .padding(horizontal = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Inventory,
+                contentDescription = "Produto",
+                tint = if (produto != null) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(if (produto != null) 22.dp else 16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                produto?.nome ?: "Selecione um produto",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (produto != null) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.weight(1f),
+                maxLines = 1
+            )
+            if (produto != null) {
+                val estoqueCor = when {
+                    produto.estoque <= 0 -> MaterialTheme.colorScheme.error
+                    produto.estoque <= 5 -> Color(0xFFFF9800)
+                    else -> MaterialTheme.colorScheme.tertiary
+                }
+                val estoqueLabel = if (produto.estoque <= 0) "ESGOTADO" else "Estq:${produto.estoqueFormatado()}"
+                Text(
+                    estoqueLabel,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = estoqueCor
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    produto.precoFormatado(),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor
+                )
+            }
+        }
+    } else {
+        // Layout normal
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .background(primaryColor.copy(alpha = 0.1f))
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.QrCode,
+                    contentDescription = "Código de barras",
+                    tint = if (produto != null) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    produto?.nome ?: "Selecione um produto",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (produto != null) primaryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CarrinhoTableHeader(primaryColor: Color, isSmallScreen: Boolean = false) {
+    val fs = if (isSmallScreen) 11.sp else 13.sp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(primaryColor.copy(alpha = 0.15f))
+            .padding(horizontal = if (isSmallScreen) 4.dp else 12.dp, vertical = if (isSmallScreen) 5.dp else 8.dp)
+    ) {
+        Text("CÓD", modifier = Modifier.weight(if (isSmallScreen) 0.13f else 0.1f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
+        Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 0.dp))
+        Text("DESC", modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
+        Text("QTD", modifier = Modifier.weight(if (isSmallScreen) 0.16f else 0.12f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.Center)
+        Text("VL UNIT", modifier = Modifier.weight(0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
+        Text("TOTAL", modifier = Modifier.weight(0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
+        Spacer(modifier = Modifier.weight(0.16f))
+    }
+}
+
+@Composable
+private fun CarrinhoTableRow(
+    item: ItemCarrinho,
+    onQuantidadeChange: (Double) -> Unit,
+    onRemover: () -> Unit,
+    isSmallScreen: Boolean = false
+) {
+    val fs = if (isSmallScreen) 11.sp else 13.sp
+    val iconSize = if (isSmallScreen) 22.dp else 14.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {}
+            .padding(horizontal = if (isSmallScreen) 4.dp else 12.dp, vertical = if (isSmallScreen) 8.dp else 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(item.produtoId.toString(), modifier = Modifier.weight(if (isSmallScreen) 0.13f else 0.1f), fontSize = fs, fontFamily = FontFamily.Monospace)
+        Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 0.dp))
+        Text(item.produtoNome, modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontSize = fs, fontWeight = FontWeight.Medium, maxLines = 1)
+        Row(modifier = Modifier.weight(0.16f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Remove, null, modifier = Modifier.size(iconSize).clickable { onQuantidadeChange(item.quantidade - 1) }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("%.0f".format(item.quantidade), fontSize = if (isSmallScreen) 14.sp else 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 6.dp))
+            Icon(Icons.Default.Add, null, modifier = Modifier.size(iconSize).clickable { onQuantidadeChange(item.quantidade + 1) }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text("R$%.2f".format(item.precoUnitario), modifier = Modifier.weight(0.16f), fontSize = fs, textAlign = TextAlign.End)
+        Text("R$%.2f".format(item.total), modifier = Modifier.weight(0.16f), fontSize = fs, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.primary)
+        Icon(Icons.Default.Close, null, modifier = Modifier.size(if (isSmallScreen) 12.dp else 14.dp).weight(0.16f).clickable { onRemover() }, tint = MaterialTheme.colorScheme.error)
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+}
+
+@Composable
+private fun RodapePDV(
+    produtoSelecionado: Produto?,
+    total: Double,
+    carrinho: List<ItemCarrinho>,
+    caixaAberto: Boolean,
+    primaryColor: Color,
+    isSmallScreen: Boolean = false,
+    usuarioLogado: Usuario? = null,
+    onFinalizar: () -> Unit,
+    onLimpar: () -> Unit,
+    onNavigateToCaixa: () -> Unit,
+    onNavigateToProdutos: () -> Unit,
+    onNavigateToVendas: () -> Unit,
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToConfiguracaoTipoImpressao: () -> Unit = {},
+    onNavigateToAcessos: () -> Unit = {},
+    onNavigateToCadastro: () -> Unit = {},
+    onBuscarCliente: () -> Unit = {}
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+    ) {
+        // Linha: Preço do produto + Total da compra
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = if (isSmallScreen) 8.dp else 16.dp, vertical = if (isSmallScreen) 4.dp else 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Preço do produto selecionado
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("PREÇO: ", fontSize = if (isSmallScreen) 11.sp else 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    produtoSelecionado?.precoFormatado() ?: "R$ 0,00",
+                    fontSize = if (isSmallScreen) 18.sp else 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor
+                )
+            }
+
+            // Total da compra
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("TOTAL: ", fontSize = if (isSmallScreen) 11.sp else 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "R$ %.2f".format(total),
+                    fontSize = if (isSmallScreen) 20.sp else 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor
+                )
+            }
+        }
+
+        // Barra de botões F1-F9 + Finalizar
+        // Permissões: ADMIN vê tudo, outros só o que têm permissão
+        val isAdmin = usuarioLogado?.cargo == CargoUsuario.ADMIN
+        val permCaixa = isAdmin || usuarioLogado?.permCaixa == true
+        val permVendas = isAdmin || usuarioLogado?.permVendas == true
+        val permProdutos = isAdmin || usuarioLogado?.permProdutos == true
+        val permConfig = isAdmin || usuarioLogado?.permConfiguracoes == true
+        val permAcessos = isAdmin || usuarioLogado?.permAcessos == true
+        val permCadastro = isAdmin || permAcessos // Cadastro ligado a Acessos
+
+        if (isSmallScreen) {
+            // P2: 2 linhas de botões (só os permitidos)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(primaryColor)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    horizontalArrangement = Arrangement.spacedBy(1.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FuncaoBotao("F1", "Home", Icons.Default.Home, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToHome() }
+                    if (permCaixa) FuncaoBotao("F2", "Caixa", Icons.Default.AccountBalance, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCaixa() }
+                    if (permVendas) FuncaoBotao("F3", "Vendas", Icons.Default.Receipt, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToVendas() }
+                    if (permProdutos) FuncaoBotao("F4", "Produtos", Icons.Default.Inventory, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToProdutos() }
+                    if (permConfig) FuncaoBotao("F5", "Impressão", Icons.Default.Print, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToConfiguracaoTipoImpressao() }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    horizontalArrangement = Arrangement.spacedBy(1.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FuncaoBotao("F6", "Cliente", Icons.Default.Person, Color.White, Modifier.weight(1f), isSmallScreen) { onBuscarCliente() }
+                    FuncaoBotao("F7", "Limpar", Icons.Default.Delete, Color.White, Modifier.weight(1f), isSmallScreen) { onLimpar() }
+                    if (permAcessos) FuncaoBotao("F8", "Auditoria", Icons.Default.Assessment, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToAcessos() }
+                    if (permCadastro) FuncaoBotao("F9", "Cadastro", Icons.Default.AppRegistration, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCadastro() }
+                    // Botão FINALIZAR
+                    Button(
+                        onClick = onFinalizar,
+                        modifier = Modifier.weight(2f).fillMaxHeight().padding(horizontal = 2.dp),
+                        shape = RoundedCornerShape(4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (caixaAberto) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                        ),
+                        enabled = carrinho.isNotEmpty() || !caixaAberto,
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        Icon(
+                            if (caixaAberto) Icons.Default.CheckCircle else Icons.Default.Lock,
+                            null,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            if (caixaAberto) "FINALIZAR" else "ABRIR CAIXA",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+        } else {
+            // Layout normal: 1 linha (só os permitidos)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(primaryColor),
+                horizontalArrangement = Arrangement.spacedBy(1.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FuncaoBotao("F1", "Home", Icons.Default.Home, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToHome() }
+                if (permCaixa) FuncaoBotao("F2", "Caixa", Icons.Default.AccountBalance, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCaixa() }
+                if (permVendas) FuncaoBotao("F3", "Vendas", Icons.Default.Receipt, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToVendas() }
+                if (permProdutos) FuncaoBotao("F4", "Produtos", Icons.Default.Inventory, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToProdutos() }
+                if (permConfig) FuncaoBotao("F5", "Impress.", Icons.Default.Print, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToConfiguracaoTipoImpressao() }
+                FuncaoBotao("F6", "Cliente", Icons.Default.Person, Color.White, Modifier.weight(1f), isSmallScreen) { onBuscarCliente() }
+                FuncaoBotao("F7", "Limpar", Icons.Default.Delete, Color.White, Modifier.weight(1f), isSmallScreen) { onLimpar() }
+                if (permAcessos) FuncaoBotao("F8", "Auditoria", Icons.Default.Assessment, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToAcessos() }
+                if (permCadastro) FuncaoBotao("F9", "Cadastro", Icons.Default.AppRegistration, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCadastro() }
+                // Botão FINALIZAR (destaque)
+                Button(
+                    onClick = onFinalizar,
+                    modifier = Modifier.weight(2f).fillMaxHeight().padding(horizontal = 4.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (caixaAberto) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                    ),
+                    enabled = carrinho.isNotEmpty() || !caixaAberto
+                ) {
+                    Icon(
+                        if (caixaAberto) Icons.Default.CheckCircle else Icons.Default.Lock,
+                        null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (caixaAberto) "FINALIZAR" else "ABRIR CAIXA",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FuncaoBotao(
+    codigo: String,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    textColor: Color,
+    modifier: Modifier = Modifier,
+    isSmallScreen: Boolean = false,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 1.dp, vertical = if (isSmallScreen) 4.dp else 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(codigo, color = textColor.copy(alpha = 0.7f), fontSize = if (isSmallScreen) 13.sp else 11.sp, fontWeight = FontWeight.Bold)
+        Icon(icon, null, tint = textColor.copy(alpha = 0.9f), modifier = Modifier.size(if (isSmallScreen) 28.dp else 22.dp))
+        if (label.isNotBlank()) {
+            Text(label, color = textColor.copy(alpha = 0.8f), fontSize = if (isSmallScreen) 12.sp else 10.sp, maxLines = 1)
+        }
+    }
+}
+
+// ==================== DIALOG: GRID DE PRODUTOS ====================
+
+@Composable
+private fun ProdutoGridDialog(
+    produtos: List<Produto>,
+    categorias: List<Categoria>,
+    categoriaSelecionada: Categoria?,
+    busca: String,
+    carrinho: List<ItemCarrinho>,
+    onBuscaChange: (String) -> Unit,
+    onCategoriaChange: (Categoria?) -> Unit,
+    onProdutoClick: (Produto) -> Unit,
+    onDismiss: () -> Unit,
+    primaryColor: Color,
+    vendidosPorProduto: Map<Long, Int>
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                // Header com busca
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("PRODUTOS", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, null)
+                    }
+                }
+
+                OutlinedTextField(
+                    value = busca,
+                    onValueChange = onBuscaChange,
+                    label = { Text("Buscar produto...") },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Abas de categorias
+                if (categorias.isNotEmpty()) {
+                    ScrollableTabRow(
+                        selectedTabIndex = if (categoriaSelecionada == null) 0 else categorias.indexOf(categoriaSelecionada) + 1,
+                        containerColor = Color.Transparent,
+                        contentColor = primaryColor,
+                        edgePadding = 0.dp
+                    ) {
+                        Tab(
+                            selected = categoriaSelecionada == null,
+                            onClick = { onCategoriaChange(null) },
+                            text = { Text("Todos") }
+                        )
+                        categorias.forEach {
+                            Tab(
+                                selected = categoriaSelecionada?.id == it.id,
+                                onClick = { onCategoriaChange(it) },
+                                text = { Text(it.nome) }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Grid de produtos
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(produtos, key = { it.id }) { produto ->
+                        val qtdNoCarrinho = carrinho.find { it.produtoId == produto.id }?.quantidade?.toInt() ?: 0
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 70.dp, max = 90.dp)
+                                .clickable { onProdutoClick(produto) },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Column(
+                                    modifier = Modifier.padding(6.dp),
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(produto.nome, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                                    val estoqueCor = when {
+                                        produto.estoque <= 0 -> MaterialTheme.colorScheme.error
+                                        produto.estoque <= 5 -> Color(0xFFFF9800)
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                    Text(
+                                        if (produto.estoque <= 0) "ESGOTADO" else "Estq: ${produto.estoqueFormatado()}",
+                                        fontSize = 10.sp, color = estoqueCor
+                                    )
+                                    Text(produto.precoFormatado(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                }
+                                if (qtdNoCarrinho > 0) {
+                                    Badge(
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                                        containerColor = Color(0xFF4CAF50)
+                                    ) {
+                                        Text("${qtdNoCarrinho}x", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== DIALOG: VENDA SUCESSO ====================
+
+@Composable
 fun DialogVendaSucesso(
-    venda: com.seucaixa.caixacombo.data.model.Venda,
-    onDismiss: () -> Unit
+    venda: Venda,
+    onDismiss: () -> Unit,
+    nomeCliente: String? = null
 ) {
     val context = LocalContext.current
     val printService = remember { com.seucaixa.caixacombo.service.SunmiPrintService(context) }
@@ -617,16 +1142,13 @@ fun DialogVendaSucesso(
     val scope = rememberCoroutineScope()
     var isPrinting by remember { mutableStateOf(false) }
 
-    // Mostrar erro se houver
     errorMessage?.let { error ->
         AlertDialog(
             onDismissRequest = { errorMessage = null },
             title = { Text("Erro de Impressão") },
             text = { Text(error) },
             confirmButton = {
-                TextButton(onClick = { errorMessage = null }) {
-                    Text("OK")
-                }
+                TextButton(onClick = { errorMessage = null }) { Text("OK") }
             }
         )
     }
@@ -634,62 +1156,36 @@ fun DialogVendaSucesso(
     AlertDialog(
         onDismissRequest = { if (!isPrinting) onDismiss() },
         title = {
-            Text(
-                "✅ Venda Finalizada!",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Venda Finalizada!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Info da venda
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Column(
                         modifier = Modifier.padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            "Total: R$ %.2f".format(venda.total),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "Forma: ${venda.formaPagamento.name.replace("_", " ")}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "Nº ${venda.numero}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("Total: R$ %.2f".format(venda.total), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Forma: ${venda.formaPagamento.name.replace("_", " ")}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Nº ${venda.numero}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                // Botões de impressão
-                Text(
-                    "Opções de Impressão:",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
+                Text("Opções de Impressão:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
 
-                // Imprimir Total
                 Button(
                     onClick = {
                         try {
                             isPrinting = true
-                            printService.imprimirVenda(venda)
+                            printService.imprimirVenda(venda, nomeCliente = nomeCliente)
                             onDismiss()
                         } catch (e: Exception) {
-                            android.util.Log.e("DialogVendaSucesso", "Erro ao imprimir: ${e.message}", e)
                             errorMessage = "Erro ao imprimir: ${e.message}"
                             isPrinting = false
                         }
@@ -702,16 +1198,13 @@ fun DialogVendaSucesso(
                     Text("Imprimir Total")
                 }
 
-                // Imprimir Fichas Separadas
                 OutlinedButton(
                     onClick = {
                         scope.launch {
                             try {
                                 isPrinting = true
-                                var totalFichas = 0
                                 venda.itens.forEach { item ->
-                                    // Imprimir uma ficha por unidade
-                                    repeat(item.quantidade.toInt()) { index ->
+                                    repeat(item.quantidade.toInt()) {
                                         printService.imprimirFichaProducao(
                                             item = item,
                                             numeroVenda = venda.numero,
@@ -719,15 +1212,11 @@ fun DialogVendaSucesso(
                                             formaPagamento = venda.formaPagamento.name.replace("_", " "),
                                             quantidadeUnidade = 1
                                         )
-                                        totalFichas++
-                                        // Delay entre impressões para garantir que saiam separadas
-                                        kotlinx.coroutines.delay(800)
+                                        delay(800)
                                     }
                                 }
-                                android.util.Log.d("DialogVendaSucesso", "Total de fichas impressas: $totalFichas")
                                 onDismiss()
                             } catch (e: Exception) {
-                                android.util.Log.e("DialogVendaSucesso", "Erro ao imprimir fichas: ${e.message}", e)
                                 errorMessage = "Erro ao imprimir fichas: ${e.message}"
                                 isPrinting = false
                             }
@@ -744,9 +1233,7 @@ fun DialogVendaSucesso(
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("OK")
-            }
+            Button(onClick = onDismiss) { Text("OK") }
         }
     )
 }
