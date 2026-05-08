@@ -122,7 +122,6 @@ fun CheckoutScreenPOS(
     // Stone deeplink
     var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
     var stonePaymentError by remember { mutableStateOf<String?>(null) }
-    var isStoneProcessing by remember { mutableStateOf(false) }
     val isStoneAvailable = remember { StoneDeeplinkService.isStoneInstalled(context) }
 
     // Relógio atualizado
@@ -461,13 +460,11 @@ fun CheckoutScreenPOS(
                 if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
                     val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
                     val centavos = StoneDeeplinkService.toCentavos(total)
-                    isStoneProcessing = true
                     stonePaymentError = null
                     stonePaymentResult = null
                     formaPagamentoSelecionada = forma
 
-                    onSendStonePayment?.invoke(centavos, transactionType, "", "") { result ->
-                        isStoneProcessing = false
+                    onSendStonePayment?.invoke(centavos, transactionType, StoneDeeplinkService.InstallmentType.NONE, "") { result ->
                         if (result != null && result.success) {
                             stonePaymentResult = result
                             val stoneAtk = result.authorizationCode.ifEmpty { null }
@@ -520,62 +517,18 @@ fun CheckoutScreenPOS(
         )
     }
 
-    // Erro do Stone deeplink
+    // Erro de pagamento Stone
     if (stonePaymentError != null) {
         AlertDialog(
             onDismissRequest = { stonePaymentError = null },
-            title = { Text("Pagamento Recusado") },
-            text = { Text(stonePaymentError!!) },
+            title = { Text("Pagamento") },
+            text = { Text(stonePaymentError ?: "Erro desconhecido") },
             confirmButton = {
-                Button(onClick = { stonePaymentError = null }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    // Indicador de processamento Stone
-    if (isStoneProcessing) {
-        val formaTexto = when (formaPagamentoSelecionada) {
-            FormaPagamento.PIX -> "PIX"
-            FormaPagamento.CARTAO_CREDITO -> "CARTÃO DE CRÉDITO"
-            FormaPagamento.CARTAO_DEBITO -> "CARTÃO DE DÉBITO"
-            else -> "PAGAMENTO"
-        }
-        val instrucao = when (formaPagamentoSelecionada) {
-            FormaPagamento.PIX -> "Apresente o QR Code ao cliente no terminal"
-            FormaPagamento.CARTAO_CREDITO -> "Insira ou passe o cartão no terminal"
-            FormaPagamento.CARTAO_DEBITO -> "Insira ou passe o cartão no terminal"
-            else -> "Aguardando terminal..."
-        }
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text(formaTexto) },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        androidx.compose.material3.CircularProgressIndicator()
-                        Text("Processando R$ %.2f".format(total))
-                    }
-                    Text(
-                        instrucao,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    isStoneProcessing = false
-                    stonePaymentError = "Pagamento cancelado pelo operador"
+                Button(onClick = {
+                    stonePaymentError = null
                     formaPagamentoSelecionada = null
                 }) {
-                    Text("Cancelar")
+                    Text("OK")
                 }
             }
         )
