@@ -133,6 +133,7 @@ object StoneDeeplinkService {
             appendQueryParameter("installment_count", installmentCount.toString())
             appendQueryParameter("type", type)
             appendQueryParameter("returnscheme", RETURN_SCHEME)
+            appendQueryParameter("third_party_theme_enabled", "true")
             if (orderId.isNotBlank()) {
                 appendQueryParameter("order_id", orderId)
             }
@@ -236,6 +237,7 @@ object StoneDeeplinkService {
                 appendQueryParameter("amount", amount.toString())
             }
             appendQueryParameter("editable_amount", editableAmount.toString())
+            appendQueryParameter("third_party_theme_enabled", "true")
         }
 
         val uri = uriBuilder.build()
