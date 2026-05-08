@@ -25,8 +25,11 @@ class PollingService : Service() {
         private const val TAG = "PollingService"
         private const val POLL_INTERVAL_MS = 15_000L // 15 segundos
         private const val MAX_RETRIES = 5
+        private const val PREFS_NAME = "server_config"
+        private const val KEY_SERVER_URL = "server_url"
+        private const val DEFAULT_SERVER_URL = "https://caixa-dashboard-mt.onrender.com"
 
-        private var SERVER_URL = "https://caixa-dashboard-mt.onrender.com"
+        private var SERVER_URL = DEFAULT_SERVER_URL
         private var pollingDeviceId: String? = null
         private var deviceName: String? = null
         private var serialNumber: String? = null
@@ -49,8 +52,24 @@ class PollingService : Service() {
         private var consecutiveErrors = 0
 
         fun configureServer(url: String) {
-            SERVER_URL = url
+            SERVER_URL = url.trimEnd('/')
         }
+
+        fun configureServer(context: android.content.Context, url: String) {
+            SERVER_URL = url.trimEnd('/')
+            context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                .edit().putString(KEY_SERVER_URL, SERVER_URL).apply()
+        }
+
+        fun loadServerUrl(context: android.content.Context) {
+            val saved = context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+                .getString(KEY_SERVER_URL, null)
+            if (saved != null) {
+                SERVER_URL = saved.trimEnd('/')
+            }
+        }
+
+        fun getServerUrl(): String = SERVER_URL
 
         fun setDeviceInfo(id: String, name: String, serial: String? = null) {
             pollingDeviceId = id
@@ -173,7 +192,7 @@ class PollingService : Service() {
             val id = pollingDeviceId ?: return
             thread {
                 try {
-                    val url = URL("$SERVER_URL/api/operacoes")
+                    val url = URL("$SERVER_URL/api/device/operacao")
                     val conn = url.openConnection() as HttpURLConnection
                     conn.requestMethod = "POST"
                     conn.setRequestProperty("Content-Type", "application/json")

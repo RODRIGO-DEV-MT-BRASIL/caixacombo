@@ -78,3 +78,10 @@
 
 # Keep data classes with @Keep annotation if needed
 -keep @androidx.annotation.Keep class * { *; }
+
+# Fix R8 missing classes from google.crypto.tink (referenced transitively)
+-dontwarn com.google.api.client.http.**
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
+-dontwarn org.joda.time.**
+-dontwarn com.google.crypto.tink.util.KeysDownloader

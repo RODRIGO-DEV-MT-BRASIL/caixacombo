@@ -1282,6 +1282,19 @@ app.post('/api/device/poll', (req, res) => {
   }
   saveData();
 
+  // Detectar mudança de status e notificar dashboards
+  const newStatus = status || existing?.status || 'online';
+  if (existing && existing.status !== newStatus) {
+    io.emit('device_status_update', {
+      deviceId,
+      status: newStatus,
+      lockReason: connectedDevices.get(deviceId)?.lockReason,
+      lockedAt: connectedDevices.get(deviceId)?.lockedAt,
+      usageTimeLimit: connectedDevices.get(deviceId)?.usageTimeLimit,
+      usageStartTime: connectedDevices.get(deviceId)?.usageStartTime
+    });
+  }
+
   // Processar dados de caixa se enviado
   if (caixaData) {
     io.emit('caixa_data', { deviceId, caixa: caixaData });
@@ -1343,6 +1356,84 @@ app.post('/api/device/sale', (req, res) => {
   res.json({ success: true });
 });
 
+// Enviar operação de caixa via REST (sem autenticação - usado pelos terminais Android)
+app.post('/api/device/operacao', (req, res) => {
+  const { deviceId, tipo, valor, nomeOperador, observacao } = req.body;
+  
+  if (!deviceId || !tipo) {
+    return res.status(400).json({ error: 'deviceId e tipo obrigatórios' });
+  }
+
+  const deviceInfo = connectedDevices.get(deviceId);
+
+  const operacao = {
+    id: Date.now(),
+    tipo,
+    valor: parseFloat(valor) || 0,
+    deviceId,
+    nomeOperador: nomeOperador || 'terminal',
+    observacao: observacao || '',
+    dataHora: new Date().toISOString(),
+    timestamp: Date.now()
+  };
+
+  // Salvar no banco local
+  if (!db.operacoes) db.operacoes = [];
+  db.operacoes.push(operacao);
+
+  // Se for fechamento, salvar sessão de caixa no histórico
+  if (tipo === 'fechamento') {
+    if (!db.caixaSessoes) db.caixaSessoes = [];
+    
+    const aberturas = db.operacoes.filter(o => 
+      o.tipo === 'abertura' && (o.deviceId === deviceId || (!o.deviceId && !deviceId))
+    );
+    const ultimaAbertura = aberturas[aberturas.length - 1];
+    
+    if (ultimaAbertura) {
+      const opsSessao = db.operacoes.filter(o => 
+        o.timestamp >= ultimaAbertura.timestamp && o.timestamp <= operacao.timestamp &&
+        (o.deviceId === deviceId || (!o.deviceId && !deviceId) || o.tipo === 'fechamento')
+      );
+      
+      const vendasSessao = (db.vendas || []).filter(v => {
+        const vTime = new Date(v.createdAt || v.dataHora).getTime();
+        return vTime >= ultimaAbertura.timestamp && vTime <= operacao.timestamp &&
+        (v.deviceId === deviceId || !deviceId);
+      });
+      
+      db.caixaSessoes.push({
+        id: Date.now(),
+        deviceId: deviceId || 'geral',
+        aberturaEm: ultimaAbertura.dataHora,
+        fechamentoEm: operacao.dataHora,
+        operadorAbertura: ultimaAbertura.nomeOperador,
+        operadorFechamento: nomeOperador || 'terminal',
+        totalAbertura: opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0),
+        totalVendas: vendasSessao.reduce((s, v) => s + (v.total || 0), 0),
+        totalSangrias: opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0),
+        totalSuprimentos: opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0),
+        vendas: vendasSessao
+      });
+    }
+  }
+
+  saveData();
+
+  // Broadcast para todos os dashboards
+  io.emit('operacao_adicionada', operacao);
+  io.emit('operacoes_sync', {
+    operacoes: db.operacoes
+  });
+
+  // Auditoria
+  addAuditoria('operacao_caixa', deviceId, `${tipo}: R$ ${operacao.valor.toFixed(2)}`, nomeOperador);
+
+  console.log(`✅ Operação de caixa via REST: ${tipo} de ${deviceId} - R$ ${operacao.valor.toFixed(2)}`);
+
+  res.json({ success: true, operacao });
+});
+
 // Enviar status do dispositivo via REST
 app.post('/api/device/status', (req, res) => {
   const { deviceId, status } = req.body;
@@ -1353,9 +1444,16 @@ app.post('/api/device/status', (req, res) => {
 
   const device = connectedDevices.get(deviceId);
   if (device) {
+    const statusAnterior = device.status;
     device.status = status;
     device.lastPoll = new Date();
-    io.emit('device_status', { deviceId, status });
+    
+    // Auditoria se houve mudança de status
+    if (statusAnterior !== status) {
+      addAuditoria('mudanca_status', deviceId, `Status alterado via REST: ${statusAnterior} → ${status}`);
+    }
+    
+    io.emit('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
   }
 
   res.json({ success: true });
@@ -1987,6 +2085,11 @@ io.on('connection', (socket) => {
     // Enviar vendas recentes (últimas 50)
     const recentVendas = (db.vendas || []).slice(-50).reverse();
     socket.emit('vendas_history', recentVendas);
+
+    // Enviar operações de caixa para sincronização
+    socket.emit('operacoes_sync', {
+      operacoes: db.operacoes || []
+    });
   });
 
   socket.on('lock_device', (data) => {
