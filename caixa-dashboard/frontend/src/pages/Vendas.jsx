@@ -24,6 +24,7 @@ export default function Vendas() {
     if (!acc[deviceId]) {
       acc[deviceId] = {
         deviceId,
+        deviceName: venda.deviceName || null,
         vendas: [],
         total: 0,
         count: 0
@@ -122,7 +123,7 @@ export default function Vendas() {
                     <Monitor size={24} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{dispositivo.deviceId.substring(0, 16)}...</p>
+                    <p className="font-semibold text-white">{dispositivo.deviceName || dispositivo.deviceId.substring(0, 16)}{dispositivo.deviceId.length > 16 ? '...' : ''}</p>
                     <p className="text-xs text-gray-500">{dispositivo.count} vendas</p>
                   </div>
                 </div>
@@ -154,7 +155,7 @@ export default function Vendas() {
                         </div>
                         <p className="text-xs text-gray-500">
                           <Calendar size={10} className="inline mr-1" />
-                          {new Date(venda.createdAt).toLocaleString('pt-BR')}
+                          {venda.createdAt ? new Date(venda.createdAt).toLocaleString('pt-BR') : venda.dataHora ? new Date(venda.dataHora).toLocaleString('pt-BR') : 'Data indisponível'}
                         </p>
                       </div>
                       <p className="text-sm font-bold text-emerald-400 shrink-0">

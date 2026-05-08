@@ -1015,16 +1015,26 @@ app.post('/api/device/sale', (req, res) => {
 
   // Processar venda igual ao WebSocket
   if (!db.vendas) db.vendas = [];
-  const existingIndex = db.vendas.findIndex(v => v.id === sale.id);
+  
+  // Adicionar deviceId e createdAt se não existirem
+  const deviceInfo = connectedDevices.get(deviceId);
+  const enrichedSale = {
+    ...sale,
+    deviceId: sale.deviceId || deviceId,
+    deviceName: sale.deviceName || deviceInfo?.deviceName || deviceId,
+    createdAt: sale.createdAt || new Date().toISOString()
+  };
+  
+  const existingIndex = db.vendas.findIndex(v => v.id === enrichedSale.id);
   if (existingIndex === -1) {
-    db.vendas.push(sale);
+    db.vendas.push(enrichedSale);
   } else {
-    db.vendas[existingIndex] = sale;
+    db.vendas[existingIndex] = enrichedSale;
   }
   saveData();
 
   // Notificar dashboards
-  io.emit('sale_data', { deviceId, sale });
+  io.emit('venda_added', enrichedSale);
 
   // Auto-unlock se dispositivo estava bloqueado
   const device = connectedDevices.get(deviceId);
