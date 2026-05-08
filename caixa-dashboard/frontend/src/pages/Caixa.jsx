@@ -130,7 +130,9 @@ export default function Caixa() {
       if (d.deviceId) ensureDevice(porDispositivo, d.deviceId)
     })
 
-    // 4. Determinar sessão atual de cada dispositivo (última abertura sem fechamento posterior)
+    // 4. Determinar sessão de cada dispositivo
+    // Aberto: desde a última abertura até agora
+    // Fechado: da última abertura até o fechamento correspondente
     const sessoes = {}
     Object.entries(porDispositivo).forEach(([deviceId, dev]) => {
       const opsSorted = [...dev.operacoes].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
@@ -138,18 +140,21 @@ export default function Caixa() {
       const ultimaAbertura = aberturas[aberturas.length - 1] || null
 
       if (!ultimaAbertura) {
-        sessoes[deviceId] = { aberto: false, aberturaEm: null, aberturaTimestamp: null, operador: null }
+        sessoes[deviceId] = { aberto: false, aberturaEm: null, aberturaTimestamp: null, fechamentoTimestamp: null, operador: null }
         return
       }
 
       // Verificar se há fechamento APÓS a última abertura
       const fechamentosApos = opsSorted.filter(o => o.tipo === 'fechamento' && o.timestamp > ultimaAbertura.timestamp)
       const aberto = fechamentosApos.length === 0
+      const ultimoFechamento = fechamentosApos.length > 0 ? fechamentosApos[fechamentosApos.length - 1] : null
 
       sessoes[deviceId] = {
         aberto,
         aberturaEm: ultimaAbertura.dataHora,
         aberturaTimestamp: ultimaAbertura.timestamp,
+        fechamentoTimestamp: ultimoFechamento ? ultimoFechamento.timestamp : null,
+        fechamentoEm: ultimoFechamento ? ultimoFechamento.dataHora : null,
         operador: ultimaAbertura.nomeOperador
       }
     })
@@ -157,26 +162,26 @@ export default function Caixa() {
     return { dispositivos: Object.values(porDispositivo), caixaAtual: sessoes }
   }, [operacoes, vendas, dispositivosConectados])
 
-  // Totais consolidados (soma de todos os terminais com caixa aberto)
+  // Totais consolidados (soma de todos os terminais com sessão — aberta ou fechada)
   const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria, totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito } = useMemo(() => {
     let ab = 0, ft = 0, sup = 0, san = 0, tv = 0, din = 0, pix = 0, cred = 0, deb = 0
     
     dispositivos.forEach(d => {
       const sessao = caixaAtual[d.deviceId]
-      if (!sessao || !sessao.aberto) return
+      if (!sessao || !sessao.aberturaTimestamp) return
       
-      const ts = sessao.aberturaTimestamp || 0
-      const opsSessao = d.operacoes.filter(o => o.timestamp >= ts)
+      const ts = sessao.aberturaTimestamp
+      const tf = sessao.aberto ? Date.now() : (sessao.fechamentoTimestamp || Date.now())
+      const opsSessao = d.operacoes.filter(o => o.timestamp >= ts && o.timestamp <= tf)
       
       ab += opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
       sup += opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
       san += opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
       ft += opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
       
-      // Vendas da sessão atual deste dispositivo
       const vendasSessao = vendas.filter(v => {
         const vTime = new Date(v.createdAt || v.dataHora).getTime()
-        return vTime >= ts && (v.deviceId === d.deviceId || (d.deviceId === 'geral' && !v.deviceId))
+        return vTime >= ts && vTime <= tf && (v.deviceId === d.deviceId || (d.deviceId === 'geral' && !v.deviceId))
       })
       tv += vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
       din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
@@ -200,25 +205,27 @@ export default function Caixa() {
     return d.deviceId.toLowerCase().includes(s)
   })
 
-  // Vendas da sessão atual de um dispositivo
+  // Vendas da sessão de um dispositivo (aberta ou fechada)
   const getVendasSessao = (deviceId) => {
     const sessao = caixaAtual[deviceId]
-    if (!sessao) return []
-    const ts = sessao.aberturaTimestamp || 0
+    if (!sessao || !sessao.aberturaTimestamp) return []
+    const ts = sessao.aberturaTimestamp
+    const tf = sessao.aberto ? Date.now() : (sessao.fechamentoTimestamp || Date.now())
     return vendas.filter(v => {
       const vTime = new Date(v.createdAt || v.dataHora).getTime()
-      return vTime >= ts && (v.deviceId === deviceId || (deviceId === 'geral' && !v.deviceId))
+      return vTime >= ts && vTime <= tf && (v.deviceId === deviceId || (deviceId === 'geral' && !v.deviceId))
     })
   }
 
-  // Operações da sessão atual de um dispositivo
+  // Operações da sessão de um dispositivo (aberta ou fechada)
   const getOpsSessao = (deviceId) => {
     const sessao = caixaAtual[deviceId]
-    if (!sessao) return []
-    const ts = sessao.aberturaTimestamp || 0
+    if (!sessao || !sessao.aberturaTimestamp) return []
+    const ts = sessao.aberturaTimestamp
+    const tf = sessao.aberto ? Date.now() : (sessao.fechamentoTimestamp || Date.now())
     const dev = dispositivos.find(d => d.deviceId === deviceId)
     if (!dev) return []
-    return dev.operacoes.filter(o => o.timestamp >= ts)
+    return dev.operacoes.filter(o => o.timestamp >= ts && o.timestamp <= tf)
   }
 
   // Filtrar operações/vendas por aba selecionada (por dispositivo, sessão atual)
@@ -547,12 +554,20 @@ export default function Caixa() {
                 onClick={() => setExpandedDevice(expandedDevice === dispositivo.deviceId ? null : dispositivo.deviceId)}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${caixaAtual[dispositivo.deviceId]?.aberto ? 'bg-gradient-to-br from-emerald-600 to-emerald-400' : 'bg-gradient-to-br from-gray-600 to-gray-500'}`}>
                     <Monitor size={24} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">{dispositivo.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === dispositivo.deviceId)?.deviceName || dispositivo.deviceId}</p>
-                    <p className="text-xs text-gray-500">{getOperacoesByTab(dispositivo, selectedTab).length} {selectedTab >= 4 ? 'vendas' : 'operações'}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-white text-sm">{dispositivo.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === dispositivo.deviceId)?.deviceName || dispositivo.deviceName || dispositivo.deviceId}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${caixaAtual[dispositivo.deviceId]?.aberto ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                        {caixaAtual[dispositivo.deviceId]?.aberto ? 'Aberto' : 'Fechado'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {getOperacoesByTab(dispositivo, selectedTab).length} {selectedTab >= 4 ? 'vendas' : 'operações'}
+                      {caixaAtual[dispositivo.deviceId]?.aberturaEm && ` • Desde ${new Date(caixaAtual[dispositivo.deviceId].aberturaEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
@@ -634,8 +649,19 @@ export default function Caixa() {
               {expandedDevice === dispositivo.deviceId && (
                 <div className="border-t border-white/5 p-4 space-y-2">
                   {getOperacoesByTab(dispositivo, selectedTab).length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="text-gray-400">Nenhuma operação encontrada</p>
+                    <div className="text-center py-6">
+                      <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center mx-auto mb-2">
+                        {selectedTab >= 4 ? <DollarSign size={18} className="text-gray-500" /> : <Wallet size={18} className="text-gray-500" />}
+                      </div>
+                      <p className="text-gray-400 text-sm">
+                        {selectedTab >= 4 
+                          ? `Nenhuma venda via ${['','Dinheiro','PIX','Crédito','Débito'][selectedTab-3]} nesta sessão`
+                          : `Nenhuma operação de ${['abertura','fechamento','suprimento','sangria'][selectedTab]} nesta sessão`
+                        }
+                      </p>
+                      {!caixaAtual[dispositivo.deviceId]?.aberturaTimestamp && (
+                        <p className="text-gray-600 text-xs mt-1">Abra o caixa para registrar operações</p>
+                      )}
                     </div>
                   ) : (
                     getOperacoesByTab(dispositivo, selectedTab).map(item => {
