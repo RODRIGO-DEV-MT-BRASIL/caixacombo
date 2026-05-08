@@ -18,6 +18,11 @@ export default function Caixa() {
   const [dispositivosConectados, setDispositivosConectados] = useState([])
   const [form, setForm] = useState({ tipo: 'abertura', valor: '', deviceId: '' })
   const [selectedTab, setSelectedTab] = useState(0)
+  const [showHistorico, setShowHistorico] = useState(false)
+  const [showFaturamento, setShowFaturamento] = useState(false)
+  const [sessoes, setSessoes] = useState([])
+  const [faturamento, setFaturamento] = useState([])
+  const [periodoFaturamento, setPeriodoFaturamento] = useState('diario')
 
   useEffect(() => {
     fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
@@ -34,7 +39,20 @@ export default function Caixa() {
       .then(res => res.json())
       .then(data => setDispositivosConectados(data))
       .catch(() => setDispositivosConectados([]))
+
+    fetch(apiUrl('/api/caixa-sessoes'), { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => setSessoes(data))
+      .catch(() => setSessoes([]))
   }, [])
+
+  useEffect(() => {
+    if (!showFaturamento) return
+    fetch(apiUrl(`/api/faturamento?periodo=${periodoFaturamento}`), { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => setFaturamento(data))
+      .catch(() => setFaturamento([]))
+  }, [showFaturamento, periodoFaturamento, token])
 
   // Escutar atualizações via WebSocket (único effect consolidado)
   useEffect(() => {
@@ -114,25 +132,67 @@ export default function Caixa() {
     return { dispositivos: Object.values(porDispositivo), operacoesPorDispositivo: porDispositivo }
   }, [operacoes])
 
-  // Totais de operações (memoizado)
-  const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria } = useMemo(() => {
-    const ab = operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const ft = operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const sup = operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const san = operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0)
-    return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab + sup - san - ft, totalSuprimento: sup, totalSangria: san }
-  }, [operacoes])
+  // Determinar período do caixa atual (última abertura até agora)
+  const caixaAtual = useMemo(() => {
+    const porDispositivo = {}
+    
+    dispositivos.forEach(d => {
+      const deviceId = d.deviceId
+      const aberturas = d.operacoes.filter(o => o.tipo === 'abertura')
+      const fechamentos = d.operacoes.filter(o => o.tipo === 'fechamento')
+      
+      // Última abertura
+      const ultimaAbertura = aberturas[aberturas.length - 1]
+      if (!ultimaAbertura) {
+        porDispositivo[deviceId] = { aberto: false, aberturaEm: null }
+        return
+      }
+      
+      // Verificar se há fechamento após a última abertura
+      const fechamentosApos = fechamentos.filter(f => f.timestamp > ultimaAbertura.timestamp)
+      const aberto = fechamentosApos.length === 0
+      
+      porDispositivo[deviceId] = {
+        aberto,
+        aberturaEm: ultimaAbertura.dataHora,
+        aberturaTimestamp: ultimaAbertura.timestamp,
+        operador: ultimaAbertura.nomeOperador
+      }
+    })
+    
+    return porDispositivo
+  }, [dispositivos])
 
-  // Calcular totais de vendas por forma de pagamento (memoizado)
-  const { totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito, totalCartao } = useMemo(() => {
-    const total = vendas.reduce((sum, v) => sum + (v.total || 0), 0)
-    const dinheiro = vendas.filter(v => v.formaPagamento === 'DINHEIRO').reduce((sum, v) => sum + (v.total || 0), 0)
-    const pix = vendas.filter(v => v.formaPagamento === 'PIX').reduce((sum, v) => sum + (v.total || 0), 0)
-    const credito = vendas.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((sum, v) => sum + (v.total || 0), 0)
-    const debito = vendas.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((sum, v) => sum + (v.total || 0), 0)
-    const cartao = vendas.filter(v => v.formaPagamento === 'CARTAO').reduce((sum, v) => sum + (v.total || 0), 0)
-    return { totalVendas: total, totalDinheiro: dinheiro, totalPix: pix, totalCredito: credito, totalDebito: debito, totalCartao: cartao }
-  }, [vendas])
+  // Totais do caixa atual (só operações/vendas desde a última abertura)
+  const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria, totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito } = useMemo(() => {
+    let ab = 0, ft = 0, sup = 0, san = 0, tv = 0, din = 0, pix = 0, cred = 0, deb = 0
+    
+    dispositivos.forEach(d => {
+      const caixaInfo = caixaAtual[d.deviceId]
+      if (!caixaInfo || !caixaInfo.aberto) return
+      
+      const ts = caixaInfo.aberturaTimestamp || 0
+      const opsSessao = d.operacoes.filter(o => o.timestamp >= ts)
+      
+      ab += opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+      sup += opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+      san += opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+      ft += opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
+      
+      // Vendas da sessão
+      const vendasSessao = vendas.filter(v => {
+        const vTime = new Date(v.createdAt || v.dataHora).getTime()
+        return vTime >= ts && v.deviceId === d.deviceId
+      })
+      tv += vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
+      din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
+      pix += vendasSessao.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
+      cred += vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0)
+      deb += vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+    })
+    
+    return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab + sup - san - ft, totalSuprimento: sup, totalSangria: san, totalVendas: tv, totalDinheiro: din, totalPix: pix, totalCredito: cred, totalDebito: deb }
+  }, [dispositivos, vendas, caixaAtual])
 
   const tipoColors = {
     abertura: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -435,6 +495,12 @@ export default function Caixa() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
         </div>
         <div className="flex gap-2">
+          <button onClick={() => { setShowFaturamento(!showFaturamento); setShowHistorico(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showFaturamento ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}>
+            <TrendingUp size={16} /> Faturamento
+          </button>
+          <button onClick={() => { setShowHistorico(!showHistorico); setShowFaturamento(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showHistorico ? 'bg-amber-600 text-white' : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/20'}`}>
+            <Wallet size={16} /> Histórico
+          </button>
           <button onClick={() => setShowFechamentoModal(true)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
             <Lock size={16} /> Fechamento Geral
           </button>
@@ -643,6 +709,109 @@ export default function Caixa() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Histórico de Caixas Fechados */}
+      {showHistorico && (
+        <div className="glass p-4 rounded-xl">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Wallet size={20} className="text-amber-400" /> Histórico de Caixas
+          </h3>
+          {sessoes.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Nenhum caixa fechado registrado</p>
+          ) : (
+            <div className="space-y-3">
+              {[...sessoes].reverse().map(s => (
+                <div key={s.id} className="glass p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {s.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === s.deviceId)?.deviceName || s.deviceId}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(s.aberturaEm).toLocaleString('pt-BR')} → {new Date(s.fechamentoEm).toLocaleString('pt-BR')}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Operadores: {s.operadorAbertura} / {s.operadorFechamento}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-emerald-400">R$ {s.totalVendas.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">{s.qtdVendas} vendas</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-xs mt-2 pt-2 border-t border-white/5">
+                    <div><span className="text-gray-500">Abertura</span><br/><span className="text-emerald-400">R$ {s.totalAbertura.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">Suprimento</span><br/><span className="text-blue-400">R$ {s.totalSuprimento.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">Sangria</span><br/><span className="text-amber-400">R$ {s.totalSangria.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">Fechamento</span><br/><span className="text-red-400">R$ {s.totalFechamento.toFixed(2)}</span></div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-xs mt-2">
+                    <div><span className="text-gray-500">Dinheiro</span><br/><span className="text-emerald-400">R$ {s.vendasDinheiro.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">PIX</span><br/><span className="text-blue-400">R$ {s.vendasPix.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">Crédito</span><br/><span className="text-amber-400">R$ {s.vendasCredito.toFixed(2)}</span></div>
+                    <div><span className="text-gray-500">Débito</span><br/><span className="text-cyan-400">R$ {s.vendasDebito.toFixed(2)}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Faturamento */}
+      {showFaturamento && (
+        <div className="glass p-4 rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <TrendingUp size={20} className="text-blue-400" /> Faturamento
+            </h3>
+            <div className="flex gap-1">
+              {['diario', 'semanal', 'mensal', 'anual'].map(p => (
+                <button key={p} onClick={() => setPeriodoFaturamento(p)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${periodoFaturamento === p ? 'bg-blue-500/20 text-blue-400 border border-blue-500/20' : 'text-gray-400 hover:text-white'}`}>
+                  {p === 'diario' ? 'Diário' : p === 'semanal' ? 'Semanal' : p === 'mensal' ? 'Mensal' : 'Anual'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {faturamento.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Nenhum dado de faturamento</p>
+          ) : (
+            <div className="space-y-2">
+              {/* Bar chart simples */}
+              <div className="space-y-1.5">
+                {faturamento.filter(f => f.totalVendas > 0).slice(0, 15).map((f, i) => {
+                  const maxVal = Math.max(...faturamento.map(x => x.totalVendas), 1)
+                  const pct = (f.totalVendas / maxVal) * 100
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-xs text-gray-400 w-16 text-right shrink-0">{f.label}</span>
+                      <div className="flex-1 h-6 bg-gray-800 rounded overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-600 to-cyan-500 rounded flex items-center px-2 transition-all" style={{ width: `${Math.max(pct, 2)}%` }}>
+                          <span className="text-xs font-medium text-white whitespace-nowrap">R$ {f.totalVendas.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 w-10 shrink-0">{f.qtdVendas}v</span>
+                    </div>
+                  )
+                })}
+              </div>
+              {/* Totais do período */}
+              <div className="glass p-3 mt-4">
+                <p className="text-xs text-gray-400 mb-2">Resumo do período</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between"><span className="text-gray-500">Total Geral:</span><span className="text-emerald-400 font-bold">R$ {faturamento.reduce((s, f) => s + f.totalVendas, 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Total Vendas:</span><span className="text-white">{faturamento.reduce((s, f) => s + f.qtdVendas, 0)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Dinheiro:</span><span className="text-emerald-400">R$ {faturamento.reduce((s, f) => s + f.dinheiro, 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">PIX:</span><span className="text-blue-400">R$ {faturamento.reduce((s, f) => s + f.pix, 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Crédito:</span><span className="text-amber-400">R$ {faturamento.reduce((s, f) => s + f.credito, 0).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Débito:</span><span className="text-cyan-400">R$ {faturamento.reduce((s, f) => s + f.debito, 0).toFixed(2)}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
