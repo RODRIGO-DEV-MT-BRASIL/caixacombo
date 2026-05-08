@@ -120,7 +120,7 @@ export default function Caixa() {
     const ft = operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)
     const sup = operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0)
     const san = operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0)
-    return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab - ft, totalSuprimento: sup, totalSangria: san }
+    return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab + sup - san - ft, totalSuprimento: sup, totalSangria: san }
   }, [operacoes])
 
   // Calcular totais de vendas por forma de pagamento (memoizado)
@@ -314,7 +314,7 @@ export default function Caixa() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <LockOpen size={24} className="text-emerald-400" />
+            <ArrowUpCircle size={24} className="text-emerald-400" />
           </div>
           <div>
             <p className="text-2xl font-bold text-white">R$ {totalAbertura.toFixed(2)}</p>
@@ -323,7 +323,7 @@ export default function Caixa() {
         </div>
         <div className="stat-card">
           <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-            <Lock size={24} className="text-red-400" />
+            <ArrowDownCircle size={24} className="text-red-400" />
           </div>
           <div>
             <p className="text-2xl font-bold text-white">R$ {totalFechamento.toFixed(2)}</p>
@@ -335,7 +335,7 @@ export default function Caixa() {
             <PiggyBank size={24} className="text-blue-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">R$ {operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">R$ {totalSuprimento.toFixed(2)}</p>
             <p className="text-xs text-gray-400">Total Suprimento</p>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function Caixa() {
             <Wallet size={24} className="text-amber-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-white">R$ {operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</p>
+            <p className="text-2xl font-bold text-white">R$ {totalSangria.toFixed(2)}</p>
             <p className="text-xs text-gray-400">Total Sangria</p>
           </div>
         </div>
@@ -403,21 +403,21 @@ export default function Caixa() {
       <div className="glass p-1 rounded-xl">
         <div className="flex flex-wrap gap-1">
           {[
-            { id: 0, label: 'Aberturas', icon: LockOpen, color: 'emerald' },
-            { id: 1, label: 'Fechamentos', icon: Lock, color: 'red' },
-            { id: 2, label: 'Suprimentos', icon: PiggyBank, color: 'blue' },
-            { id: 3, label: 'Sangrias', icon: Wallet, color: 'amber' },
-            { id: 4, label: 'Dinheiro', icon: DollarSign, color: 'emerald' },
-            { id: 5, label: 'PIX', icon: Smartphone, color: 'blue' },
-            { id: 6, label: 'Crédito', icon: CreditCard, color: 'amber' },
-            { id: 7, label: 'Débito', icon: CreditCard, color: 'cyan' }
+            { id: 0, label: 'Aberturas', icon: ArrowUpCircle, activeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' },
+            { id: 1, label: 'Fechamentos', icon: ArrowDownCircle, activeClass: 'bg-red-500/20 text-red-400 border border-red-500/20' },
+            { id: 2, label: 'Suprimentos', icon: PiggyBank, activeClass: 'bg-blue-500/20 text-blue-400 border border-blue-500/20' },
+            { id: 3, label: 'Sangrias', icon: Wallet, activeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/20' },
+            { id: 4, label: 'Dinheiro', icon: DollarSign, activeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' },
+            { id: 5, label: 'PIX', icon: Smartphone, activeClass: 'bg-blue-500/20 text-blue-400 border border-blue-500/20' },
+            { id: 6, label: 'Crédito', icon: CreditCard, activeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/20' },
+            { id: 7, label: 'Débito', icon: CreditCard, activeClass: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/20' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setSelectedTab(tab.id)}
               className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                 selectedTab === tab.id
-                  ? `bg-${tab.color}-500/20 text-${tab.color}-400 border border-${tab.color}-500/20`
+                  ? tab.activeClass
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
@@ -469,7 +469,7 @@ export default function Caixa() {
                     <Monitor size={24} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">{dispositivo.deviceId === 'geral' ? 'Geral' : dispositivo.deviceId}</p>
+                    <p className="font-semibold text-white text-sm">{dispositivo.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === dispositivo.deviceId)?.deviceName || dispositivo.deviceId}</p>
                     <p className="text-xs text-gray-500">{getOperacoesByTab(dispositivo, selectedTab).length} {selectedTab >= 4 ? 'vendas' : 'operações'}</p>
                   </div>
                 </div>
@@ -673,7 +673,7 @@ export default function Caixa() {
                 <select value={form.deviceId} onChange={e => setForm({ ...form, deviceId: e.target.value })} className="bg-gray-800 border border-gray-600 text-white rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option value="">Geral (todos os dispositivos)</option>
                   {dispositivosConectados.map(d => (
-                    <option key={d.deviceId} value={d.deviceId}>{d.deviceId}</option>
+                    <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
                   ))}
                 </select>
               </div>
@@ -759,7 +759,7 @@ export default function Caixa() {
                   return (
                     <div key={d.deviceId} className="border border-white/10 rounded-lg p-3 space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-white">{d.deviceId}</span>
+                        <span className="text-sm font-medium text-white">{dispositivosConectados.find(dc => dc.deviceId === d.deviceId)?.deviceName || d.deviceId}</span>
                         <span className="text-emerald-400 font-bold">R$ {totalVendasDispositivo.toFixed(2)}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">

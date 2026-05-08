@@ -10,6 +10,7 @@ export default function Vendas() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [expandedDevice, setExpandedDevice] = useState(null)
+  const [expandedVenda, setExpandedVenda] = useState(null)
 
   useEffect(() => {
     fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
@@ -147,27 +148,62 @@ export default function Vendas() {
               {expandedDevice === dispositivo.deviceId && (
                 <div className="border-t border-white/5 p-4 space-y-2">
                   {dispositivo.vendas.map(venda => (
-                    <div key={venda.id} className="glass p-3 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-                        <ShoppingCart size={16} className="text-emerald-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="text-sm font-medium text-white">Venda #{venda.id?.toString().slice(-6)}</p>
-                          {venda.formaPagamento && (
-                            <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${paymentColors[venda.formaPagamento] || 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>
-                              {venda.formaPagamento}
-                            </span>
-                          )}
+                    <div key={venda.id}>
+                      <div 
+                        className="glass p-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+                        onClick={() => setExpandedVenda(expandedVenda === venda.id ? null : venda.id)}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <ShoppingCart size={16} className="text-emerald-400" />
                         </div>
-                        <p className="text-xs text-gray-500">
-                          <Calendar size={10} className="inline mr-1" />
-                          {venda.createdAt ? new Date(venda.createdAt).toLocaleString('pt-BR') : venda.dataHora ? new Date(venda.dataHora).toLocaleString('pt-BR') : 'Data indisponível'}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-sm font-medium text-white">Venda #{venda.id?.toString().slice(-6)}</p>
+                            {venda.formaPagamento && (
+                              <span className={`px-2 py-0.5 rounded-lg text-xs font-medium border ${paymentColors[venda.formaPagamento] || 'bg-gray-500/10 text-gray-400 border-gray-500/20'}`}>
+                                {venda.formaPagamento}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            <Calendar size={10} className="inline mr-1" />
+                            {venda.createdAt ? new Date(venda.createdAt).toLocaleString('pt-BR') : venda.dataHora ? new Date(venda.dataHora).toLocaleString('pt-BR') : 'Data indisponível'}
+                          </p>
+                        </div>
+                        <p className="text-sm font-bold text-emerald-400 shrink-0">
+                          R$ {(venda.total || 0).toFixed(2)}
                         </p>
+                        {expandedVenda === venda.id ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
                       </div>
-                      <p className="text-sm font-bold text-emerald-400 shrink-0">
-                        R$ {(venda.total || 0).toFixed(2)}
-                      </p>
+                      {/* Itens da venda */}
+                      {expandedVenda === venda.id && venda.itens && (
+                        <div className="mt-2 ml-11 space-y-1">
+                          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs text-gray-500 mb-1 px-2">
+                            <span>Produto</span>
+                            <span className="text-center">Qtd</span>
+                            <span className="text-right">Subtotal</span>
+                          </div>
+                          {venda.itens.map((item, idx) => (
+                            <div key={idx} className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs px-2 py-1 rounded hover:bg-white/5">
+                              <span className="text-gray-300 truncate">{item.produtoNome || `Produto #${item.produtoId}`}</span>
+                              <span className="text-gray-400">{item.quantidade}{item.unidade || 'un'}</span>
+                              <span className="text-gray-300 text-right">R$ {(item.total || item.precoUnitario * item.quantidade).toFixed(2)}</span>
+                            </div>
+                          ))}
+                          {venda.desconto > 0 && (
+                            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs px-2 py-1 text-red-400">
+                              <span>Desconto</span>
+                              <span></span>
+                              <span className="text-right">- R$ {venda.desconto.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 text-xs px-2 py-1 border-t border-white/10 mt-1 pt-1">
+                            <span className="text-white font-medium">Total</span>
+                            <span></span>
+                            <span className="text-emerald-400 font-bold text-right">R$ {(venda.total || 0).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
