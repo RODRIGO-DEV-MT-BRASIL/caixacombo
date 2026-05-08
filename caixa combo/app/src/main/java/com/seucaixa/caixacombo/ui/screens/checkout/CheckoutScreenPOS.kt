@@ -540,15 +540,31 @@ fun CheckoutScreenPOS(
             onDismissRequest = {},
             title = { Text("Processando Pagamento") },
             text = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    androidx.compose.material3.CircularProgressIndicator()
-                    Text("Aguardando terminal Stone...")
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                        Text("Aguardando terminal Stone...")
+                    }
+                    Text(
+                        "Insira ou passe o cartão no terminal",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
-            confirmButton = {}
+            confirmButton = {
+                TextButton(onClick = {
+                    isStoneProcessing = false
+                    stonePaymentError = "Pagamento cancelado pelo operador"
+                }) {
+                    Text("Cancelar")
+                }
+            }
         )
     }
 }
