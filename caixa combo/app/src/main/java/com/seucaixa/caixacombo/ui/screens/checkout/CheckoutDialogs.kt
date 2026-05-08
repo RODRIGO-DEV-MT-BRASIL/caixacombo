@@ -60,70 +60,63 @@ fun EscolhaFormaPagamentoDialogPOS(
             ) {
                 // Título
                 Text(
-                    "💳 FORMA DE PAGAMENTO",
+                    "FORMA DE PAGAMENTO",
                     fontSize = FontDimensions.precoMedio(),
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Grid de botões de pagamento
-                Column(
+                // Grid 2x2 de botões de pagamento
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Linha 1
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        FormaPagamentoButtonPOS(
-                            forma = FormaPagamento.DINHEIRO,
-                            icone = Icons.Default.Money,
-                            texto = "DINHEIRO",
-                            selecionada = false,
-                            onClick = { onFormaSelecionada(FormaPagamento.DINHEIRO) },
-                            modifier = Modifier.weight(1f)
-                        )
+                    FormaPagamentoButtonPOS(
+                        forma = FormaPagamento.DINHEIRO,
+                        icone = Icons.Default.Money,
+                        texto = "DINHEIRO",
+                        selecionada = false,
+                        onClick = { onFormaSelecionada(FormaPagamento.DINHEIRO) },
+                        modifier = Modifier.weight(1f)
+                    )
 
-                        FormaPagamentoButtonPOS(
-                            forma = FormaPagamento.CARTAO_CREDITO,
-                            icone = Icons.Default.CreditCard,
-                            texto = "CRÉDITO",
-                            selecionada = false,
-                            onClick = { onFormaSelecionada(FormaPagamento.CARTAO_CREDITO) },
-                            modifier = Modifier.weight(1f),
-                            enabled = isStoneAvailable
-                        )
-                    }
+                    FormaPagamentoButtonPOS(
+                        forma = FormaPagamento.PIX,
+                        icone = Icons.Default.QrCode,
+                        texto = "PIX",
+                        selecionada = false,
+                        onClick = { onFormaSelecionada(FormaPagamento.PIX) },
+                        modifier = Modifier.weight(1f),
+                        enabled = isStoneAvailable
+                    )
+                }
 
-                    // Linha 2
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        FormaPagamentoButtonPOS(
-                            forma = FormaPagamento.CARTAO_DEBITO,
-                            icone = Icons.Default.CreditCard,
-                            texto = "DÉBITO",
-                            selecionada = false,
-                            onClick = { onFormaSelecionada(FormaPagamento.CARTAO_DEBITO) },
-                            modifier = Modifier.weight(1f),
-                            enabled = isStoneAvailable
-                        )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FormaPagamentoButtonPOS(
+                        forma = FormaPagamento.CARTAO_CREDITO,
+                        icone = Icons.Default.CreditCard,
+                        texto = "CRÉDITO",
+                        selecionada = false,
+                        onClick = { onFormaSelecionada(FormaPagamento.CARTAO_CREDITO) },
+                        modifier = Modifier.weight(1f),
+                        enabled = isStoneAvailable
+                    )
 
-                        FormaPagamentoButtonPOS(
-                            forma = FormaPagamento.PIX,
-                            icone = Icons.Default.QrCode,
-                            texto = "PIX",
-                            selecionada = false,
-                            onClick = { onFormaSelecionada(FormaPagamento.PIX) },
-                            modifier = Modifier.weight(1f),
-                            enabled = isStoneAvailable
-                        )
-                    }
+                    FormaPagamentoButtonPOS(
+                        forma = FormaPagamento.CARTAO_DEBITO,
+                        icone = Icons.Default.CreditCard,
+                        texto = "DÉBITO",
+                        selecionada = false,
+                        onClick = { onFormaSelecionada(FormaPagamento.CARTAO_DEBITO) },
+                        modifier = Modifier.weight(1f),
+                        enabled = isStoneAvailable
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

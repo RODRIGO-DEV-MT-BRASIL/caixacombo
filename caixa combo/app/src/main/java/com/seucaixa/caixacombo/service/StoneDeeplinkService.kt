@@ -28,7 +28,7 @@ object StoneDeeplinkService {
     object PaymentType {
         const val CREDIT = "CREDIT"
         const val DEBIT = "DEBIT"
-        const val PIX = "PIX"
+        const val PIX = "INSTANT_PAYMENT"
     }
 
     /**
@@ -130,10 +130,18 @@ object StoneDeeplinkService {
             authority("pay")
             scheme("payment-app")
             appendQueryParameter("amount", amount.toString())
-            appendQueryParameter("installment_count", installmentCount.toString())
             appendQueryParameter("type", type)
             appendQueryParameter("returnscheme", RETURN_SCHEME)
             appendQueryParameter("third_party_theme_enabled", "true")
+            // Parcelamento: crédito à vista = NONE, parcelado = MERCHANT_INSTALLMENTS
+            if (type == PaymentType.CREDIT) {
+                if (installmentCount <= 1) {
+                    appendQueryParameter("installment_type", "NONE")
+                } else {
+                    appendQueryParameter("installment_type", "MERCHANT_INSTALLMENTS")
+                    appendQueryParameter("installment_count", installmentCount.toString())
+                }
+            }
             if (orderId.isNotBlank()) {
                 appendQueryParameter("order_id", orderId)
             }
