@@ -161,10 +161,18 @@ export function SocketProvider({ children }) {
   }, [token])
 
   const lockDevice = (deviceId, reason) => {
+    // Atualizar otimisticamente no frontend (feedback imediato)
+    setDevices(prev => prev.map(d => 
+      d.deviceId === deviceId ? { ...d, status: 'locked', online: true, lockReason: reason, lockedAt: new Date() } : d
+    ))
     socketRef.current?.emit('lock_device', { deviceId, reason })
   }
 
   const unlockDevice = (deviceId) => {
+    // Atualizar otimisticamente no frontend (feedback imediato)
+    setDevices(prev => prev.map(d => 
+      d.deviceId === deviceId ? { ...d, status: 'online', online: true, lockReason: null, lockedAt: null } : d
+    ))
     socketRef.current?.emit('unlock_device', { deviceId })
   }
 
