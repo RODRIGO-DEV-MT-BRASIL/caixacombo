@@ -90,6 +90,29 @@ object StoneDeeplinkService {
     }
 
     /**
+     * Verifica se os apps da Stone estão instalados no dispositivo.
+     * O deeplink só funciona se o Stone Payment App estiver presente.
+     * D2s usa SUNMI Payment, não tem Stone - deeplink não funciona.
+     */
+    fun isStoneInstalled(context: android.content.Context): Boolean {
+        val pm = context.packageManager
+        return try {
+            // Verificar se o app de pagamento da Stone está instalado
+            pm.getPackageInfo("br.com.stone.posandroid.paymentapp", 0)
+            true
+        } catch (e: Exception) {
+            try {
+                // Fallback: verificar se resolve o scheme payment-app
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("payment-app://pay"))
+                val resolved = pm.queryIntentActivities(intent, 0)
+                resolved.isNotEmpty()
+            } catch (e2: Exception) {
+                false
+            }
+        }
+    }
+
+    /**
      * Cria a Intent de pagamento para o Stone deeplink
      *
      * @param amount valor em centavos (ex: 1000 = R$ 10,00)

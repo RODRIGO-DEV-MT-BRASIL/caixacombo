@@ -42,7 +42,8 @@ private fun formatarMoeda(input: String): String {
 @Composable
 fun EscolhaFormaPagamentoDialogPOS(
     onFormaSelecionada: (FormaPagamento) -> Unit,
-    onCancelar: () -> Unit
+    onCancelar: () -> Unit,
+    isStoneAvailable: Boolean = true
 ) {
     Dialog(onDismissRequest = onCancelar) {
         Card(
@@ -93,7 +94,8 @@ fun EscolhaFormaPagamentoDialogPOS(
                             texto = "CRÉDITO",
                             selecionada = false,
                             onClick = { onFormaSelecionada(FormaPagamento.CARTAO_CREDITO) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            enabled = isStoneAvailable
                         )
                     }
 
@@ -108,7 +110,8 @@ fun EscolhaFormaPagamentoDialogPOS(
                             texto = "DÉBITO",
                             selecionada = false,
                             onClick = { onFormaSelecionada(FormaPagamento.CARTAO_DEBITO) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            enabled = isStoneAvailable
                         )
 
                         FormaPagamentoButtonPOS(
@@ -117,7 +120,8 @@ fun EscolhaFormaPagamentoDialogPOS(
                             texto = "PIX",
                             selecionada = false,
                             onClick = { onFormaSelecionada(FormaPagamento.PIX) },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            enabled = isStoneAvailable
                         )
                     }
                 }
@@ -511,12 +515,14 @@ fun FormaPagamentoButtonPOS(
     texto: String,
     selecionada: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
         modifier = modifier.height(80.dp),
         shape = RoundedCornerShape(12.dp),
+        enabled = enabled,
         colors = if (selecionada) {
             ButtonDefaults.buttonColors()
         } else {

@@ -123,6 +123,7 @@ fun CheckoutScreenPOS(
     var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
     var stonePaymentError by remember { mutableStateOf<String?>(null) }
     var isStoneProcessing by remember { mutableStateOf(false) }
+    val isStoneAvailable = remember { StoneDeeplinkService.isStoneInstalled(context) }
 
     // Relógio atualizado
     var currentTime by remember { mutableStateOf("") }
@@ -461,7 +462,8 @@ fun CheckoutScreenPOS(
             onCancelar = {
                 showFormaPagamentoDialog = false
                 formaPagamentoSelecionada = null
-            }
+            },
+            isStoneAvailable = isStoneAvailable
         )
     }
 
@@ -476,8 +478,8 @@ fun CheckoutScreenPOS(
                 val recebido = valorRecebido.toDoubleSafe(total)
                 val forma = formaPagamentoSelecionada!!
 
-                // Se deve usar Stone deeplink (Cartão/PIX), enviar pagamento primeiro
-                if (onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
+                // Se deve usar Stone deeplink (Cartão/PIX) e Stone está instalado
+                if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
                     val stoneType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
                     val centavos = StoneDeeplinkService.toCentavos(recebido)
                     val parcelas = if (forma == FormaPagamento.CARTAO_CREDITO) 1 else 0
