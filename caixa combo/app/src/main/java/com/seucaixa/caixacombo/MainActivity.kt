@@ -286,9 +286,9 @@ class MainActivity : ComponentActivity() {
                                         onNavigateToCadastro = {
                                             navController.navigate("cadastro")
                                         },
-                                        onSendStonePayment = { amount, transactionType, paymentType, orderId, callback ->
+                                        onSendStonePayment = { amount, transactionType, installmentType, orderId, callback ->
                                             stonePaymentCallback = callback
-                                            StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, paymentType, 0, orderId)
+                                            StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, installmentType, 0, orderId)
                                         }
                                     )
                                 }

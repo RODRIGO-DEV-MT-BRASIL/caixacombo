@@ -459,14 +459,14 @@ fun CheckoutScreenPOS(
 
                 // Cartão/PIX com Stone instalado -> enviar direto ao terminal com valor total
                 if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
-                    val (transactionType, paymentType) = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
+                    val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
                     val centavos = StoneDeeplinkService.toCentavos(total)
                     isStoneProcessing = true
                     stonePaymentError = null
                     stonePaymentResult = null
                     formaPagamentoSelecionada = forma
 
-                    onSendStonePayment?.invoke(centavos, transactionType, paymentType, "") { result ->
+                    onSendStonePayment?.invoke(centavos, transactionType, "", "") { result ->
                         isStoneProcessing = false
                         if (result != null && result.success) {
                             stonePaymentResult = result
