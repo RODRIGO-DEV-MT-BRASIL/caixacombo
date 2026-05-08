@@ -148,6 +148,10 @@ export function SocketProvider({ children }) {
       setVendas(prev => [venda, ...prev].slice(0, 200)) // Limitar a 200 vendas em memória
     })
 
+    socket.on('vendas_history', (history) => {
+      setVendas(history.slice(0, 200))
+    })
+
     socket.on('device_password_updated', ({ deviceId, lockPassword }) => {
       setDevices(prev => prev.map(d =>
         d.deviceId === deviceId ? { ...d, lockPassword } : d

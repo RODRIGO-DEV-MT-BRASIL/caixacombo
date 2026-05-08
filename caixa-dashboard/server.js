@@ -148,6 +148,26 @@ const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
 const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
 
+// Carregar dispositivos do banco para o mapa ao iniciar
+// Dispositivos que fizeram polling antes terão socketId=null mas lastPoll recente
+if (db.dispositivos && db.dispositivos.length > 0) {
+  db.dispositivos.forEach(d => {
+    connectedDevices.set(d.deviceId, {
+      socketId: null,
+      deviceName: d.deviceName || 'Dispositivo',
+      deviceType: d.deviceType || 'Android',
+      serialNumber: d.serialNumber || null,
+      status: d.status || 'online',
+      lockPassword: d.lockPassword || null,
+      lastPoll: d.lastPoll || null,
+      empresaId: d.empresaId || null,
+      usageTimeLimit: d.usageTimeLimit || null,
+      usageStartTime: d.usageStartTime || null
+    });
+  });
+  console.log(`📱 ${connectedDevices.size} dispositivos carregados do banco`);
+}
+
 // Função para adicionar logs de auditoria
 function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
   const log = {
@@ -1267,10 +1287,10 @@ app.post('/api/device/poll', (req, res) => {
     io.emit('caixa_data', { deviceId, caixa: caixaData });
   }
 
-  // Notificar dashboards apenas se for um novo dispositivo (não a cada poll)
-  if (!existing) {
-    io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
-  }
+  // Notificar dashboards sobre o estado do dispositivo
+  const now = new Date();
+  const isPollingRecent = connectedDevices.get(deviceId)?.lastPoll && (now - new Date(connectedDevices.get(deviceId).lastPoll)) < 120000;
+  io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
 
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];
@@ -1951,15 +1971,22 @@ io.on('connection', (socket) => {
     
     console.log(`🖥️ Dashboard conectado: ${usuario}`);
     
-    // Enviar APENAS dispositivos conectados via WebSocket (em tempo real)
-    const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
-      deviceId: id, ...d, online: d.socketId !== null
-    }));
+    // Enviar dispositivos conectados (WebSocket ou polling recente)
+    const now = new Date();
+    const list = Array.from(connectedDevices.entries()).map(([id, d]) => {
+      const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000; // 2 min
+      const isOnline = d.socketId !== null || isPollingRecent;
+      return { deviceId: id, ...d, online: isOnline };
+    });
     
     console.log(`📊 [DEBUG] Dispositivos conectados: ${list.length}`);
     console.log(`📊 [DEBUG] DeviceIds:`, list.map(d => d.deviceId));
     
     socket.emit('devices_list', list);
+    
+    // Enviar vendas recentes (últimas 50)
+    const recentVendas = (db.vendas || []).slice(-50).reverse();
+    socket.emit('vendas_history', recentVendas);
   });
 
   socket.on('lock_device', (data) => {
