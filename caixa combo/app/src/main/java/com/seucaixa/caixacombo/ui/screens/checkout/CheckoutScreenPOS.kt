@@ -56,7 +56,7 @@ fun CheckoutScreenPOS(
     onNavigateToConfiguracaoTipoImpressao: () -> Unit = {},
     onNavigateToAcessos: () -> Unit = {},
     onNavigateToCadastro: () -> Unit = {},
-    onSendStonePayment: ((Long, String, Int, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null
+    onSendStonePayment: ((Long, String, String, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
@@ -459,15 +459,14 @@ fun CheckoutScreenPOS(
 
                 // Cartão/PIX com Stone instalado -> enviar direto ao terminal com valor total
                 if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
-                    val stoneType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
+                    val (transactionType, paymentType) = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
                     val centavos = StoneDeeplinkService.toCentavos(total)
-                    val parcelas = if (forma == FormaPagamento.CARTAO_CREDITO) 1 else 0
                     isStoneProcessing = true
                     stonePaymentError = null
                     stonePaymentResult = null
                     formaPagamentoSelecionada = forma
 
-                    onSendStonePayment?.invoke(centavos, stoneType, parcelas, "") { result ->
+                    onSendStonePayment?.invoke(centavos, transactionType, paymentType, "") { result ->
                         isStoneProcessing = false
                         if (result != null && result.success) {
                             stonePaymentResult = result

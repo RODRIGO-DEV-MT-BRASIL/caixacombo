@@ -24,11 +24,16 @@ object StoneDeeplinkService {
     // Return scheme configurado no AndroidManifest
     private const val RETURN_SCHEME = "caixacombo"
 
-    // Tipos de pagamento Stone
-    object PaymentType {
+    // Tipos de transacao Stone
+    object TransactionType {
         const val CREDIT = "CREDIT"
         const val DEBIT = "DEBIT"
-        const val PIX = "INSTANT_PAYMENT"
+    }
+
+    // Tipos de pagamento Stone (cartao, qrcode)
+    object PaymentType {
+        const val CARD = "CARD"
+        const val QRCODE = "QRCODE"
     }
 
     /**
@@ -72,12 +77,14 @@ object StoneDeeplinkService {
 
     /**
      * Mapeia FormaPagamento do app para tipo do Stone
+     * Retorna Pair(transactionType, paymentType)
+     * PIX = CREDIT + QRCODE, Cartão = CREDIT/DEBIT + CARD
      */
-    fun mapFormaPagamentoToStone(forma: com.seucaixa.caixacombo.data.model.FormaPagamento): String? {
+    fun mapFormaPagamentoToStone(forma: com.seucaixa.caixacombo.data.model.FormaPagamento): Pair<String, String>? {
         return when (forma) {
-            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_CREDITO -> PaymentType.CREDIT
-            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_DEBITO -> PaymentType.DEBIT
-            com.seucaixa.caixacombo.data.model.FormaPagamento.PIX -> PaymentType.PIX
+            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_CREDITO -> Pair(TransactionType.CREDIT, PaymentType.CARD)
+            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_DEBITO -> Pair(TransactionType.DEBIT, PaymentType.CARD)
+            com.seucaixa.caixacombo.data.model.FormaPagamento.PIX -> Pair(TransactionType.CREDIT, PaymentType.QRCODE)
             else -> null // DINHEIRO, BOLETO, FIADO não usam Stone
         }
     }
@@ -122,7 +129,8 @@ object StoneDeeplinkService {
      */
     fun createPaymentIntent(
         amount: Long,
-        type: String,
+        transactionType: String,
+        paymentType: String = PaymentType.CARD,
         installmentCount: Int = 0,
         orderId: String = ""
     ): Intent {
@@ -130,11 +138,12 @@ object StoneDeeplinkService {
             authority("pay")
             scheme("payment-app")
             appendQueryParameter("amount", amount.toString())
-            appendQueryParameter("type", type)
+            appendQueryParameter("type", transactionType)
+            appendQueryParameter("payment_type", paymentType)
             appendQueryParameter("returnscheme", RETURN_SCHEME)
             appendQueryParameter("third_party_theme_enabled", "true")
             // Parcelamento: crédito à vista = NONE, parcelado = MERCHANT_INSTALLMENTS
-            if (type == PaymentType.CREDIT) {
+            if (transactionType == TransactionType.CREDIT) {
                 if (installmentCount <= 1) {
                     appendQueryParameter("installment_type", "NONE")
                 } else {
@@ -164,12 +173,10 @@ object StoneDeeplinkService {
     /**
      * Envia o pagamento via deeplink para o app da Stone
      */
-    fun sendPayment(activity: Activity, amount: Long, type: String, installmentCount: Int = 0, orderId: String = "") {
-        val intent = createPaymentIntent(amount, type, installmentCount, orderId)
+    fun sendPayment(activity: Activity, amount: Long, transactionType: String, paymentType: String = PaymentType.CARD, installmentCount: Int = 0, orderId: String = "") {
+        val intent = createPaymentIntent(amount, transactionType, paymentType, installmentCount, orderId)
         try {
-            Log.d(TAG, "Enviando pagamento: amount=$amount, type=$type, installmentCount=$installmentCount")
-            // Usar startActivity em vez de startActivityForResult pois launchMode=singleTask
-            // O retorno vem via onNewIntent com scheme caixacombo
+            Log.d(TAG, "Enviando pagamento: amount=$amount, type=$transactionType, paymentType=$paymentType")
             activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar pagamento via Stone deeplink. App Stone instalado?", e)
