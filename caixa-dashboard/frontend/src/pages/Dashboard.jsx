@@ -468,45 +468,28 @@ export default function Dashboard() {
                           )}
 
                           <div className="flex gap-2 mt-3">
-                            {status === 'online' && (
-                              <>
-                                <button
-                                  onClick={() => setLockModal(device.deviceId)}
-                                  className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1"
-                                >
-                                  <Lock size={12} /> Bloquear
-                                </button>
-                                <button
-                                  onClick={() => setUsageModal(device.deviceId)}
-                                  className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
-                                >
-                                  <Clock size={12} /> Tempo
-                                </button>
-                              </>
-                            )}
-                            {status === 'locked' && (
-                              <>
-                                <button
-                                  onClick={() => unlockDevice(device.deviceId)}
-                                  className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
-                                >
-                                  <Unlock size={12} /> Desbloquear
-                                </button>
-                                <button
-                                  onClick={() => forceUnlockDevice(device.deviceId)}
-                                  className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
-                                  title="Forçar desbloqueio (se o terminal não funcionar)"
-                                >
-                                  <AlertTriangle size={12} /> Forçar
-                                </button>
-                              </>
-                            )}
-                            {status === 'in_use' && (
+                            {/* Toggle Bloquear/Desbloquear */}
+                            {status === 'locked' ? (
                               <button
-                                onClick={() => lockDevice(device.deviceId, 'Uso interrompido pelo admin')}
+                                onClick={() => unlockDevice(device.deviceId)}
+                                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
+                              >
+                                <Unlock size={12} /> Desbloquear
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setLockModal(device.deviceId)}
                                 className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1"
                               >
                                 <Lock size={12} /> Bloquear
+                              </button>
+                            )}
+                            {status === 'online' && (
+                              <button
+                                onClick={() => setUsageModal(device.deviceId)}
+                                className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
+                              >
+                                <Clock size={12} /> Tempo
                               </button>
                             )}
                             {/* Botões de controle do app */}
