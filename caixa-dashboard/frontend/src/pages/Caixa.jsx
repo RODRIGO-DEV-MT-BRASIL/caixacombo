@@ -94,101 +94,78 @@ export default function Caixa() {
   }, [socket])
 
   
-  // Agrupar operações por dispositivo (memoizado)
-  const { dispositivos, operacoesPorDispositivo } = useMemo(() => {
+  // ==================== LÓGICA DE CAIXA POR TERMINAL ====================
+  // Cada terminal tem sua própria sessão de caixa (abertura → fechamento).
+  // O dashboard mostra o consolidado (soma de todos os terminais).
+  // Operações sem deviceId (criadas pelo dashboard) vão para "geral".
+
+  // Agrupar operações e vendas por dispositivo, com sessão atual
+  const { dispositivos, caixaAtual } = useMemo(() => {
     const ensureDevice = (acc, deviceId) => {
       if (!acc[deviceId]) {
         acc[deviceId] = {
           deviceId,
           operacoes: [],
-          totalAbertura: 0,
-          totalFechamento: 0,
-          totalSuprimento: 0,
-          totalSangria: 0,
-          saldo: 0,
-          ultimaAbertura: null,
-          caixaAberto: false
+          deviceName: dispositivosConectados.find(d => d.deviceId === deviceId)?.deviceName || null
         }
       }
     }
 
+    // 1. Agrupar operações por deviceId
     const porDispositivo = operacoes.reduce((acc, operacao) => {
       const deviceId = operacao.deviceId || 'geral'
       ensureDevice(acc, deviceId)
       acc[deviceId].operacoes.push(operacao)
-      
-      if (operacao.tipo === 'abertura') {
-        acc[deviceId].totalAbertura += (operacao.valor || 0)
-        acc[deviceId].ultimaAbertura = operacao
-        acc[deviceId].caixaAberto = true
-      } else if (operacao.tipo === 'fechamento') {
-        acc[deviceId].totalFechamento += (operacao.valor || 0)
-        acc[deviceId].caixaAberto = false
-      } else if (operacao.tipo === 'suprimento') {
-        acc[deviceId].totalSuprimento += (operacao.valor || 0)
-      } else if (operacao.tipo === 'sangria') {
-        acc[deviceId].totalSangria += (operacao.valor || 0)
-      }
-      
-      acc[deviceId].saldo = acc[deviceId].totalAbertura - acc[deviceId].totalFechamento + acc[deviceId].totalSuprimento - acc[deviceId].totalSangria
       return acc
     }, {})
 
-    // Incluir dispositivos que têm vendas mas não têm operações
+    // 2. Incluir dispositivos que têm vendas mas não têm operações
     vendas.forEach(v => {
       const deviceId = v.deviceId || 'geral'
       ensureDevice(porDispositivo, deviceId)
     })
 
-    // Incluir dispositivos conectados que não têm vendas nem operações
+    // 3. Incluir dispositivos conectados que não têm vendas nem operações
     dispositivosConectados.forEach(d => {
-      const deviceId = d.deviceId
-      if (deviceId) ensureDevice(porDispositivo, deviceId)
+      if (d.deviceId) ensureDevice(porDispositivo, d.deviceId)
     })
 
-    return { dispositivos: Object.values(porDispositivo), operacoesPorDispositivo: porDispositivo }
-  }, [operacoes, vendas, dispositivosConectados])
+    // 4. Determinar sessão atual de cada dispositivo (última abertura sem fechamento posterior)
+    const sessoes = {}
+    Object.entries(porDispositivo).forEach(([deviceId, dev]) => {
+      const opsSorted = [...dev.operacoes].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+      const aberturas = opsSorted.filter(o => o.tipo === 'abertura')
+      const ultimaAbertura = aberturas[aberturas.length - 1] || null
 
-  // Determinar período do caixa atual (última abertura até agora)
-  const caixaAtual = useMemo(() => {
-    const porDispositivo = {}
-    
-    dispositivos.forEach(d => {
-      const deviceId = d.deviceId
-      const aberturas = d.operacoes.filter(o => o.tipo === 'abertura')
-      const fechamentos = d.operacoes.filter(o => o.tipo === 'fechamento')
-      
-      // Última abertura
-      const ultimaAbertura = aberturas[aberturas.length - 1]
       if (!ultimaAbertura) {
-        porDispositivo[deviceId] = { aberto: false, aberturaEm: null }
+        sessoes[deviceId] = { aberto: false, aberturaEm: null, aberturaTimestamp: null, operador: null }
         return
       }
-      
-      // Verificar se há fechamento após a última abertura
-      const fechamentosApos = fechamentos.filter(f => f.timestamp > ultimaAbertura.timestamp)
+
+      // Verificar se há fechamento APÓS a última abertura
+      const fechamentosApos = opsSorted.filter(o => o.tipo === 'fechamento' && o.timestamp > ultimaAbertura.timestamp)
       const aberto = fechamentosApos.length === 0
-      
-      porDispositivo[deviceId] = {
+
+      sessoes[deviceId] = {
         aberto,
         aberturaEm: ultimaAbertura.dataHora,
         aberturaTimestamp: ultimaAbertura.timestamp,
         operador: ultimaAbertura.nomeOperador
       }
     })
-    
-    return porDispositivo
-  }, [dispositivos])
 
-  // Totais do caixa atual (só operações/vendas desde a última abertura)
+    return { dispositivos: Object.values(porDispositivo), caixaAtual: sessoes }
+  }, [operacoes, vendas, dispositivosConectados])
+
+  // Totais consolidados (soma de todos os terminais com caixa aberto)
   const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria, totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito } = useMemo(() => {
     let ab = 0, ft = 0, sup = 0, san = 0, tv = 0, din = 0, pix = 0, cred = 0, deb = 0
     
     dispositivos.forEach(d => {
-      const caixaInfo = caixaAtual[d.deviceId]
-      if (!caixaInfo || !caixaInfo.aberto) return
+      const sessao = caixaAtual[d.deviceId]
+      if (!sessao || !sessao.aberto) return
       
-      const ts = caixaInfo.aberturaTimestamp || 0
+      const ts = sessao.aberturaTimestamp || 0
       const opsSessao = d.operacoes.filter(o => o.timestamp >= ts)
       
       ab += opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
@@ -196,10 +173,10 @@ export default function Caixa() {
       san += opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
       ft += opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
       
-      // Vendas da sessão
+      // Vendas da sessão atual deste dispositivo
       const vendasSessao = vendas.filter(v => {
         const vTime = new Date(v.createdAt || v.dataHora).getTime()
-        return vTime >= ts && v.deviceId === d.deviceId
+        return vTime >= ts && (v.deviceId === d.deviceId || (d.deviceId === 'geral' && !v.deviceId))
       })
       tv += vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
       din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
@@ -223,25 +200,47 @@ export default function Caixa() {
     return d.deviceId.toLowerCase().includes(s)
   })
 
-  // Filtrar operações por aba selecionada (por dispositivo)
-  const getOperacoesByTab = (dispositivo, tab) => {
-    let filtered
-    switch(tab) {
-      case 0: filtered = dispositivo.operacoes.filter(o => o.tipo === 'abertura'); break
-      case 1: filtered = dispositivo.operacoes.filter(o => o.tipo === 'fechamento'); break
-      case 2: filtered = dispositivo.operacoes.filter(o => o.tipo === 'suprimento'); break
-      case 3: filtered = dispositivo.operacoes.filter(o => o.tipo === 'sangria'); break
-      case 4: filtered = vendas.filter(v => v.deviceId === dispositivo.deviceId && v.formaPagamento === 'DINHEIRO'); break
-      case 5: filtered = vendas.filter(v => v.deviceId === dispositivo.deviceId && v.formaPagamento === 'PIX'); break
-      case 6: filtered = vendas.filter(v => v.deviceId === dispositivo.deviceId && (v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO')); break
-      case 7: filtered = vendas.filter(v => v.deviceId === dispositivo.deviceId && (v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO')); break
-      default: filtered = dispositivo.operacoes
-    }
-    
-    return filtered
+  // Vendas da sessão atual de um dispositivo
+  const getVendasSessao = (deviceId) => {
+    const sessao = caixaAtual[deviceId]
+    if (!sessao) return []
+    const ts = sessao.aberturaTimestamp || 0
+    return vendas.filter(v => {
+      const vTime = new Date(v.createdAt || v.dataHora).getTime()
+      return vTime >= ts && (v.deviceId === deviceId || (deviceId === 'geral' && !v.deviceId))
+    })
   }
 
-// Obter informações do card baseadas na aba selecionada
+  // Operações da sessão atual de um dispositivo
+  const getOpsSessao = (deviceId) => {
+    const sessao = caixaAtual[deviceId]
+    if (!sessao) return []
+    const ts = sessao.aberturaTimestamp || 0
+    const dev = dispositivos.find(d => d.deviceId === deviceId)
+    if (!dev) return []
+    return dev.operacoes.filter(o => o.timestamp >= ts)
+  }
+
+  // Filtrar operações/vendas por aba selecionada (por dispositivo, sessão atual)
+  const getOperacoesByTab = (dispositivo, tab) => {
+    const deviceId = dispositivo.deviceId
+    const opsSessao = getOpsSessao(deviceId)
+    const vendasSessao = getVendasSessao(deviceId)
+    
+    switch(tab) {
+      case 0: return opsSessao.filter(o => o.tipo === 'abertura')
+      case 1: return opsSessao.filter(o => o.tipo === 'fechamento')
+      case 2: return opsSessao.filter(o => o.tipo === 'suprimento')
+      case 3: return opsSessao.filter(o => o.tipo === 'sangria')
+      case 4: return vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO')
+      case 5: return vendasSessao.filter(v => v.formaPagamento === 'PIX')
+      case 6: return vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO')
+      case 7: return vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO')
+      default: return opsSessao
+    }
+  }
+
+  // Obter informações do card baseadas na aba selecionada
   const getCardInfo = (dispositivo, tab) => {
     const tabItems = getOperacoesByTab(dispositivo, tab)
     const total = tabItems.reduce((sum, item) => sum + (item.valor || item.total || 0), 0)
@@ -289,7 +288,7 @@ export default function Caixa() {
 
   const handleFechamentoGeral = async () => {
     // Verificar se há caixas abertos antes de permitir fechamento geral
-    const dispositivosComCaixaAberto = dispositivos.filter(d => d.caixaAberto)
+    const dispositivosComCaixaAberto = dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto)
     
     if (dispositivosComCaixaAberto.length > 0) {
       alert(`⚠️ ATENÇÃO: Existem ${dispositivosComCaixaAberto.length} caixas abertos:\n\n${dispositivosComCaixaAberto.map(d => `- ${d.deviceId === 'geral' ? 'Geral' : d.deviceId}`).join('\n')}\n\nFaça o fechamento individual dos caixas antes do fechamento geral.`)
@@ -580,7 +579,7 @@ export default function Caixa() {
                             <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                               <Smartphone size={16} className="text-blue-400" />
                             </div>
-                          ) : dispositivo.caixaAberto ? (
+                          ) : caixaAtual[dispositivo.deviceId]?.aberto ? (
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                               <LockOpen size={16} className="text-emerald-400" />
                             </div>
@@ -589,8 +588,8 @@ export default function Caixa() {
                               <Lock size={16} className="text-red-400" />
                             </div>
                           )}
-                          <span className={`text-sm font-medium ${cardInfo.isVenda ? 'text-blue-400' : (dispositivo.caixaAberto ? 'text-emerald-400' : 'text-red-400')}`}>
-                            {cardInfo.isVenda ? cardInfo.label : `Caixa ${dispositivo.caixaAberto ? 'Aberto' : 'Fechado'}`}
+                          <span className={`text-sm font-medium ${cardInfo.isVenda ? 'text-blue-400' : (caixaAtual[dispositivo.deviceId]?.aberto ? 'text-emerald-400' : 'text-red-400')}`}>
+                            {cardInfo.isVenda ? cardInfo.label : `Caixa ${caixaAtual[dispositivo.deviceId]?.aberto ? 'Aberto' : 'Fechado'}`}
                           </span>
                         </div>
                         <div className="text-right">
