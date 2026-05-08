@@ -251,7 +251,7 @@ class CheckoutViewModel(
         _total.value = _carrinho.value.sumOf { it.total }
     }
     
-    fun finalizarVenda(formaPagamento: FormaPagamento, valorRecebido: Double, clienteId: Long? = null): Boolean {
+    fun finalizarVenda(formaPagamento: FormaPagamento, valorRecebido: Double, clienteId: Long? = null, stoneAtk: String? = null): Boolean {
         if (_carrinho.value.isEmpty()) return false
         
         viewModelScope.launch {
@@ -278,6 +278,7 @@ class CheckoutViewModel(
                 formaPagamento = formaPagamento,
                 valorRecebido = valorRecebido,
                 troco = troco,
+                stoneAtk = stoneAtk,
                 clienteId = clienteId
             )
             
@@ -317,6 +318,7 @@ class CheckoutViewModel(
                 put("formaPagamento", venda.formaPagamento.name)
                 put("valorRecebido", venda.valorRecebido)
                 put("troco", venda.troco)
+                venda.stoneAtk?.let { put("stoneAtk", it) }
                 
                 val itensArray = org.json.JSONArray()
                 venda.itens.forEach { item ->

@@ -63,6 +63,8 @@ class MainActivity : ComponentActivity() {
 
     // Callback para resultado do Stone deeplink
     private var stonePaymentCallback: ((StoneDeeplinkService.PaymentResult?) -> Unit)? = null
+    private var stoneCancelCallback: ((StoneDeeplinkService.CancelResult?) -> Unit)? = null
+    private var stoneReprintCallback: ((StoneDeeplinkService.ReprintResult?) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,6 +152,26 @@ class MainActivity : ComponentActivity() {
                         // Senha incorreta no servidor
                         android.util.Log.w("MainActivity", "Senha rejeitada pelo servidor: $message")
                     }
+                }
+            },
+            onReprintRequested = { atk ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Reimpressão solicitada via dashboard, atk=$atk")
+                    stoneReprintCallback = { result ->
+                        android.util.Log.d("MainActivity", "Reimpressão resultado: success=${result?.success}")
+                        PollingService.sendControlResult("reimprimir_venda", result?.success ?: false, if (result?.success != true) result?.reason else null)
+                    }
+                    StoneDeeplinkService.sendReprint(this@MainActivity, atk)
+                }
+            },
+            onCancelRequested = { atk, amount ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Cancelamento solicitado via dashboard, atk=$atk, amount=$amount")
+                    stoneCancelCallback = { result ->
+                        android.util.Log.d("MainActivity", "Cancelamento resultado: success=${result?.success}")
+                        PollingService.sendControlResult("cancelar_venda", result?.success ?: false, if (result?.success != true) result?.reason else null)
+                    }
+                    StoneDeeplinkService.sendCancel(this@MainActivity, atk, amount, false)
                 }
             }
         )
@@ -533,6 +555,20 @@ class MainActivity : ComponentActivity() {
         if (requestCode == StoneDeeplinkService.REQUEST_CODE_PAYMENT) {
             val result = StoneDeeplinkService.parsePaymentResult(data)
             stonePaymentCallback?.invoke(result)
+        }
+
+        // Stone cancel result
+        if (requestCode == StoneDeeplinkService.REQUEST_CODE_CANCEL) {
+            val result = StoneDeeplinkService.parseCancelResult(data)
+            stoneCancelCallback?.invoke(result)
+            android.util.Log.d("MainActivity", "Resultado cancelamento Stone: success=${result?.success}, reason=${result?.reason}")
+        }
+
+        // Stone reprint result
+        if (requestCode == StoneDeeplinkService.REQUEST_CODE_REPRINT) {
+            val result = StoneDeeplinkService.parseReprintResult(data)
+            stoneReprintCallback?.invoke(result)
+            android.util.Log.d("MainActivity", "Resultado reimpressão Stone: success=${result?.success}, reason=${result?.reason}")
         }
 
         // Device Admin result

@@ -489,8 +489,9 @@ fun CheckoutScreenPOS(
                         isStoneProcessing = false
                         if (result != null && result.success) {
                             stonePaymentResult = result
-                            // Stone aprovou -> finalizar venda
-                            if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
+                            // Stone aprovou -> finalizar venda com atk para cancelamento/reimpressao
+                            val stoneAtk = result.authorizationCode.ifEmpty { null }
+                            if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id, stoneAtk)) {
                                 showValorDialog = false
                                 valorRecebido = ""
                                 formaPagamentoSelecionada = null

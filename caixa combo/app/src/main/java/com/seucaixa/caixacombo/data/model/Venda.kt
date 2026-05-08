@@ -31,6 +31,9 @@ data class Venda(
     val status: StatusVenda = StatusVenda.FINALIZADA,
     val sincronizado: Boolean = false,
     
+    // Stone
+    val stoneAtk: String? = null, // Authorization code da Stone para cancelamento/reimpressao
+    
     // Opcional
     val clienteId: Long? = null,
     val vendedorId: Long? = null,

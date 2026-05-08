@@ -335,15 +335,16 @@ app.post('/api/vendas/:id/reimprimir', authenticateToken, (req, res) => {
   if (!venda) return res.status(404).json({ error: 'Venda não encontrada' });
   
   const deviceId = venda.deviceId;
-  const device = connectedDevices.get(deviceId);
+  const atk = venda.stoneAtk || venda.atk || null;
   
-  // Enviar comando de reimpressão para o dispositivo
-  enqueueDeviceCommand(deviceId, 'reimprimir_venda', { vendaId: id });
+  // Enviar comando de reimpressão para o dispositivo com o ATK
+  enqueueDeviceCommand(deviceId, 'reimprimir_venda', { vendaId: id, atk });
+  const device = connectedDevices.get(deviceId);
   if (device?.socketId) {
-    io.to(device.socketId).emit('reimprimir_venda', { vendaId: id, venda });
+    io.to(device.socketId).emit('reimprimir_venda', { vendaId: id, atk });
   }
   
-  addAuditoria('reimpressao', deviceId, `Reimpressão da venda #${id}`, req.user.username);
+  addAuditoria('reimpressao', deviceId, `Reimpressão da venda #${id}${atk ? ' (atk: ' + atk + ')' : ''}`, req.user.username);
   res.json({ success: true, message: 'Comando de reimpressão enviado' });
 });
 
@@ -356,6 +357,13 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
   
   const venda = db.vendas[vendaIndex];
   const deviceId = venda.deviceId;
+  const atk = venda.stoneAtk || venda.atk || null;
+  
+  // Verificar se venda de cartão/PIX tem ATK (necessário para cancelamento via deeplink Stone)
+  const formasStone = ['CARTAO_CREDITO', 'CARTAO_DEBITO', 'CREDITO', 'DEBITO', 'PIX'];
+  if (!atk && formasStone.includes(venda.formaPagamento)) {
+    return res.status(400).json({ error: 'Venda sem ATK da Stone - cancelamento via deeplink não disponível. Use cancelamento manual.' });
+  }
   
   // Marcar venda como cancelada
   db.vendas[vendaIndex].cancelada = true;
@@ -364,17 +372,18 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
   db.vendas[vendaIndex].motivoCancelamento = motivo || '';
   saveData();
   
-  // Enviar comando de cancelamento para o dispositivo
+  // Enviar comando de cancelamento para o dispositivo com ATK e amount
+  const amount = Math.round((venda.total || 0) * 100); // valor em centavos
+  enqueueDeviceCommand(deviceId, 'cancelar_venda', { vendaId: id, atk, amount });
   const device = connectedDevices.get(deviceId);
-  enqueueDeviceCommand(deviceId, 'cancelar_venda', { vendaId: id, venda });
   if (device?.socketId) {
-    io.to(device.socketId).emit('cancelar_venda', { vendaId: id, venda });
+    io.to(device.socketId).emit('cancelar_venda', { vendaId: id, atk, amount });
   }
   
   // Notificar dashboards
   io.emit('venda_cancelada', { vendaId: id, deviceId });
   
-  addAuditoria('cancelamento', deviceId, `Venda #${id} cancelada: ${motivo || 'sem motivo'}`, req.user.username);
+  addAuditoria('cancelamento', deviceId, `Venda #${id} cancelada: ${motivo || 'sem motivo'}${atk ? ' (atk: ' + atk + ')' : ''}`, req.user.username);
   res.json({ success: true, message: 'Venda cancelada com sucesso' });
 });
 
