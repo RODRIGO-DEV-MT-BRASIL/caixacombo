@@ -948,7 +948,9 @@ app.post('/api/device/poll', (req, res) => {
 
   // Registrar/atualizar dispositivo no mapa
   const existing = connectedDevices.get(deviceId);
-  const lockPassword = (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString();
+  // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
+  const existingDb = db.dispositivos?.find(d => d.deviceId === deviceId);
+  const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
 
   connectedDevices.set(deviceId, {
     socketId: existing?.socketId || null,
@@ -1104,8 +1106,11 @@ app.post('/api/device/unlock-attempt', (req, res) => {
 
   if (device.lockPassword && password === device.lockPassword) {
     device.status = 'online';
-    device.lockPassword = Math.floor(100000 + Math.random() * 900000).toString();
+    device.lockReason = null;
+    device.lockedAt = null;
+    // NÃO gerar nova senha aqui - manter a mesma até o próximo bloqueio
     io.emit('unlock_response', { deviceId, success: true, message: 'Desbloqueado com sucesso' });
+    io.emit('device_status_update', { deviceId, status: 'online' });
     addAuditoria('desbloqueio', deviceId, 'Desbloqueio via senha', 'Terminal');
     res.json({ success: true, message: 'Desbloqueado com sucesso' });
   } else {
@@ -1176,7 +1181,8 @@ io.on('connection', (socket) => {
       if (oldSocket) oldSocket.disconnect();
     }
 
-    const lockPassword = (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString();
+    const existingDb = db.dispositivos?.find(d => d.deviceId === deviceId);
+    const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
 
     connectedDevices.set(deviceId, {
       socketId: socket.id,
@@ -1672,12 +1678,16 @@ io.on('connection', (socket) => {
     const dashboardInfo = connectedDashboards.get(socket.id);
     
     if (device) {
+      // Gerar nova senha apenas se não existir (primeiro bloqueio)
+      if (!device.lockPassword) {
+        device.lockPassword = Math.floor(100000 + Math.random() * 900000).toString();
+      }
       device.status = 'locked';
       device.lockReason = reason;
       device.lockedAt = new Date();
       enqueueDeviceCommand(deviceId, 'device_locked', { reason, lockPassword: device.lockPassword });
       if (device.socketId) io.to(device.socketId).emit('device_locked', { reason, lockPassword: device.lockPassword });
-      io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
+      io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, lockPassword: device.lockPassword, usageTimeLimit: null, usageStartTime: null });
       
       // Auditoria: Bloqueio via dashboard
       addAuditoria('bloqueio', deviceId, `Bloqueado: ${reason}`, dashboardInfo?.usuario);
