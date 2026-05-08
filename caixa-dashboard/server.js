@@ -566,11 +566,24 @@ app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
   // Limpar auditoria
   db.auditoria = [];
   
-  // Remover dispositivos de teste
-  db.dispositivos = (db.dispositivos || []).filter(d => 
-    d.serialNumber === 'PB59237K70640' || d.serialNumber === 'TC04209140208' ||
-    d.deviceId === 'PB59237K70640' || d.deviceId === 'TC04209140208'
+  // Corrigir dispositivos com deviceId null (usar serialNumber)
+  db.dispositivos = (db.dispositivos || []).map(d => {
+    if (!d.deviceId && d.serialNumber) {
+      console.log(`🔧 Corrigindo deviceId null para ${d.deviceName}: ${d.serialNumber}`);
+      return { ...d, deviceId: d.serialNumber };
+    }
+    return d;
+  });
+
+  // Remover dispositivos de teste (por deviceId ou serialNumber)
+  const testIds = ['test-check', 'test-local', 'test-render', 'deploy-check'];
+  db.dispositivos = db.dispositivos.filter(d => 
+    !testIds.includes(d.deviceId) && !testIds.includes(d.serialNumber)
   );
+
+  // Remover vendas e operações de teste
+  db.vendas = (db.vendas || []).filter(v => !testIds.includes(v.deviceId));
+  db.operacoes = (db.operacoes || []).filter(o => !testIds.includes(o.deviceId));
   
   saveData();
   
