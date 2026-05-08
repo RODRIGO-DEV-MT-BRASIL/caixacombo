@@ -1320,7 +1320,10 @@ app.post('/api/device/poll', (req, res) => {
 app.post('/api/device/sale', (req, res) => {
   const { deviceId, sale } = req.body;
   
+  console.log(`💰 [SALE] Venda recebida via REST - deviceId: ${deviceId}, sale.id: ${sale?.id}, total: ${sale?.total}, forma: ${sale?.formaPagamento}`);
+  
   if (!deviceId || !sale) {
+    console.log(`❌ [SALE] Dados inválidos - deviceId: ${deviceId}, sale: ${!!sale}`);
     return res.status(400).json({ error: 'deviceId e sale obrigatórios' });
   }
 
