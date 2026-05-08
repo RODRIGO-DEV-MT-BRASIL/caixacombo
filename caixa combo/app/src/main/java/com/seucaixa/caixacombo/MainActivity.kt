@@ -69,6 +69,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Processar intent de deeplink Stone se recebido na criação
+        processStoneDeeplinkIntent(intent)
+
         // Configuração de tela cheia imersiva
         setupImmersiveMode()
 
@@ -540,6 +543,45 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             android.util.Log.d("MainActivity", "✅ Permissões de Device Admin já ativas")
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        processStoneDeeplinkIntent(intent)
+    }
+
+    /**
+     * Processa retorno dos deeplinks Stone (pagamento, cancelamento, reimpressao)
+     * A Stone retorna via scheme "caixacombo" configurado como returnscheme
+     */
+    private fun processStoneDeeplinkIntent(intent: Intent?) {
+        if (intent == null || intent.data == null) return
+        val uri = intent.data!!
+        val scheme = uri.scheme ?: return
+
+        if (scheme != "caixacombo") return
+
+        android.util.Log.d("MainActivity", "Deeplink Stone recebido: $uri")
+        val authority = uri.authority ?: return
+
+        when (authority) {
+            "pay-response" -> {
+                val result = StoneDeeplinkService.parsePaymentResult(intent)
+                stonePaymentCallback?.invoke(result)
+                android.util.Log.d("MainActivity", "Deeplink pagamento: success=${result?.success}")
+            }
+            "cancel" -> {
+                val result = StoneDeeplinkService.parseCancelResult(intent)
+                stoneCancelCallback?.invoke(result)
+                android.util.Log.d("MainActivity", "Deeplink cancelamento: success=${result?.success}")
+            }
+            "reprint" -> {
+                val result = StoneDeeplinkService.parseReprintResult(intent)
+                stoneReprintCallback?.invoke(result)
+                android.util.Log.d("MainActivity", "Deeplink reimpressão: success=${result?.success}")
+            }
         }
     }
 
