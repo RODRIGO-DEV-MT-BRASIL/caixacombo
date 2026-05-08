@@ -455,9 +455,36 @@ fun CheckoutScreenPOS(
     if (showFormaPagamentoDialog) {
         EscolhaFormaPagamentoDialogPOS(
             onFormaSelecionada = { forma ->
-                formaPagamentoSelecionada = forma
                 showFormaPagamentoDialog = false
-                showValorDialog = true
+
+                // Cartão/PIX com Stone instalado -> enviar direto ao terminal com valor total
+                if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
+                    val stoneType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
+                    val centavos = StoneDeeplinkService.toCentavos(total)
+                    val parcelas = if (forma == FormaPagamento.CARTAO_CREDITO) 1 else 0
+                    isStoneProcessing = true
+                    stonePaymentError = null
+                    stonePaymentResult = null
+                    formaPagamentoSelecionada = forma
+
+                    onSendStonePayment?.invoke(centavos, stoneType, parcelas, "") { result ->
+                        isStoneProcessing = false
+                        if (result != null && result.success) {
+                            stonePaymentResult = result
+                            val stoneAtk = result.authorizationCode.ifEmpty { null }
+                            if (viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)) {
+                                formaPagamentoSelecionada = null
+                                produtoSelecionado = null
+                            }
+                        } else {
+                            stonePaymentError = result?.reason ?: "Pagamento recusado no terminal"
+                        }
+                    }
+                } else {
+                    // Dinheiro / outras formas -> mostrar dialog de valor
+                    formaPagamentoSelecionada = forma
+                    showValorDialog = true
+                }
             },
             onCancelar = {
                 showFormaPagamentoDialog = false
@@ -467,7 +494,7 @@ fun CheckoutScreenPOS(
         )
     }
 
-    // Dialog de valor (após escolher forma)
+    // Dialog de valor (apenas para Dinheiro - troco)
     if (showValorDialog && formaPagamentoSelecionada != null) {
         ValorPagamentoDialogPOS(
             total = total,
@@ -478,40 +505,12 @@ fun CheckoutScreenPOS(
                 val recebido = valorRecebido.toDoubleSafe(total)
                 val forma = formaPagamentoSelecionada!!
 
-                // Se deve usar Stone deeplink (Cartão/PIX) e Stone está instalado
-                if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
-                    val stoneType = StoneDeeplinkService.mapFormaPagamentoToStone(forma)!!
-                    val centavos = StoneDeeplinkService.toCentavos(recebido)
-                    val parcelas = if (forma == FormaPagamento.CARTAO_CREDITO) 1 else 0
-                    isStoneProcessing = true
-                    stonePaymentError = null
-                    stonePaymentResult = null
-
-                    onSendStonePayment?.invoke(centavos, stoneType, parcelas, "") { result ->
-                        isStoneProcessing = false
-                        if (result != null && result.success) {
-                            stonePaymentResult = result
-                            // Stone aprovou -> finalizar venda com atk para cancelamento/reimpressao
-                            val stoneAtk = result.authorizationCode.ifEmpty { null }
-                            if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id, stoneAtk)) {
-                                showValorDialog = false
-                                valorRecebido = ""
-                                formaPagamentoSelecionada = null
-                                produtoSelecionado = null
-                            }
-                        } else {
-                            // Stone recusou ou erro
-                            stonePaymentError = result?.reason ?: "Pagamento recusado no terminal"
-                        }
-                    }
-                } else {
-                    // Dinheiro / outras formas -> finalizar direto
-                    if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
-                        showValorDialog = false
-                        valorRecebido = ""
-                        formaPagamentoSelecionada = null
-                        produtoSelecionado = null
-                    }
+                // Dinheiro -> finalizar direto
+                if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
+                    showValorDialog = false
+                    valorRecebido = ""
+                    formaPagamentoSelecionada = null
+                    produtoSelecionado = null
                 }
             },
             onCancelar = {
@@ -538,9 +537,21 @@ fun CheckoutScreenPOS(
 
     // Indicador de processamento Stone
     if (isStoneProcessing) {
+        val formaTexto = when (formaPagamentoSelecionada) {
+            FormaPagamento.PIX -> "PIX"
+            FormaPagamento.CARTAO_CREDITO -> "CARTÃO DE CRÉDITO"
+            FormaPagamento.CARTAO_DEBITO -> "CARTÃO DE DÉBITO"
+            else -> "PAGAMENTO"
+        }
+        val instrucao = when (formaPagamentoSelecionada) {
+            FormaPagamento.PIX -> "Apresente o QR Code ao cliente no terminal"
+            FormaPagamento.CARTAO_CREDITO -> "Insira ou passe o cartão no terminal"
+            FormaPagamento.CARTAO_DEBITO -> "Insira ou passe o cartão no terminal"
+            else -> "Aguardando terminal..."
+        }
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Processando Pagamento") },
+            title = { Text(formaTexto) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -550,10 +561,10 @@ fun CheckoutScreenPOS(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         androidx.compose.material3.CircularProgressIndicator()
-                        Text("Aguardando terminal Stone...")
+                        Text("Processando R$ %.2f".format(total))
                     }
                     Text(
-                        "Insira ou passe o cartão no terminal",
+                        instrucao,
                         style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -563,6 +574,7 @@ fun CheckoutScreenPOS(
                 TextButton(onClick = {
                     isStoneProcessing = false
                     stonePaymentError = "Pagamento cancelado pelo operador"
+                    formaPagamentoSelecionada = null
                 }) {
                     Text("Cancelar")
                 }
