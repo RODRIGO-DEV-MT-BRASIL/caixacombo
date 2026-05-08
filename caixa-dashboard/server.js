@@ -319,11 +319,85 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
   res.json({ valid: true, user: req.user });
 });
 
+// Verificar senha para ações sensíveis
+app.post('/api/auth/verify-password', authenticateToken, (req, res) => {
+  const { password } = req.body;
+  const user = db.usuarios.find(u => u.id === req.user.id || u.username === req.user.username);
+  if (!user) return res.status(401).json({ valid: false, error: 'Usuário não encontrado' });
+  if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ valid: false, error: 'Senha incorreta' });
+  res.json({ valid: true });
+});
+
+// Reimprimir venda
+app.post('/api/vendas/:id/reimprimir', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const venda = (db.vendas || []).find(v => v.id == id);
+  if (!venda) return res.status(404).json({ error: 'Venda não encontrada' });
+  
+  const deviceId = venda.deviceId;
+  const device = connectedDevices.get(deviceId);
+  
+  // Enviar comando de reimpressão para o dispositivo
+  enqueueDeviceCommand(deviceId, 'reimprimir_venda', { vendaId: id });
+  if (device?.socketId) {
+    io.to(device.socketId).emit('reimprimir_venda', { vendaId: id, venda });
+  }
+  
+  addAuditoria('reimpressao', deviceId, `Reimpressão da venda #${id}`, req.user.username);
+  res.json({ success: true, message: 'Comando de reimpressão enviado' });
+});
+
+// Cancelar venda
+app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { motivo } = req.body;
+  const vendaIndex = (db.vendas || []).findIndex(v => v.id == id);
+  if (vendaIndex === -1) return res.status(404).json({ error: 'Venda não encontrada' });
+  
+  const venda = db.vendas[vendaIndex];
+  const deviceId = venda.deviceId;
+  
+  // Marcar venda como cancelada
+  db.vendas[vendaIndex].cancelada = true;
+  db.vendas[vendaIndex].canceladaEm = new Date().toISOString();
+  db.vendas[vendaIndex].canceladaPor = req.user.username;
+  db.vendas[vendaIndex].motivoCancelamento = motivo || '';
+  saveData();
+  
+  // Enviar comando de cancelamento para o dispositivo
+  const device = connectedDevices.get(deviceId);
+  enqueueDeviceCommand(deviceId, 'cancelar_venda', { vendaId: id, venda });
+  if (device?.socketId) {
+    io.to(device.socketId).emit('cancelar_venda', { vendaId: id, venda });
+  }
+  
+  // Notificar dashboards
+  io.emit('venda_cancelada', { vendaId: id, deviceId });
+  
+  addAuditoria('cancelamento', deviceId, `Venda #${id} cancelada: ${motivo || 'sem motivo'}`, req.user.username);
+  res.json({ success: true, message: 'Venda cancelada com sucesso' });
+});
+
 app.get('/api/dispositivos', authenticateToken, (req, res) => {
   const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
     deviceId: id, ...d, online: d.socketId !== null
   }));
   res.json(list);
+});
+
+// ==================== CONFIGURAÇÕES WHITELABEL ====================
+app.get('/api/config', authenticateToken, (req, res) => {
+  if (!db.config) db.config = {};
+  res.json(db.config);
+});
+
+app.post('/api/config', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
+  db.config = { ...db.config, ...req.body, updatedAt: new Date().toISOString() };
+  saveData();
+  io.emit('config_updated', db.config);
+  addAuditoria('config', null, 'Configurações atualizadas', req.user.username);
+  res.json({ success: true, config: db.config });
 });
 
 app.get('/api/auditoria', authenticateToken, (req, res) => {
