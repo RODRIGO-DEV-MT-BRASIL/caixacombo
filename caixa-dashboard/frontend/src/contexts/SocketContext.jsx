@@ -19,8 +19,9 @@ export function SocketProvider({ children }) {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000
     })
     socketRef.current = socket
 
@@ -28,12 +29,12 @@ export function SocketProvider({ children }) {
       setConnected(true)
       socket.emit('dashboard_connect', { token })
       
-      // Forçar atualização completa a cada 30 segundos para garantir sincronismo
+      // Atualização periódica leve a cada 60s (evita re-renderizações excessivas)
       const syncInterval = setInterval(() => {
         if (socket.connected) {
           socket.emit('dashboard_connect', { token })
         }
-      }, 30000)
+      }, 60000)
       
       // Salvar referência para limpar quando desconectar
       socket.syncInterval = syncInterval
@@ -63,8 +64,15 @@ export function SocketProvider({ children }) {
     
     socket.on('device_connected', (device) => {
       setDevices(prev => {
-        const filtered = prev.filter(d => d.deviceId !== device.deviceId)
-        return [...filtered, { ...device, online: true }]
+        const existingIndex = prev.findIndex(d => d.deviceId === device.deviceId)
+        if (existingIndex >= 0) {
+          // Atualizar in-place mantendo posição
+          const updated = [...prev]
+          updated[existingIndex] = { ...prev[existingIndex], ...device, online: true }
+          return updated
+        }
+        // Novo dispositivo vai ao final
+        return [...prev, { ...device, online: true }]
       })
     })
 
@@ -137,7 +145,7 @@ export function SocketProvider({ children }) {
     })
 
     socket.on('venda_added', (venda) => {
-      setVendas(prev => [venda, ...prev])
+      setVendas(prev => [venda, ...prev].slice(0, 200)) // Limitar a 200 vendas em memória
     })
 
     socket.on('device_password_updated', ({ deviceId, lockPassword }) => {
