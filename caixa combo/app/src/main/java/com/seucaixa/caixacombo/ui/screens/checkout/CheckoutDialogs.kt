@@ -6,6 +6,7 @@ package com.seucaixa.caixacombo.ui.screens.checkout
  */
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType as ComposeKeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -25,6 +28,7 @@ import com.seucaixa.caixacombo.data.model.FormaPagamento
 import com.seucaixa.caixacombo.ui.theme.FontDimensions
 import com.seucaixa.caixacombo.ui.theme.CheckoutDimensions
 import com.seucaixa.caixacombo.ui.components.CustomKeyboard
+import android.content.Context
 import com.seucaixa.caixacombo.ui.components.KeyboardType
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 
@@ -45,81 +49,101 @@ fun EscolhaFormaPagamentoDialogPOS(
     onCancelar: () -> Unit,
     isStoneAvailable: Boolean = true
 ) {
+    val context = LocalContext.current
+    val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
+    val primaryColor = Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))
+
     Dialog(onDismissRequest = onCancelar) {
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .padding(8.dp),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .background(primaryColor.copy(alpha = 0.05f))
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Título
-                Text(
-                    "FORMA DE PAGAMENTO",
-                    fontSize = FontDimensions.precoMedio(),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Grid 2x2 de botões de pagamento
+                // Header com cor primária
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(primaryColor, RoundedCornerShape(12.dp))
+                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    FormaPagamentoButtonPOS(
-                        forma = FormaPagamento.DINHEIRO,
-                        icone = Icons.Default.Money,
-                        texto = "DINHEIRO",
-                        selecionada = false,
-                        onClick = { onFormaSelecionada(FormaPagamento.DINHEIRO) },
-                        modifier = Modifier.weight(1f)
+                    Icon(
+                        Icons.Default.Payment,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
-
-                    FormaPagamentoButtonPOS(
-                        forma = FormaPagamento.PIX,
-                        icone = Icons.Default.QrCode,
-                        texto = "PIX",
-                        selecionada = false,
-                        onClick = { onFormaSelecionada(FormaPagamento.PIX) },
-                        modifier = Modifier.weight(1f),
-                        enabled = isStoneAvailable
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "COMO DESEJA PAGAR?",
+                        fontSize = FontDimensions.precoMedio(),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
 
-                Row(
+                // Grid 2x2 de cards de pagamento
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    FormaPagamentoButtonPOS(
-                        forma = FormaPagamento.CARTAO_CREDITO,
-                        icone = Icons.Default.CreditCard,
-                        texto = "CRÉDITO",
-                        selecionada = false,
-                        onClick = { onFormaSelecionada(FormaPagamento.CARTAO_CREDITO) },
-                        modifier = Modifier.weight(1f),
-                        enabled = isStoneAvailable
-                    )
-
-                    FormaPagamentoButtonPOS(
-                        forma = FormaPagamento.CARTAO_DEBITO,
-                        icone = Icons.Default.CreditCard,
-                        texto = "DÉBITO",
-                        selecionada = false,
-                        onClick = { onFormaSelecionada(FormaPagamento.CARTAO_DEBITO) },
-                        modifier = Modifier.weight(1f),
-                        enabled = isStoneAvailable
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        PagamentoCard(
+                            icone = Icons.Default.Money,
+                            texto = "Dinheiro",
+                            descricao = "Pagamento em espécie",
+                            cor = Color(0xFF4CAF50),
+                            enabled = true,
+                            onClick = { onFormaSelecionada(FormaPagamento.DINHEIRO) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        PagamentoCard(
+                            icone = Icons.Default.QrCode,
+                            texto = "PIX",
+                            descricao = "QR Code instantâneo",
+                            cor = Color(0xFF00BCD4),
+                            enabled = isStoneAvailable,
+                            onClick = { onFormaSelecionada(FormaPagamento.PIX) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        PagamentoCard(
+                            icone = Icons.Default.CreditCard,
+                            texto = "Crédito",
+                            descricao = "Cartão de crédito",
+                            cor = Color(0xFFFF9800),
+                            enabled = isStoneAvailable,
+                            onClick = { onFormaSelecionada(FormaPagamento.CARTAO_CREDITO) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        PagamentoCard(
+                            icone = Icons.Default.CreditCard,
+                            texto = "Débito",
+                            descricao = "Cartão de débito",
+                            cor = Color(0xFF2196F3),
+                            enabled = isStoneAvailable,
+                            onClick = { onFormaSelecionada(FormaPagamento.CARTAO_DEBITO) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 // Botão cancelar
                 OutlinedButton(
@@ -127,14 +151,65 @@ fun EscolhaFormaPagamentoDialogPOS(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(CheckoutDimensions.botaoFinalizarHeight()),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
                 ) {
                     Text(
                         "CANCELAR",
-                        fontSize = FontDimensions.botaoTexto()
+                        fontSize = FontDimensions.botaoTexto(),
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PagamentoCard(
+    icone: androidx.compose.ui.graphics.vector.ImageVector,
+    texto: String,
+    descricao: String,
+    cor: Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = { if (enabled) onClick() },
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (enabled) 4.dp else 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) Color.White else Color(0xFFF5F5F5)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                icone,
+                contentDescription = null,
+                tint = if (enabled) cor else Color(0xFFBDBDBD),
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                texto,
+                fontSize = FontDimensions.subtituloProduto(),
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) Color(0xFF1C1B1F) else Color(0xFFBDBDBD)
+            )
+            Text(
+                descricao,
+                fontSize = 9.sp,
+                color = if (enabled) Color(0xFF757575) else Color(0xFFBDBDBD),
+                maxLines = 1
+            )
         }
     }
 }
