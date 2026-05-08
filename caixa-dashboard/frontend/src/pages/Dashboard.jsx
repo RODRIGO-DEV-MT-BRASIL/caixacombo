@@ -67,8 +67,7 @@ export default function Dashboard() {
 
     const handleControlResult = (event) => {
       const { deviceId, action, success: isSuccess, error } = event.detail
-      const device = devices.find(d => d.deviceId === deviceId)
-      const deviceName = device?.deviceName || deviceId
+      const deviceName = event.detail.deviceName || deviceId
 
       const actionNames = {
         'open_app': 'Abrir app',
@@ -93,11 +92,12 @@ export default function Dashboard() {
       window.removeEventListener('device_locked', handleDeviceLocked)
       window.removeEventListener('control_result', handleControlResult)
     }
-  }, [success, devices])
+  }, [success])
 
   const onlineDevices = devices.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
   const lockedDevices = devices.filter(d => d.status === 'locked')
   const inUseDevices = devices.filter(d => d.status === 'in_use')
+  const freeOnlineDevices = devices.filter(d => d.status === 'online' || (d.online && d.status !== 'locked' && d.status !== 'in_use'))
 
   // Filtrar itens do menu baseado em permissões
   const filteredNavItems = navItems.filter(item => {
@@ -136,8 +136,8 @@ export default function Dashboard() {
   const getConnectedTime = (connectedAt) => {
     if (!connectedAt) return '-'
     const now = new Date()
-    const connected = new Date(connectedAt)
-    const diff = now - connected
+    const connDate = new Date(connectedAt)
+    const diff = now - connDate
     const minutes = Math.floor(diff / 60000)
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
@@ -170,7 +170,6 @@ export default function Dashboard() {
   }
 
   const handleControlDevice = useCallback(async (deviceId, action) => {
-    console.log(`🎮 [DEBUG] handleControlDevice chamado: deviceId=${deviceId}, action=${action}`)
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/control`, {
         method: 'POST',
@@ -181,15 +180,11 @@ export default function Dashboard() {
         body: JSON.stringify({ action })
       })
       const data = await res.json()
-      console.log(`🎮 [DEBUG] Resposta do servidor:`, data)
       if (!res.ok) {
-        console.error('Erro ao controlar dispositivo:', data.error)
-        // Mostrar erro ao usuário
         if (data.error) {
           success(`❌ Erro: ${data.error}`, 5000)
         }
       } else {
-        // Mostrar confirmação
         const actionNames = {
           'open_app': 'Abrindo app',
           'close_app': 'Fechando app',
@@ -199,29 +194,16 @@ export default function Dashboard() {
         success(`✅ ${actionNames[action] || 'Comando enviado'}`, 3000)
       }
     } catch (err) {
-      console.error(err)
       success('❌ Erro ao enviar comando', 3000)
     }
   }, [token, success])
 
   const handleForceSync = () => {
-    console.log('🔄 [DEBUG] Botão sincronizar clicado')
-    console.log('🔄 [DEBUG] Socket conectado:', connected)
-    console.log('🔄 [DEBUG] Socket object:', socket ? 'disponível' : 'nulo')
-    
-    if (socket) {
-      console.log('🔄 [DEBUG] Socket ID:', socket.id)
-      console.log('🔄 [DEBUG] Socket connected:', socket.connected)
-    }
-    
     if (socket && connected) {
-      console.log('🔄 [DEBUG] Enviando dashboard_connect...')
       socket.emit('dashboard_connect', { token })
       success('🔄 Sincronização forçada - atualizando dispositivos...', 3000)
     } else {
-      console.error('❌ [DEBUG] Socket não disponível ou desconectado')
       success('❌ WebSocket desconectado - tentando reconectar...', 3000)
-      // Forçar reconexão se necessário
       if (socket) {
         socket.connect()
       }
@@ -315,7 +297,7 @@ export default function Dashboard() {
               <RefreshCw size={14} />
               Sincronizar
             </button>
-            <span className="text-xs text-gray-500">{new Date().toLocaleDateString('pt-BR')}</span>
+            <span className="text-xs text-gray-500">{new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
           </div>
         </header>
 
@@ -329,8 +311,8 @@ export default function Dashboard() {
                     <Monitor size={24} className="text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{devices.length}</p>
-                    <p className="text-xs text-gray-400">Total Dispositivos</p>
+                    <p className="text-2xl font-bold text-white">{onlineDevices.length}</p>
+                    <p className="text-xs text-gray-400">Dispositivos Conectados</p>
                   </div>
                 </div>
                 <div className="stat-card glow-green">
@@ -338,7 +320,7 @@ export default function Dashboard() {
                     <Wifi size={24} className="text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{onlineDevices.length}</p>
+                    <p className="text-2xl font-bold text-white">{freeOnlineDevices.length}</p>
                     <p className="text-xs text-gray-400">Online</p>
                   </div>
                 </div>
