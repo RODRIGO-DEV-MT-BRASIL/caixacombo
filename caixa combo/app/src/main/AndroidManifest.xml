@@ -16,13 +16,7 @@
 
     <!-- Permissões para ler e escrever arquivos (exportar/importar produtos) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
-    <!-- Permissão para mostrar diálogo sobre outras apps (bloqueio de tela) -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-
-    <!-- Permissão para reiniciar o dispositivo (requer assinatura do sistema ou device admin) -->
-    <uses-permission android:name="android.permission.REBOOT" />
 
     <application
         android:name=".CaixaApplication"
@@ -46,9 +40,18 @@
             </intent-filter>
         </activity>
 
-        <!-- WebSocket Service para comunicação com Dashboard -->
+        <!-- Activity fullscreen para bloqueio de tela (substitui SYSTEM_ALERT_WINDOW) -->
+        <activity
+            android:name=".LockActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CaixaCombo.Lock"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true" />
+
+        <!-- Polling Service REST para comunicação com Dashboard (Stone compliance - sem WebSocket) -->
         <service
-            android:name=".service.WebSocketService"
+            android:name=".service.PollingService"
             android:enabled="true"
             android:exported="false" />
 
@@ -62,6 +65,16 @@
                 android:resource="@xml/device_admin_policies" />
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Receiver para desprovisionar Device Owner via ADB -->
+        <!-- Uso: adb shell am broadcast -a com.seucaixa.caixacombo.UNPROVISION -->
+        <receiver
+            android:name=".UnprovisionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.seucaixa.caixacombo.UNPROVISION" />
             </intent-filter>
         </receiver>
         

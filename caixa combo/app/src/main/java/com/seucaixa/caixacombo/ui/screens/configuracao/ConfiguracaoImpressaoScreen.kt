@@ -20,6 +20,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -185,7 +187,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateTitulo,
                                     label = { Text("Título (ex: Quintal Bar)") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 Row(
@@ -197,7 +200,8 @@ fun ConfiguracaoImpressaoScreen(
                                         onValueChange = viewModel::updateCnpj,
                                         label = { Text("CNPJ") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                     )
                                     
                                     OutlinedTextField(
@@ -205,7 +209,8 @@ fun ConfiguracaoImpressaoScreen(
                                         onValueChange = viewModel::updateInscricaoEstadual,
                                         label = { Text("IE") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                     )
                                 }
                                 
@@ -214,7 +219,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateTelefone,
                                     label = { Text("Telefone") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                                 )
                                 
                                 OutlinedTextField(
@@ -222,7 +228,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateEmail,
                                     label = { Text("Email") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                                 )
                                 
                                 OutlinedTextField(
@@ -230,7 +237,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateEndereco,
                                     label = { Text(stringResource(R.string.endereco)) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 OutlinedTextField(
@@ -238,7 +246,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateCidade,
                                     label = { Text(stringResource(R.string.cidade_uf)) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 OutlinedTextField(
@@ -246,7 +255,8 @@ fun ConfiguracaoImpressaoScreen(
                                     onValueChange = viewModel::updateCep,
                                     label = { Text(stringResource(R.string.cep)) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                 )
                             }
                         }

@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -593,10 +594,17 @@ fun ProdutoItemMobile(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
+                val estoqueCor = when {
+                    produto.estoque <= 0 -> MaterialTheme.colorScheme.error
+                    produto.estoque <= 5 -> Color(0xFFFF9800)
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                val estoqueLabel = if (produto.estoque <= 0) "ESGOTADO" else "Estoque: ${produto.estoqueFormatado()}"
                 Text(
-                    "Estoque: ${produto.estoqueFormatado()}",
+                    estoqueLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (produto.estoque > 10) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error
+                    fontWeight = if (produto.estoque <= 5) FontWeight.Bold else FontWeight.Normal,
+                    color = estoqueCor
                 )
             }
             
@@ -656,7 +664,7 @@ fun CarrinhoBottomSheetContent(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        Divider()
+        HorizontalDivider()
         
         Spacer(modifier = Modifier.height(8.dp))
         
@@ -679,7 +687,7 @@ fun CarrinhoBottomSheetContent(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        Divider()
+        HorizontalDivider()
         
         Spacer(modifier = Modifier.height(8.dp))
         
@@ -717,9 +725,18 @@ fun CarrinhoBottomSheetContent(
             Button(
                 onClick = onFinalizar,
                 modifier = Modifier.weight(2f),
-                enabled = carrinho.isNotEmpty()
+                enabled = carrinho.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text("Finalizar Venda")
+                Icon(
+                    Icons.Default.CheckCircle,
+                    null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Finalizar Venda", fontWeight = FontWeight.Bold)
             }
         }
         

@@ -149,7 +149,7 @@ fun ProdutosScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Busca
             OutlinedTextField(
@@ -157,10 +157,11 @@ fun ProdutosScreen(
                 onValueChange = viewModel::buscarProdutos,
                 label = { Text("Buscar produto...") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Abas de categorias
             val todasCategorias = listOf(null) + categorias
@@ -177,7 +178,7 @@ fun ProdutosScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Lista de produtos filtrados por categoria
             val produtosFiltrados = if (selectedCategoriaId == null) {
@@ -246,7 +247,7 @@ fun ProdutoGerenciamentoItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -585,7 +586,8 @@ fun CategoriasDialog(
                         value = novaCategoria,
                         onValueChange = { novaCategoria = it },
                         label = { Text("Nova Categoria") },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                     )
                     
                     Button(

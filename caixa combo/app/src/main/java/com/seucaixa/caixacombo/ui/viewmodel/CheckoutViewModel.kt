@@ -6,7 +6,7 @@ import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.data.repository.CategoriaRepository
 import com.seucaixa.caixacombo.data.repository.ProdutoRepository
 import com.seucaixa.caixacombo.data.repository.VendaRepository
-import com.seucaixa.caixacombo.service.WebSocketService
+import com.seucaixa.caixacombo.service.PollingService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -251,7 +251,7 @@ class CheckoutViewModel(
         _total.value = _carrinho.value.sumOf { it.total }
     }
     
-    fun finalizarVenda(formaPagamento: FormaPagamento, valorRecebido: Double): Boolean {
+    fun finalizarVenda(formaPagamento: FormaPagamento, valorRecebido: Double, clienteId: Long? = null): Boolean {
         if (_carrinho.value.isEmpty()) return false
         
         viewModelScope.launch {
@@ -277,7 +277,8 @@ class CheckoutViewModel(
                 total = _total.value,
                 formaPagamento = formaPagamento,
                 valorRecebido = valorRecebido,
-                troco = troco
+                troco = troco,
+                clienteId = clienteId
             )
             
             // Salvar venda
@@ -295,7 +296,7 @@ class CheckoutViewModel(
                     if (itemVendido != null) {
                         val novoEstoque = produto.estoque - itemVendido.quantidade
                         // Enviar atualização para o servidor
-                        WebSocketService.sendEstoqueUpdate(produto.id, novoEstoque)
+                        PollingService.sendEstoqueUpdate(produto.id, novoEstoque)
                         produto.copy(estoque = novoEstoque)
                     } else {
                         produto
@@ -328,7 +329,7 @@ class CheckoutViewModel(
                 }
                 put("itens", itensArray)
             }
-            WebSocketService.sendSaleData(vendaJson)
+            PollingService.sendSaleData(vendaJson)
 
             // Atualizar contador de vendidos
             val vendidosAtual = _vendidosPorProduto.value.toMutableMap()
@@ -395,7 +396,7 @@ class CheckoutViewModel(
                     })
                 }
                 
-                WebSocketService.sendProdutosSync(produtosJson)
+                PollingService.sendProdutosSync(produtosJson)
                 android.util.Log.d("CheckoutViewModel", "Enviados ${produtosLocais.size} produtos para sincronização")
             }
         }

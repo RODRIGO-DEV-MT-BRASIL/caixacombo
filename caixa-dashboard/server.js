@@ -8,12 +8,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const puppeteer = require('puppeteer');
+const PDFDocument = require('pdfkit');
 require('dotenv').config();
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
+app.use(cors({ 
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true, 
+  credentials: true 
+}));
 app.use(express.json());
 
 // Servir arquivos estáticos da pasta uploads
@@ -80,9 +84,7 @@ function loadData() {
     categorias: [],
     vendas: [],
     operacoes: [],
-    usuarios: [
-      { id: 1, username: 'rodrigodevmt', password: bcrypt.hashSync('1985', 10), role: 'admin' }
-    ],
+    usuarios: [],
     dispositivos: []
   };
 }
@@ -124,8 +126,27 @@ function saveAuditoria() {
 let db = loadData();
 db.auditoria = loadAuditoria();
 
+// Seed do admin padrão a partir de variáveis de ambiente (se não existir nenhum usuário)
+if (!db.usuarios || db.usuarios.length === 0) {
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminPassword) {
+    db.usuarios.push({
+      id: Date.now(),
+      username: adminUsername,
+      password: bcrypt.hashSync(adminPassword, 10),
+      role: 'admin'
+    });
+    saveData();
+    console.log(`👤 Admin criado: ${adminUsername}`);
+  } else {
+    console.warn('⚠️ ADMIN_PASSWORD não definido. Nenhum usuário admin será criado.');
+  }
+}
+
 const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
+const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
 
 // Função para adicionar logs de auditoria
 function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
@@ -236,7 +257,11 @@ const io = new Server(server, {
   allowEIO3: true
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'caixacombo-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ JWT_SECRET não definido! Defina a variável de ambiente JWT_SECRET.');
+  process.exit(1);
+}
 
 function authenticateToken(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -424,7 +449,7 @@ app.post('/api/produtos', authenticateToken, (req, res) => {
     codigoBarras: req.body.codigoBarras || Date.now().toString(),
     estoque: req.body.estoque || 0,
     unidade: req.body.unidade || 'un',
-    imagem: req.body.imagem || null,
+    imagem: (req.body.imagem && req.body.imagem.startsWith('/uploads/')) ? req.body.imagem : null,
     createdAt: new Date()
   };
   db.produtos.push(produto);
@@ -704,37 +729,38 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
     console.log(`⚠️ [CONTROL] Comando '${action}' requer permissões especiais (Admin ou Root)`);
   }
 
-  // Enviar comando para o dispositivo via WebSocket
+  // Enviar comando para o dispositivo via WebSocket e/ou enfileirar para polling
+  enqueueDeviceCommand(deviceId, 'control_command', { action });
+
   if (device.socketId) {
     io.to(device.socketId).emit('control_command', { action });
     console.log(`📤 [CONTROL] Comando '${action}' enviado para socketId ${device.socketId} (deviceId: ${deviceId})`);
-
-    // Auditoria
-    addAuditoria('mudanca_status', deviceId, `Comando de controle enviado: ${action}`, dashboardInfo?.usuario);
-
-    res.json({
-      message: requiresSpecialPermissions
-        ? `Comando enviado. Pode não funcionar se o dispositivo não tiver permissões de Admin ou Root`
-        : 'Comando enviado com sucesso',
-      deviceId,
-      action,
-      socketId: device.socketId,
-      requiresSpecialPermissions,
-      timestamp: new Date()
-    });
   } else {
-    console.log(`❌ [CONTROL] Dispositivo ${deviceId} não possui socketId`);
-    res.status(400).json({ error: 'Dispositivo não está conectado' });
+    console.log(`📤 [CONTROL] Comando '${action}' enfileirado para polling (deviceId: ${deviceId})`);
   }
+
+  // Auditoria
+  addAuditoria('mudanca_status', deviceId, `Comando de controle enviado: ${action}`, dashboardInfo?.usuario);
+
+  res.json({
+    message: requiresSpecialPermissions
+      ? `Comando enviado. Pode não funcionar se o dispositivo não tiver permissões de Admin ou Root`
+      : 'Comando enviado com sucesso',
+    deviceId,
+    action,
+    socketId: device.socketId,
+    requiresSpecialPermissions,
+    timestamp: new Date()
+  });
 });
 
 // ==================== API DE OPERAÇÕES DE CAIXA ====================
-app.get('/api/operacoes', (req, res) => {
+app.get('/api/operacoes', authenticateToken, (req, res) => {
   // Retornar operações do banco local (do dashboard)
   res.json(db.operacoes || []);
 });
 
-app.post('/api/operacoes', (req, res) => {
+app.post('/api/operacoes', authenticateToken, (req, res) => {
   const { tipo, valor, deviceId, nomeOperador, observacao } = req.body;
   
   const operacao = {
@@ -771,7 +797,7 @@ app.post('/api/operacoes', (req, res) => {
 });
 
 // DELETE operação (para limpar dados incorretos)
-app.delete('/api/operacoes/:id', (req, res) => {
+app.delete('/api/operacoes/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
   
   if (!db.operacoes) {
@@ -800,172 +826,320 @@ app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
   try {
     const dados = req.body;
     
-    console.log('📄 Gerando PDF do fechamento geral:', dados.dataHora);
-    console.log('📊 Dados recebidos:', {
-      totalAbertura: dados.totalAbertura,
-      totalSuprimento: dados.totalSuprimento,
-      totalSangria: dados.totalSangria,
-      totalFechamento: dados.totalFechamento,
-      totalVendas: dados.totalVendas,
-      operacoes: dados.operacoes?.length || 0,
-      vendas: dados.vendas?.length || 0
-    });
-    
     if (!dados || dados.totalAbertura === undefined) {
-      console.error('❌ Dados inválidos para gerar PDF');
       return res.status(400).json({ error: 'Dados inválidos para gerar PDF' });
     }
     
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    const chunks = [];
+    
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=fechamento-geral-${new Date().toISOString().split('T')[0]}.pdf`);
+      res.send(pdfBuffer);
     });
     
-    const page = await browser.newPage();
+    // Cabeçalho
+    doc.fontSize(20).fillColor('#6200EE').text('FECHAMENTO GERAL DO CAIXA', { align: 'center' });
+    doc.fontSize(12).fillColor('#666666').text('CaixaCombo - Sistema de PDV', { align: 'center' });
+    doc.fontSize(10).text(`Data: ${dados.dataHora}`, { align: 'center' });
+    doc.moveDown(1.5);
     
-    // Criar HTML para o PDF
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; }
-          .header { text-align: center; margin-bottom: 40px; }
-          .header h1 { color: #6200EE; margin: 0; }
-          .header p { color: #666; margin: 5px 0; }
-          .section { margin-bottom: 30px; }
-          .section h2 { color: #333; border-bottom: 2px solid #6200EE; padding-bottom: 10px; }
-          .row { display: flex; justify-content: space-between; margin: 10px 0; }
-          .label { color: #666; }
-          .value { font-weight: bold; color: #333; }
-          .total { font-size: 18px; color: #6200EE; }
-          .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          .table th, .table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-          .table th { background-color: #6200EE; color: white; }
-          .table tr:nth-child(even) { background-color: #f9f9f9; }
-          .positive { color: #00C853; }
-          .negative { color: #D50000; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>FECHAMENTO GERAL DO CAIXA</h1>
-          <p>CaixaCombo - Sistema de PDV</p>
-          <p>Data: ${dados.dataHora}</p>
-        </div>
-        
-        <div class="section">
-          <h2>RESUMO FINANCEIRO</h2>
-          <div class="row">
-            <span class="label">Total de Aberturas:</span>
-            <span class="value positive">+ R$ ${dados.totalAbertura.toFixed(2)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Total de Suprimentos:</span>
-            <span class="value positive">+ R$ ${dados.totalSuprimento.toFixed(2)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Total de Sangrias:</span>
-            <span class="value negative">- R$ ${dados.totalSangria.toFixed(2)}</span>
-          </div>
-          <div class="row">
-            <span class="label">Total de Vendas:</span>
-            <span class="value positive">R$ ${dados.totalVendas.toFixed(2)}</span>
-          </div>
-          <div class="row" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #6200EE;">
-            <span class="label total">SALDO FINAL:</span>
-            <span class="value total">R$ ${dados.totalFechamento.toFixed(2)}</span>
-          </div>
-        </div>
-        
-        ${dados.operacoes && dados.operacoes.length > 0 ? `
-        <div class="section">
-          <h2>OPERAÇÕES DE CAIXA</h2>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Valor</th>
-                <th>Data/Hora</th>
-                <th>Observação</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${dados.operacoes.map(op => `
-                <tr>
-                  <td>${op.tipo.toUpperCase()}</td>
-                  <td class="${op.tipo === 'abertura' || op.tipo === 'suprimento' ? 'positive' : 'negative'}">
-                    ${op.tipo === 'abertura' || op.tipo === 'suprimento' ? '+' : '-'} R$ ${(op.valor || 0).toFixed(2)}
-                  </td>
-                  <td>${new Date(op.dataHora || op.createdAt).toLocaleString('pt-BR')}</td>
-                  <td>${op.observacao || '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        ` : ''}
-        
-        ${dados.vendas && dados.vendas.length > 0 ? `
-        <div class="section">
-          <h2>VENDAS REALIZADAS</h2>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Nº</th>
-                <th>Data/Hora</th>
-                <th>Forma Pagamento</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${dados.vendas.map(venda => `
-                <tr>
-                  <td>${venda.id || venda.numero}</td>
-                  <td>${new Date(venda.dataHora || venda.createdAt).toLocaleString('pt-BR')}</td>
-                  <td>${venda.formaPagamento}</td>
-                  <td class="positive">R$ ${(venda.total || 0).toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-        ` : ''}
-        
-        <div class="section" style="margin-top: 50px; text-align: center; color: #666; font-size: 12px;">
-          <p>Documento gerado automaticamente pelo sistema CaixaCombo</p>
-          <p>Não é necessário assinatura - documento digital válido</p>
-        </div>
-      </body>
-      </html>
-    `;
+    // Resumo Financeiro
+    doc.fontSize(14).fillColor('#333333').text('RESUMO FINANCEIRO');
+    doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#6200EE').lineWidth(2).stroke();
+    doc.moveDown(0.5);
     
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const addRow = (label, value, color = '#333333') => {
+      doc.fontSize(10).fillColor('#666666').text(label, 40, doc.y, { continued: true, width: 300 });
+      doc.fillColor(color).text(value, { align: 'right', width: 215 });
+    };
     
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20px',
-        right: '20px',
-        bottom: '20px',
-        left: '20px'
-      }
-    });
+    addRow('Total de Aberturas:', `+ R$ ${(dados.totalAbertura || 0).toFixed(2)}`, '#00C853');
+    addRow('Total de Suprimentos:', `+ R$ ${(dados.totalSuprimento || 0).toFixed(2)}`, '#00C853');
+    addRow('Total de Sangrias:', `- R$ ${(dados.totalSangria || 0).toFixed(2)}`, '#D50000');
+    addRow('Total de Vendas:', `R$ ${(dados.totalVendas || 0).toFixed(2)}`, '#00C853');
+    doc.moveDown(0.5);
+    doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#6200EE').lineWidth(1).stroke();
+    doc.moveDown(0.3);
+    addRow('SALDO FINAL:', `R$ ${(dados.totalFechamento || 0).toFixed(2)}`, '#6200EE');
+    doc.moveDown(1.5);
     
-    await browser.close();
+    // Operações de Caixa
+    if (dados.operacoes && dados.operacoes.length > 0) {
+      doc.fontSize(14).fillColor('#333333').text('OPERAÇÕES DE CAIXA');
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#6200EE').lineWidth(2).stroke();
+      doc.moveDown(0.5);
+      
+      // Cabeçalho da tabela
+      const tableTop = doc.y;
+      doc.fontSize(9).fillColor('#FFFFFF');
+      doc.rect(40, tableTop, 515, 20).fill('#6200EE');
+      doc.fillColor('#FFFFFF').text('Tipo', 45, tableTop + 5, { width: 100 });
+      doc.text('Valor', 145, tableTop + 5, { width: 100 });
+      doc.text('Data/Hora', 245, tableTop + 5, { width: 150 });
+      doc.text('Obs.', 395, tableTop + 5, { width: 155 });
+      
+      let rowY = tableTop + 22;
+      dados.operacoes.forEach((op, i) => {
+        if (rowY > 750) { doc.addPage(); rowY = 40; }
+        if (i % 2 === 0) { doc.rect(40, rowY - 2, 515, 18).fill('#f9f9f9'); }
+        const isPositive = op.tipo === 'abertura' || op.tipo === 'suprimento';
+        doc.fontSize(8).fillColor('#333333').text(op.tipo.toUpperCase(), 45, rowY + 2, { width: 100 });
+        doc.fillColor(isPositive ? '#00C853' : '#D50000').text(`${isPositive ? '+' : '-'} R$ ${(op.valor || 0).toFixed(2)}`, 145, rowY + 2, { width: 100 });
+        doc.fillColor('#333333').text(new Date(op.dataHora || op.createdAt).toLocaleString('pt-BR'), 245, rowY + 2, { width: 150 });
+        doc.text(op.observacao || '-', 395, rowY + 2, { width: 155 });
+        rowY += 20;
+      });
+      doc.moveDown(1.5);
+    }
     
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=fechamento-geral-${new Date().toISOString().split('T')[0]}.pdf`);
-    res.send(pdfBuffer);
+    // Vendas
+    if (dados.vendas && dados.vendas.length > 0) {
+      if (doc.y > 600) doc.addPage();
+      doc.fontSize(14).fillColor('#333333').text('VENDAS REALIZADAS');
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#6200EE').lineWidth(2).stroke();
+      doc.moveDown(0.5);
+      
+      const tableTop = doc.y;
+      doc.fontSize(9).fillColor('#FFFFFF');
+      doc.rect(40, tableTop, 515, 20).fill('#6200EE');
+      doc.text('Nº', 45, tableTop + 5, { width: 80 });
+      doc.text('Data/Hora', 125, tableTop + 5, { width: 150 });
+      doc.text('Pagamento', 275, tableTop + 5, { width: 120 });
+      doc.text('Total', 395, tableTop + 5, { width: 155 });
+      
+      let rowY = tableTop + 22;
+      dados.vendas.forEach((venda, i) => {
+        if (rowY > 750) { doc.addPage(); rowY = 40; }
+        if (i % 2 === 0) { doc.rect(40, rowY - 2, 515, 18).fill('#f9f9f9'); }
+        doc.fontSize(8).fillColor('#333333').text(String(venda.id || venda.numero || ''), 45, rowY + 2, { width: 80 });
+        doc.text(new Date(venda.dataHora || venda.createdAt).toLocaleString('pt-BR'), 125, rowY + 2, { width: 150 });
+        doc.text(venda.formaPagamento || '-', 275, rowY + 2, { width: 120 });
+        doc.fillColor('#00C853').text(`R$ ${(venda.total || 0).toFixed(2)}`, 395, rowY + 2, { width: 155 });
+        rowY += 20;
+      });
+    }
     
-    console.log('✅ PDF gerado com sucesso');
+    // Rodapé
+    if (doc.y > 700) doc.addPage();
+    doc.moveDown(2);
+    doc.fontSize(8).fillColor('#999999').text('Documento gerado automaticamente pelo sistema CaixaCombo', { align: 'center' });
+    doc.text('Documento digital válido', { align: 'center' });
+    
+    doc.end();
   } catch (error) {
-    console.error('❌ Erro ao gerar PDF:', error);
+    console.error('Erro ao gerar PDF:', error);
     res.status(500).json({ error: 'Erro ao gerar PDF', details: error.message });
   }
 });
+
+// ==================== POLLING REST API (Stone Compliance - sem WebSocket no POS) ====================
+
+// Dispositivo faz heartbeat e recebe comandos pendentes
+app.post('/api/device/poll', (req, res) => {
+  const { deviceId, deviceName, deviceType, serialNumber, status, caixaData } = req.body;
+  
+  if (!deviceId) {
+    return res.status(400).json({ error: 'deviceId obrigatório' });
+  }
+
+  // Registrar/atualizar dispositivo no mapa
+  const existing = connectedDevices.get(deviceId);
+  const lockPassword = (existing && existing.lockPassword) ? existing.lockPassword : Math.floor(100000 + Math.random() * 900000).toString();
+
+  connectedDevices.set(deviceId, {
+    socketId: existing?.socketId || null,
+    deviceName: deviceName || existing?.deviceName || 'Dispositivo',
+    deviceType: deviceType || 'Android',
+    serialNumber: serialNumber || existing?.serialNumber || null,
+    status: status || existing?.status || 'online',
+    lockPassword: lockPassword,
+    lastPoll: new Date(),
+    empresaId: existing?.empresaId || null,
+    usageTimeLimit: existing?.usageTimeLimit || null,
+    usageStartTime: existing?.usageStartTime || null
+  });
+
+  // Salvar dispositivo no banco
+  if (!db.dispositivos) db.dispositivos = [];
+  const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+  const deviceData = {
+    deviceId,
+    deviceName: deviceName || existing?.deviceName || 'Dispositivo',
+    deviceType: deviceType || 'Android',
+    serialNumber: serialNumber || existing?.serialNumber || null,
+    status: status || 'online',
+    lockPassword: lockPassword,
+    lastPoll: new Date()
+  };
+  if (deviceIndex === -1) {
+    db.dispositivos.push(deviceData);
+  } else {
+    db.dispositivos[deviceIndex] = { ...db.dispositivos[deviceIndex], ...deviceData };
+  }
+  saveData();
+
+  // Processar dados de caixa se enviado
+  if (caixaData) {
+    io.emit('caixa_data', { deviceId, caixa: caixaData });
+  }
+
+  // Notificar dashboards sobre atualização do dispositivo
+  io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+
+  // Retornar comandos pendentes para o dispositivo
+  const commands = pendingCommands.get(deviceId) || [];
+  pendingCommands.delete(deviceId); // Limpar após enviar
+
+  res.json({ 
+    success: true, 
+    commands: commands,
+    serverTime: Date.now()
+  });
+});
+
+// Enviar venda via REST
+app.post('/api/device/sale', (req, res) => {
+  const { deviceId, sale } = req.body;
+  
+  if (!deviceId || !sale) {
+    return res.status(400).json({ error: 'deviceId e sale obrigatórios' });
+  }
+
+  // Processar venda igual ao WebSocket
+  if (!db.vendas) db.vendas = [];
+  const existingIndex = db.vendas.findIndex(v => v.id === sale.id);
+  if (existingIndex === -1) {
+    db.vendas.push(sale);
+  } else {
+    db.vendas[existingIndex] = sale;
+  }
+  saveData();
+
+  // Notificar dashboards
+  io.emit('sale_data', { deviceId, sale });
+
+  // Auto-unlock se dispositivo estava bloqueado
+  const device = connectedDevices.get(deviceId);
+  if (device && device.status === 'locked') {
+    device.status = 'online';
+  }
+
+  res.json({ success: true });
+});
+
+// Enviar status do dispositivo via REST
+app.post('/api/device/status', (req, res) => {
+  const { deviceId, status } = req.body;
+  
+  if (!deviceId) {
+    return res.status(400).json({ error: 'deviceId obrigatório' });
+  }
+
+  const device = connectedDevices.get(deviceId);
+  if (device) {
+    device.status = status;
+    device.lastPoll = new Date();
+    io.emit('device_status', { deviceId, status });
+  }
+
+  res.json({ success: true });
+});
+
+// Enviar atualização de estoque via REST
+app.post('/api/device/estoque', (req, res) => {
+  const { deviceId, produtoId, novoEstoque } = req.body;
+  
+  if (!deviceId) {
+    return res.status(400).json({ error: 'deviceId obrigatório' });
+  }
+
+  const produto = db.produtos.find(p => p.id === produtoId);
+  if (produto) {
+    const estoqueAnterior = produto.estoque;
+    produto.estoque = novoEstoque;
+    saveData();
+    io.emit('estoque_update', { deviceId, produtoId, novoEstoque });
+    addAuditoria('estoque', deviceId, `Estoque atualizado: ${produto.nome} (${estoqueAnterior} -> ${novoEstoque})`, connectedDevices.get(deviceId)?.deviceName);
+  }
+
+  res.json({ success: true });
+});
+
+// Confirmar bloqueio via REST
+app.post('/api/device/lock-confirmed', (req, res) => {
+  const { deviceId } = req.body;
+  const device = connectedDevices.get(deviceId);
+  if (device) {
+    device.status = 'locked';
+    io.emit('lock_confirmed', { deviceId });
+    addAuditoria('bloqueio', deviceId, 'Dispositivo bloqueado com sucesso', 'Sistema');
+  }
+  res.json({ success: true });
+});
+
+// Confirmar desbloqueio via REST
+app.post('/api/device/unlock-confirmed', (req, res) => {
+  const { deviceId } = req.body;
+  const device = connectedDevices.get(deviceId);
+  if (device) {
+    device.status = 'online';
+    io.emit('unlock_confirmed', { deviceId });
+    addAuditoria('desbloqueio', deviceId, 'Dispositivo desbloqueado', 'Sistema');
+  }
+  res.json({ success: true });
+});
+
+// Tentativa de desbloqueio via REST
+app.post('/api/device/unlock-attempt', (req, res) => {
+  const { deviceId, password } = req.body;
+  const device = connectedDevices.get(deviceId);
+  
+  if (!device) {
+    return res.status(404).json({ success: false, message: 'Dispositivo não encontrado' });
+  }
+
+  if (device.lockPassword && password === device.lockPassword) {
+    device.status = 'online';
+    device.lockPassword = Math.floor(100000 + Math.random() * 900000).toString();
+    io.emit('unlock_response', { deviceId, success: true, message: 'Desbloqueado com sucesso' });
+    addAuditoria('desbloqueio', deviceId, 'Desbloqueio via senha', 'Terminal');
+    res.json({ success: true, message: 'Desbloqueado com sucesso' });
+  } else {
+    addAuditoria('bloqueio', deviceId, `Tentativa de desbloqueio falhou: senha incorreta`, 'Terminal');
+    res.json({ success: false, message: 'Senha incorreta' });
+  }
+});
+
+// Enviar resultado de controle via REST
+app.post('/api/device/control-result', (req, res) => {
+  const { deviceId, action, success, error } = req.body;
+  io.emit('control_result', { deviceId, action, success, error });
+  res.json({ success: true });
+});
+
+// Sincronizar produtos via REST (dispositivo envia seus produtos)
+app.post('/api/device/produtos-sync', (req, res) => {
+  const { deviceId, produtos } = req.body;
+  // Notificar dashboards
+  io.emit('produtos_sync', { deviceId, produtos });
+  res.json({ success: true });
+});
+
+// Função auxiliar: enfileirar comando para dispositivo (usado pelo dashboard)
+function enqueueDeviceCommand(deviceId, command, params = {}) {
+  if (!pendingCommands.has(deviceId)) {
+    pendingCommands.set(deviceId, []);
+  }
+  pendingCommands.get(deviceId).push({
+    command,
+    params,
+    timestamp: Date.now()
+  });
+}
 
 // ==================== WEBSOCKET ====================
 io.on('connection', (socket) => {
@@ -1176,7 +1350,6 @@ io.on('connection', (socket) => {
     
     // Emitir evento para atualizar dashboards
     io.emit('venda_added', venda);
-    io.emit('sale_update', { sale: venda });
     
     console.log('✅ Venda processada e salva:', venda.id);
   });
@@ -1214,7 +1387,7 @@ io.on('connection', (socket) => {
         addAuditoria('mudanca_status', deviceId, 'Tentativa de desbloqueio com senha incorreta');
         
         // Responder erro para o dispositivo
-        socket.emit('unlock_response', { deviceId, success: false, message: 'Senha incorreta', correctPassword: device.lockPassword });
+        socket.emit('unlock_response', { deviceId, success: false, message: 'Senha incorreta' });
       }
     } else {
       console.log(`❌ [DEBUG] Dispositivo não encontrado para unlock_attempt: ${deviceId}`);
@@ -1351,8 +1524,9 @@ io.on('connection', (socket) => {
       device.usageStartTime = new Date();
       
       // Enviar comando para o dispositivo
+      enqueueDeviceCommand(deviceId, 'usage_time_set', { minutes, startTime: device.usageStartTime });
       if (device.socketId) {
-        io.to(device.socketId).emit('set_time_limit', { minutes, startTime: device.usageStartTime });
+        io.to(device.socketId).emit('usage_time_set', { minutes, startTime: device.usageStartTime });
       }
       
       // Auditoria: Tempo de uso definido
@@ -1501,6 +1675,7 @@ io.on('connection', (socket) => {
       device.status = 'locked';
       device.lockReason = reason;
       device.lockedAt = new Date();
+      enqueueDeviceCommand(deviceId, 'device_locked', { reason, lockPassword: device.lockPassword });
       if (device.socketId) io.to(device.socketId).emit('device_locked', { reason, lockPassword: device.lockPassword });
       io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
       
@@ -1527,6 +1702,7 @@ io.on('connection', (socket) => {
     
     if (device) {
       device.status = 'online';
+      enqueueDeviceCommand(deviceId, 'device_unlocked', {});
       if (device.socketId) io.to(device.socketId).emit('device_unlocked', {});
       io.emit('device_status_update', { deviceId, status: 'online' });
       
@@ -1572,5 +1748,4 @@ io.on('connection', (socket) => {
 const PORT = 3001;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server na porta ${PORT}`);
-  console.log(`👤 Usuário: rodrigodevmt / 1985`);
 });

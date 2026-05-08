@@ -23,11 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ConfiguracaoImpressaoViewModel
+import java.io.File
 import java.io.InputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +52,10 @@ fun ConfiguracaoTipoImpressaoScreen(
             try {
                 val inputStream: InputStream = context.contentResolver.openInputStream(it) ?: return@let
                 val bytes = inputStream.readBytes()
+                // Salvar como arquivo para exibição (evita CursorWindow overflow)
+                val logoFile = File(context.filesDir, "logo.png")
+                logoFile.writeBytes(bytes)
+                // Salvar base64 no Room para impressão
                 val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
                 viewModel.updateLogoBase64(base64)
             } catch (e: Exception) {
@@ -324,7 +331,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     onValueChange = viewModel::updateTitulo,
                                     label = { Text("Título (ex: Quintal Bar)") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 Row(
@@ -336,7 +344,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                         onValueChange = viewModel::updateCnpj,
                                         label = { Text("CNPJ") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                     )
                                     
                                     OutlinedTextField(
@@ -344,7 +353,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                         onValueChange = viewModel::updateInscricaoEstadual,
                                         label = { Text("IE") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                     )
                                 }
                                 
@@ -357,7 +367,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                         onValueChange = viewModel::updateTelefone,
                                         label = { Text("Telefone") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                                     )
                                     
                                     OutlinedTextField(
@@ -365,7 +376,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                         onValueChange = viewModel::updateEmail,
                                         label = { Text("Email") },
                                         modifier = Modifier.weight(1f),
-                                        singleLine = true
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                                     )
                                 }
                                 
@@ -374,7 +386,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     onValueChange = viewModel::updateEndereco,
                                     label = { Text("Endereço") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 OutlinedTextField(
@@ -382,7 +395,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     onValueChange = viewModel::updateCidade,
                                     label = { Text("Cidade - UF") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                                 )
                                 
                                 OutlinedTextField(
@@ -390,7 +404,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     onValueChange = viewModel::updateCep,
                                     label = { Text("CEP") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                 )
                             }
                         }
@@ -567,8 +582,8 @@ fun ConfiguracaoTipoImpressaoScreen(
                                                     contentDescription = "Logo selecionada",
                                                     modifier = Modifier
                                                         .size(
-                                                            width = (configuracao?.logoLargura ?: 150f).dp.coerceAtMost(200.dp),
-                                                            height = (configuracao?.logoAltura ?: 80f).dp.coerceAtMost(150.dp)
+                                                            width = (configuracao?.logoLargura ?: 150f).dp.coerceAtMost(300.dp),
+                                                            height = (configuracao?.logoAltura ?: 80f).dp.coerceAtMost(200.dp)
                                                         )
                                                         .clickable { 
                                                             imagePickerLauncher.launch("image/*")
@@ -577,7 +592,10 @@ fun ConfiguracaoTipoImpressaoScreen(
                                             }
                                             
                                             TextButton(
-                                                onClick = { viewModel.updateLogoBase64("") }
+                                                onClick = { 
+                                                    viewModel.updateLogoBase64("")
+                                                    File(context.filesDir, "logo.png").delete()
+                                                }
                                             ) {
                                                 Text("Remover logo", fontSize = 12.sp)
                                             }
@@ -603,7 +621,7 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     Slider(
                                         value = configuracao?.logoAltura ?: 80f,
                                         onValueChange = viewModel::updateLogoAltura,
-                                        valueRange = 40f..300f,
+                                        valueRange = 40f..500f,
                                         modifier = Modifier.weight(1f).padding(start = 8.dp)
                                     )
                                 }
@@ -618,7 +636,7 @@ fun ConfiguracaoTipoImpressaoScreen(
                                     Slider(
                                         value = configuracao?.logoLargura ?: 300f,
                                         onValueChange = viewModel::updateLogoLargura,
-                                        valueRange = 100f..500f,
+                                        valueRange = 100f..800f,
                                         modifier = Modifier.weight(1f).padding(start = 8.dp)
                                     )
                                 }
@@ -826,6 +844,27 @@ fun ConfiguracaoTipoImpressaoScreen(
                                                 Switch(
                                                     checked = configuracao?.logoFicha ?: false,
                                                     onCheckedChange = viewModel::updateLogoFicha
+                                                )
+                                            }
+                                        }
+                                        
+                                        Card(
+                                            modifier = Modifier.weight(1f),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surface
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(12.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text("Checkout PDV", fontSize = 12.sp)
+                                                Switch(
+                                                    checked = configuracao?.logoCheckoutPDV ?: false,
+                                                    onCheckedChange = viewModel::updateLogoCheckoutPDV
                                                 )
                                             }
                                         }

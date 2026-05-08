@@ -124,10 +124,6 @@ export function SocketProvider({ children }) {
       setTimeUpdates(prev => ({ ...prev, [deviceId]: { elapsed, remaining, total } }))
     })
 
-    socket.on('sale_update', ({ sale }) => {
-      setVendas(prev => [sale, ...prev])
-    })
-
     socket.on('venda_added', (venda) => {
       setVendas(prev => [venda, ...prev])
     })

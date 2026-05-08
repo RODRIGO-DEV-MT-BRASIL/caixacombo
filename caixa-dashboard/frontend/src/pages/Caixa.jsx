@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
@@ -24,7 +24,7 @@ export default function Caixa() {
       .then(res => res.json())
       .then(data => { setOperacoes(data); setLoading(false) })
       .catch(() => setLoading(false))
-    
+
     fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => setVendas(data))
@@ -34,123 +34,105 @@ export default function Caixa() {
       .then(res => res.json())
       .then(data => setDispositivosConectados(data))
       .catch(() => setDispositivosConectados([]))
-
-    if (socket) {
-      socket.on('operacao_adicionada', (data) => {
-        setOperacoes(prev => [...prev, data])
-      })
-
-      socket.on('operacoes_sync', (data) => {
-        setOperacoes(data)
-      })
-
-      socket.on('venda_added', (data) => {
-        setVendas(prev => [...prev, data])
-      })
-
-      socket.on('sale_update', (data) => {
-        setVendas(prev => [...prev, data.sale])
-      })
-
-      socket.on('vendas_sync', (data) => {
-        setVendas(data)
-      })
-    }
-
-    return () => {
-      socket.off('operacao_adicionada')
-      socket.off('operacoes_sync')
-      socket.off('venda_added')
-      socket.off('sale_update')
-      socket.off('vendas_sync')
-    }
   }, [])
 
-  // Escutar atualizações de operações via WebSocket
+  // Escutar atualizações via WebSocket (único effect consolidado)
   useEffect(() => {
     if (!socket) return
 
-    socket.on('operacao_adicionada', (operacao) => {
-      console.log('Nova operação recebida:', operacao)
+    const handleOperacaoAdicionada = (operacao) => {
       setOperacoes(prev => [...prev, operacao])
-    })
+    }
 
-    socket.on('operacoes_sync', (data) => {
+    const handleOperacoesSync = (data) => {
       if (data.operacoes) {
-        console.log('Sincronização recebida:', data.operacoes)
         setOperacoes(data.operacoes)
+      } else if (Array.isArray(data)) {
+        setOperacoes(data)
       }
-    })
+    }
 
-    socket.on('venda_added', (venda) => {
-      console.log('Nova venda recebida:', venda)
+    const handleVendaAdded = (venda) => {
       setVendas(prev => [...prev, venda])
-    })
+    }
 
-    socket.on('sale_update', (data) => {
-      console.log('Atualização de venda:', data)
-      if (data.sale) {
-        setVendas(prev => [...prev, data.sale])
+    const handleVendasSync = (data) => {
+      if (Array.isArray(data)) {
+        setVendas(data)
       }
-    })
+    }
+
+    socket.on('operacao_adicionada', handleOperacaoAdicionada)
+    socket.on('operacoes_sync', handleOperacoesSync)
+    socket.on('venda_added', handleVendaAdded)
+    socket.on('vendas_sync', handleVendasSync)
 
     return () => {
-      socket.off('operacao_adicionada')
-      socket.off('operacoes_sync')
-      socket.off('venda_added')
-      socket.off('sale_update')
+      socket.off('operacao_adicionada', handleOperacaoAdicionada)
+      socket.off('operacoes_sync', handleOperacoesSync)
+      socket.off('venda_added', handleVendaAdded)
+      socket.off('vendas_sync', handleVendasSync)
     }
   }, [socket])
 
   
-  // Agrupar operações por dispositivo
-  const operacoesPorDispositivo = operacoes.reduce((acc, operacao) => {
-    const deviceId = operacao.deviceId || 'geral'
-    if (!acc[deviceId]) {
-      acc[deviceId] = {
-        deviceId,
-        operacoes: [],
-        totalAbertura: 0,
-        totalFechamento: 0,
-        totalSuprimento: 0,
-        totalSangria: 0,
-        saldo: 0,
-        ultimaAbertura: null,
-        caixaAberto: false
+  // Agrupar operações por dispositivo (memoizado)
+  const { dispositivos, operacoesPorDispositivo } = useMemo(() => {
+    const porDispositivo = operacoes.reduce((acc, operacao) => {
+      const deviceId = operacao.deviceId || 'geral'
+      if (!acc[deviceId]) {
+        acc[deviceId] = {
+          deviceId,
+          operacoes: [],
+          totalAbertura: 0,
+          totalFechamento: 0,
+          totalSuprimento: 0,
+          totalSangria: 0,
+          saldo: 0,
+          ultimaAbertura: null,
+          caixaAberto: false
+        }
       }
-    }
-    acc[deviceId].operacoes.push(operacao)
-    
-    if (operacao.tipo === 'abertura') {
-      acc[deviceId].totalAbertura += (operacao.valor || 0)
-      acc[deviceId].ultimaAbertura = operacao
-      acc[deviceId].caixaAberto = true
-    } else if (operacao.tipo === 'fechamento') {
-      acc[deviceId].totalFechamento += (operacao.valor || 0)
-      acc[deviceId].caixaAberto = false
-    } else if (operacao.tipo === 'suprimento') {
-      acc[deviceId].totalSuprimento += (operacao.valor || 0)
-    } else if (operacao.tipo === 'sangria') {
-      acc[deviceId].totalSangria += (operacao.valor || 0)
-    }
-    
-    acc[deviceId].saldo = acc[deviceId].totalAbertura - acc[deviceId].totalFechamento + acc[deviceId].totalSuprimento - acc[deviceId].totalSangria
-    return acc
-  }, {})
+      acc[deviceId].operacoes.push(operacao)
+      
+      if (operacao.tipo === 'abertura') {
+        acc[deviceId].totalAbertura += (operacao.valor || 0)
+        acc[deviceId].ultimaAbertura = operacao
+        acc[deviceId].caixaAberto = true
+      } else if (operacao.tipo === 'fechamento') {
+        acc[deviceId].totalFechamento += (operacao.valor || 0)
+        acc[deviceId].caixaAberto = false
+      } else if (operacao.tipo === 'suprimento') {
+        acc[deviceId].totalSuprimento += (operacao.valor || 0)
+      } else if (operacao.tipo === 'sangria') {
+        acc[deviceId].totalSangria += (operacao.valor || 0)
+      }
+      
+      acc[deviceId].saldo = acc[deviceId].totalAbertura - acc[deviceId].totalFechamento + acc[deviceId].totalSuprimento - acc[deviceId].totalSangria
+      return acc
+    }, {})
+    return { dispositivos: Object.values(porDispositivo), operacoesPorDispositivo: porDispositivo }
+  }, [operacoes])
 
-  const dispositivos = Object.values(operacoesPorDispositivo)
+  // Totais de operações (memoizado)
+  const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria } = useMemo(() => {
+    const ab = operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0)
+    const ft = operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)
+    const sup = operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0)
+    const san = operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0)
+    return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab - ft, totalSuprimento: sup, totalSangria: san }
+  }, [operacoes])
 
-  const totalAbertura = operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0)
-  const totalFechamento = operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)
-  const saldoGeral = totalAbertura - totalFechamento
-
-  // Calcular totais de vendas por forma de pagamento
-  const totalVendas = vendas.reduce((sum, v) => sum + (v.total || 0), 0)
-  const totalDinheiro = vendas.filter(v => v.formaPagamento === 'DINHEIRO').reduce((sum, v) => sum + (v.total || 0), 0)
-  const totalPix = vendas.filter(v => v.formaPagamento === 'PIX').reduce((sum, v) => sum + (v.total || 0), 0)
-  const totalCredito = vendas.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((sum, v) => sum + (v.total || 0), 0)
-  const totalDebito = vendas.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((sum, v) => sum + (v.total || 0), 0)
-  const totalCartao = vendas.filter(v => v.formaPagamento === 'CARTAO').reduce((sum, v) => sum + (v.total || 0), 0)
+  // Calcular totais de vendas por forma de pagamento (memoizado)
+  const { totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito, totalCartao } = useMemo(() => {
+    const total = vendas.reduce((sum, v) => sum + (v.total || 0), 0)
+    const dinheiro = vendas.filter(v => v.formaPagamento === 'DINHEIRO').reduce((sum, v) => sum + (v.total || 0), 0)
+    const pix = vendas.filter(v => v.formaPagamento === 'PIX').reduce((sum, v) => sum + (v.total || 0), 0)
+    const credito = vendas.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((sum, v) => sum + (v.total || 0), 0)
+    const debito = vendas.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((sum, v) => sum + (v.total || 0), 0)
+    const cartao = vendas.filter(v => v.formaPagamento === 'CARTAO').reduce((sum, v) => sum + (v.total || 0), 0)
+    return { totalVendas: total, totalDinheiro: dinheiro, totalPix: pix, totalCredito: credito, totalDebito: debito, totalCartao: cartao }
+  }, [vendas])
 
   const tipoColors = {
     abertura: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',

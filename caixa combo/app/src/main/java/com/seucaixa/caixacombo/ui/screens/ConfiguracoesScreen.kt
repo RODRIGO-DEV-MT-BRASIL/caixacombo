@@ -46,7 +46,7 @@ fun ConfiguracoesScreen(
                 onCheckedChange = { darkMode = it }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // Idioma
             ConfiguracaoItem(
@@ -72,7 +72,7 @@ fun ConfiguracoesScreen(
                 onClick = { }
             )
             
-            Divider()
+            HorizontalDivider()
             
             // Backup
             ConfiguracaoItem(
