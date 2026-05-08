@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
@@ -103,111 +104,162 @@ fun AcessosScreen(
             val funcionarios = usuarios.filter { it.cargo == CargoUsuario.FUNCIONARIO }
             val gerentesAdmin = usuarios.filter { it.cargo == CargoUsuario.GERENTE || it.cargo == CargoUsuario.ADMIN }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(backgroundColor)
-                    .padding(padding)
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Coluna Funcionários
-                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            val configuration = LocalConfiguration.current
+            val isSmallScreen = configuration.screenWidthDp < 600
+
+            if (isSmallScreen) {
+                // Layout em coluna única para P2-B / telas pequenas
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(backgroundColor)
+                        .padding(padding)
+                        .padding(8.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Seção Admin/Gerente
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp)
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Person,
-                            null,
-                            modifier = Modifier.size(18.dp),
-                            tint = Color(0xFF43A047)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "Funcionários (${funcionarios.size})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF43A047)
-                        )
+                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(16.dp), tint = Color(0xFFE53935))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Admin/Gerente (${gerentesAdmin.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFE53935))
+                    }
+                    gerentesAdmin.forEach { usuario ->
+                        UsuarioCardCompact(usuario, onEdit = { editingUsuario = usuario }, onToggleAtivo = { scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) } }, onDelete = { scope.launch { dao.delete(usuario) } })
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Seção Funcionários
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = Color(0xFF43A047))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Funcionários (${funcionarios.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF43A047))
                     }
                     if (funcionarios.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Nenhum funcionário", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
-                    } else {
-                        funcionarios.forEach { usuario ->
-                            UsuarioCard(
-                                usuario = usuario,
-                                onEdit = { editingUsuario = usuario },
-                                onToggleAtivo = {
-                                    scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
-                                },
-                                onDelete = {
-                                    scope.launch { dao.delete(usuario) }
-                                }
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
+                        Text("Nenhum funcionário", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                    }
+                    funcionarios.forEach { usuario ->
+                        UsuarioCardCompact(usuario, onEdit = { editingUsuario = usuario }, onToggleAtivo = { scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) } }, onDelete = { scope.launch { dao.delete(usuario) } })
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
-
-                // Divisor vertical
-                VerticalDivider(
+            } else {
+                // Layout em duas colunas para telas grandes (POS)
+                Row(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(vertical = 8.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
-
-                // Coluna Admin/Gerente
-                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.AdminPanelSettings,
-                            null,
-                            modifier = Modifier.size(18.dp),
-                            tint = Color(0xFFE53935)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            "Admin / Gerente (${gerentesAdmin.size})",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFFE53935)
-                        )
-                    }
-                    if (gerentesAdmin.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .background(backgroundColor)
+                        .padding(padding)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Coluna Funcionários
+                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp)
                         ) {
-                            Text("Nenhum admin/gerente", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
-                    } else {
-                        gerentesAdmin.forEach { usuario ->
-                            UsuarioCard(
-                                usuario = usuario,
-                                onEdit = { editingUsuario = usuario },
-                                onToggleAtivo = {
-                                    scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
-                                },
-                                onDelete = {
-                                    scope.launch { dao.delete(usuario) }
-                                }
+                            Icon(
+                                Icons.Default.Person,
+                                null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFF43A047)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Funcionários (${funcionarios.size})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFF43A047)
+                            )
+                        }
+                        if (funcionarios.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Nenhum funcionário", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                            }
+                        } else {
+                            funcionarios.forEach { usuario ->
+                                UsuarioCard(
+                                    usuario = usuario,
+                                    onEdit = { editingUsuario = usuario },
+                                    onToggleAtivo = {
+                                        scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
+                                    },
+                                    onDelete = {
+                                        scope.launch { dao.delete(usuario) }
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+                        }
+                    }
+
+                    // Divisor vertical
+                    VerticalDivider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(vertical = 8.dp),
+                        thickness = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    // Coluna Admin/Gerente
+                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.AdminPanelSettings,
+                                null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFFE53935)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Admin / Gerente (${gerentesAdmin.size})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color(0xFFE53935)
+                            )
+                        }
+                        if (gerentesAdmin.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Nenhum admin/gerente", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                            }
+                        } else {
+                            gerentesAdmin.forEach { usuario ->
+                                UsuarioCard(
+                                    usuario = usuario,
+                                    onEdit = { editingUsuario = usuario },
+                                    onToggleAtivo = {
+                                        scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
+                                    },
+                                    onDelete = {
+                                        scope.launch { dao.delete(usuario) }
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
                         }
                     }
                 }
@@ -241,6 +293,128 @@ fun AcessosScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun UsuarioCardCompact(
+    usuario: Usuario,
+    onEdit: () -> Unit,
+    onToggleAtivo: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val cargoColor = when (usuario.cargo) {
+        CargoUsuario.ADMIN -> Color(0xFFE53935)
+        CargoUsuario.GERENTE -> Color(0xFFFB8C00)
+        CargoUsuario.FUNCIONARIO -> Color(0xFF43A047)
+    }
+    val cargoLabel = when (usuario.cargo) {
+        CargoUsuario.ADMIN -> "ADM"
+        CargoUsuario.GERENTE -> "GER"
+        CargoUsuario.FUNCIONARIO -> "FUN"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (usuario.ativo) MaterialTheme.colorScheme.surface
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar com inicial
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(cargoColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    usuario.nome.take(1).uppercase(),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = cargoColor
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Info
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        usuario.nome,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = if (usuario.ativo) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(3.dp),
+                        color = cargoColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            cargoLabel,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = cargoColor
+                        )
+                    }
+                    if (!usuario.ativo) {
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Surface(
+                            shape = RoundedCornerShape(3.dp),
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                "OFF",
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+                if (usuario.cpf.isNotEmpty() || usuario.telefone.isNotEmpty()) {
+                    Text(
+                        listOfNotNull(
+                            if (usuario.cpf.isNotEmpty()) "CPF: ${usuario.cpf}" else null,
+                            if (usuario.telefone.isNotEmpty()) "Tel: ${usuario.telefone}" else null
+                        ).joinToString(" · "),
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Actions compactas
+            IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onToggleAtivo, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    if (usuario.ativo) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    null, modifier = Modifier.size(16.dp),
+                    tint = if (usuario.ativo) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF43A047)
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+            }
+        }
     }
 }
 
