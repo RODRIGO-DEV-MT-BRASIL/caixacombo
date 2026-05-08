@@ -753,7 +753,7 @@ private fun CarrinhoTableHeader(primaryColor: Color, isSmallScreen: Boolean = fa
     ) {
         Text("CÓD", modifier = Modifier.weight(if (isSmallScreen) 0.13f else 0.1f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
         Spacer(modifier = Modifier.width(if (isSmallScreen) 8.dp else 0.dp))
-        Text("DESC", modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
+        Text("PRODUTO", modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
         Text("QTD", modifier = Modifier.weight(if (isSmallScreen) 0.16f else 0.12f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.Center)
         Text("VL UNIT", modifier = Modifier.weight(0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
         Text("TOTAL", modifier = Modifier.weight(0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
