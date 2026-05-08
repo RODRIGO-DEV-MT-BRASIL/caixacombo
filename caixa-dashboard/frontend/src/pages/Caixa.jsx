@@ -97,7 +97,10 @@ export default function Caixa() {
   // ==================== LÓGICA DE CAIXA POR TERMINAL ====================
   // Cada terminal tem sua própria sessão de caixa (abertura → fechamento).
   // O dashboard mostra o consolidado (soma de todos os terminais).
-  // Operações sem deviceId (criadas pelo dashboard) vão para "geral".
+  // Dispositivos de teste são filtrados. Só dispositivos online aparecem.
+
+  // DeviceIds de teste para ignorar
+  const TEST_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check']
 
   // Agrupar operações e vendas por dispositivo, com sessão atual
   const { dispositivos, caixaAtual } = useMemo(() => {
@@ -111,23 +114,27 @@ export default function Caixa() {
       }
     }
 
-    // 1. Agrupar operações por deviceId
+    // 1. Agrupar operações por deviceId (ignorar testes)
     const porDispositivo = operacoes.reduce((acc, operacao) => {
       const deviceId = operacao.deviceId || 'geral'
+      if (TEST_DEVICE_IDS.includes(deviceId)) return acc
       ensureDevice(acc, deviceId)
       acc[deviceId].operacoes.push(operacao)
       return acc
     }, {})
 
-    // 2. Incluir dispositivos que têm vendas mas não têm operações
+    // 2. Incluir dispositivos que têm vendas mas não têm operações (ignorar testes)
     vendas.forEach(v => {
       const deviceId = v.deviceId || 'geral'
+      if (TEST_DEVICE_IDS.includes(deviceId)) return
       ensureDevice(porDispositivo, deviceId)
     })
 
-    // 3. Incluir dispositivos conectados que não têm vendas nem operações
+    // 3. Incluir dispositivos conectados que estão online (ignorar testes e offline)
     dispositivosConectados.forEach(d => {
-      if (d.deviceId) ensureDevice(porDispositivo, d.deviceId)
+      if (d.deviceId && !TEST_DEVICE_IDS.includes(d.deviceId) && d.status !== 'offline') {
+        ensureDevice(porDispositivo, d.deviceId)
+      }
     })
 
     // 4. Determinar sessão de cada dispositivo
