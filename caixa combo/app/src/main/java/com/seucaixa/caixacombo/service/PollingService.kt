@@ -42,6 +42,8 @@ class PollingService : Service() {
         private var onProdutosReceived: ((JSONArray) -> Unit)? = null
         private var onLockPasswordReceived: ((String) -> Unit)? = null
         private var onUnlockResponse: ((Boolean, String?) -> Unit)? = null
+        private var onReprintRequested: ((String?) -> Unit)? = null      // atk da venda
+        private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -67,7 +69,9 @@ class PollingService : Service() {
             onDataRequested: (() -> Unit)?,
             onLockPasswordReceived: ((String) -> Unit)? = null,
             onProdutosReceived: ((JSONArray) -> Unit)? = null,
-            onUnlockResponse: ((Boolean, String?) -> Unit)? = null
+            onUnlockResponse: ((Boolean, String?) -> Unit)? = null,
+            onReprintRequested: ((String?) -> Unit)? = null,
+            onCancelRequested: ((String, Long?) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -75,6 +79,8 @@ class PollingService : Service() {
             this.onLockPasswordReceived = onLockPasswordReceived
             this.onProdutosReceived = onProdutosReceived
             this.onUnlockResponse = onUnlockResponse
+            this.onReprintRequested = onReprintRequested
+            this.onCancelRequested = onCancelRequested
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -468,6 +474,21 @@ class PollingService : Service() {
             }
             "request_data", "request_sync" -> {
                 onDataRequested?.invoke()
+            }
+            "reimprimir_venda" -> {
+                val atk = params?.optString("atk", null)
+                Log.d(TAG, "Comando reimprimir_venda recebido, atk=$atk")
+                onReprintRequested?.invoke(atk)
+            }
+            "cancelar_venda" -> {
+                val atk = params?.optString("atk", "") ?: ""
+                val amount = params?.optLong("amount", 0)?.takeIf { it > 0 }
+                Log.d(TAG, "Comando cancelar_venda recebido, atk=$atk, amount=$amount")
+                if (atk.isNotEmpty()) {
+                    onCancelRequested?.invoke(atk, amount)
+                } else {
+                    Log.w(TAG, "Cancelamento sem ATK - não é possível cancelar via deeplink")
+                }
             }
             "produtos_sync" -> {
                 val produtos = params?.optJSONArray("produtos")

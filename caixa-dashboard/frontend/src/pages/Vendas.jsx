@@ -78,12 +78,16 @@ export default function Vendas() {
       })
       const data = await res.json()
       if (data.success) {
-        alert('✅ Venda cancelada com sucesso')
+        alert('✅ Cancelamento enviado ao terminal Stone')
         setVendas(prev => prev.map(v => v.id == vendaId ? { ...v, cancelada: true, canceladaEm: new Date().toISOString(), motivoCancelamento: cancelarMotivo } : v))
         setCancelarMotivo('')
       } else alert('❌ Erro: ' + data.error)
     } catch { alert('❌ Erro ao cancelar venda') }
   }
+
+  // Verificar se venda pode ser cancelada via Stone deeplink
+  const formasStone = ['CARTAO_CREDITO', 'CARTAO_DEBITO', 'CREDITO', 'DEBITO', 'PIX']
+  const canCancelStone = (v) => v.stoneAtk || v.atk || !formasStone.includes(v.formaPagamento)
   const paymentColors = {
     DINHEIRO: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     PIX: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -244,12 +248,18 @@ export default function Vendas() {
                               >
                                 <Printer size={12} /> Reimprimir
                               </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setSenhaModal({ action: 'cancelar', vendaId: venda.id, venda }) }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
-                              >
-                                <XCircle size={12} /> Cancelar Venda
-                              </button>
+                              {canCancelStone(venda) ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setSenhaModal({ action: 'cancelar', vendaId: venda.id, venda }) }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                                >
+                                  <XCircle size={12} /> Cancelar
+                                </button>
+                              ) : (
+                                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-500/10 text-gray-500 border border-gray-500/20 cursor-not-allowed" title="Venda sem ATK - cancelamento indisponível via Stone">
+                                  <XCircle size={12} /> Sem ATK
+                                </span>
+                              )}
                             </div>
                           )}
                           {venda.cancelada && (

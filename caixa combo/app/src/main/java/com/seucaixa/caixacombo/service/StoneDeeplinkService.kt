@@ -18,6 +18,11 @@ object StoneDeeplinkService {
 
     private const val TAG = "StoneDeeplink"
     const val REQUEST_CODE_PAYMENT = 1001
+    const val REQUEST_CODE_CANCEL = 1002
+    const val REQUEST_CODE_REPRINT = 1003
+
+    // Return scheme configurado no AndroidManifest
+    private const val RETURN_SCHEME = "caixacombo"
 
     // Tipos de pagamento Stone
     object PaymentType {
@@ -40,6 +45,29 @@ object StoneDeeplinkService {
         val authorizationCode: String = "",
         val reason: String = "",
         val orderId: String = ""
+    )
+
+    /**
+     * Resultado do cancelamento Stone
+     */
+    data class CancelResult(
+        val success: Boolean,
+        val atk: String = "",
+        val canceledAmount: Long = 0,
+        val transactionAmount: Long = 0,
+        val paymentType: Int = 0,
+        val authorizationCode: String = "",
+        val reason: String = "",
+        val responseCode: String = ""
+    )
+
+    /**
+     * Resultado da reimpressão Stone
+     */
+    data class ReprintResult(
+        val success: Boolean,
+        val reason: String = "",
+        val responseCode: String = ""
     )
 
     /**
@@ -157,6 +185,153 @@ object StoneDeeplinkService {
         )
 
         Log.d(TAG, "Resultado Stone: success=${result.success}, code=${result.code}, type=${result.type}, brand=${result.brand}, authCode=${result.authorizationCode}")
+        return result
+    }
+
+    // ==================== CANCELAMENTO ====================
+
+    /**
+     * Cria a Intent de cancelamento para o Stone deeplink
+     * Documentação: cancel-app://cancel?atk=...&amount=...&editable_amount=...&returnscheme=...
+     *
+     * @param atk Código único da transação gerado pelo autorizador da Stone
+     * @param amount Valor do cancelamento em centavos (opcional, 0 = valor total)
+     * @param editableAmount Permite editar o valor no app de cancelamento
+     */
+    fun createCancelIntent(atk: String, amount: Long? = null, editableAmount: Boolean = false): Intent {
+        val uriBuilder = Uri.Builder().apply {
+            authority("cancel")
+            scheme("cancel-app")
+            appendQueryParameter("returnscheme", RETURN_SCHEME)
+            appendQueryParameter("atk", atk)
+            if (amount != null) {
+                appendQueryParameter("amount", amount.toString())
+            }
+            appendQueryParameter("editable_amount", editableAmount.toString())
+        }
+
+        val uri = uriBuilder.build()
+        Log.d(TAG, "Criando intent de cancelamento: $uri")
+
+        return Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    /**
+     * Envia o cancelamento via deeplink para o app da Stone
+     */
+    fun sendCancel(activity: Activity, atk: String, amount: Long? = null, editableAmount: Boolean = false) {
+        val intent = createCancelIntent(atk, amount, editableAmount)
+        try {
+            Log.d(TAG, "Enviando cancelamento: atk=$atk, amount=$amount")
+            activity.startActivityForResult(intent, REQUEST_CODE_CANCEL)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao enviar cancelamento via Stone deeplink. App Stone instalado?", e)
+        }
+    }
+
+    /**
+     * Parseia o resultado do cancelamento retornado pelo Stone
+     * Retorno: caixacombo://cancel?success=true&atk=...&canceledamount=...&paymenttype=...&authorizationcode=...&reason=APPROVED&responsecode=0000
+     */
+    fun parseCancelResult(data: Intent?): CancelResult? {
+        if (data == null) {
+            Log.e(TAG, "Intent de resultado cancelamento é nula")
+            return null
+        }
+
+        val uri = data.data ?: return null
+        Log.d(TAG, "URI de resposta cancelamento: $uri")
+
+        val success = uri.getQueryParameter("success")?.toBoolean() ?: false
+        val atk = uri.getQueryParameter("atk") ?: ""
+        val canceledAmount = uri.getQueryParameter("canceledamount")?.toLongOrNull() ?: 0
+        val transactionAmount = uri.getQueryParameter("transactionamount")?.toLongOrNull() ?: 0
+        val paymentType = uri.getQueryParameter("paymenttype")?.toIntOrNull() ?: 0
+        val authorizationCode = uri.getQueryParameter("authorizationcode") ?: ""
+        val reason = uri.getQueryParameter("reason") ?: ""
+        val responseCode = uri.getQueryParameter("responsecode") ?: ""
+
+        val result = CancelResult(
+            success = success,
+            atk = atk,
+            canceledAmount = canceledAmount,
+            transactionAmount = transactionAmount,
+            paymentType = paymentType,
+            authorizationCode = authorizationCode,
+            reason = reason,
+            responseCode = responseCode
+        )
+
+        Log.d(TAG, "Resultado cancelamento: success=${result.success}, atk=${result.atk}, reason=${result.reason}")
+        return result
+    }
+
+    // ==================== REIMPRESSÃO ====================
+
+    /**
+     * Cria a Intent de reimpressão para o Stone deeplink
+     * Documentação: reprinter-app://reprint?ATK=...&SCHEME_RETURN=...&SHOW_FEEDBACK_SCREEN=...
+     *
+     * @param atk Código único da transação (opcional - se não enviado, será solicitado no app)
+     */
+    fun createReprintIntent(atk: String? = null): Intent {
+        val uriBuilder = Uri.Builder().apply {
+            authority("reprint")
+            scheme("reprinter-app")
+            appendQueryParameter("SHOW_FEEDBACK_SCREEN", "true")
+            appendQueryParameter("SCHEME_RETURN", RETURN_SCHEME)
+            if (!atk.isNullOrEmpty()) {
+                appendQueryParameter("ATK", atk)
+            }
+        }
+
+        val uri = uriBuilder.build()
+        Log.d(TAG, "Criando intent de reimpressão: $uri")
+
+        return Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    /**
+     * Envia a reimpressão via deeplink para o app da Stone
+     */
+    fun sendReprint(activity: Activity, atk: String? = null) {
+        val intent = createReprintIntent(atk)
+        try {
+            Log.d(TAG, "Enviando reimpressão: atk=$atk")
+            activity.startActivityForResult(intent, REQUEST_CODE_REPRINT)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao enviar reimpressão via Stone deeplink. App Stone instalado?", e)
+        }
+    }
+
+    /**
+     * Parseia o resultado da reimpressão retornado pelo Stone
+     * Retorno: caixacombo://reprint?success=true&reason=...&responsecode=...
+     */
+    fun parseReprintResult(data: Intent?): ReprintResult? {
+        if (data == null) {
+            Log.e(TAG, "Intent de resultado reimpressão é nula")
+            return null
+        }
+
+        val uri = data.data ?: return null
+        Log.d(TAG, "URI de resposta reimpressão: $uri")
+
+        val success = uri.getQueryParameter("success")?.toBoolean() ?: false
+        val reason = uri.getQueryParameter("reason") ?: ""
+        val responseCode = uri.getQueryParameter("responsecode") ?: ""
+
+        val result = ReprintResult(
+            success = success,
+            reason = reason,
+            responseCode = responseCode
+        )
+
+        Log.d(TAG, "Resultado reimpressão: success=${result.success}, reason=${result.reason}")
         return result
     }
 }
