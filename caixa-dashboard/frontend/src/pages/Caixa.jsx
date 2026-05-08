@@ -96,8 +96,7 @@ export default function Caixa() {
   
   // Agrupar operações por dispositivo (memoizado)
   const { dispositivos, operacoesPorDispositivo } = useMemo(() => {
-    const porDispositivo = operacoes.reduce((acc, operacao) => {
-      const deviceId = operacao.deviceId || 'geral'
+    const ensureDevice = (acc, deviceId) => {
       if (!acc[deviceId]) {
         acc[deviceId] = {
           deviceId,
@@ -111,6 +110,11 @@ export default function Caixa() {
           caixaAberto: false
         }
       }
+    }
+
+    const porDispositivo = operacoes.reduce((acc, operacao) => {
+      const deviceId = operacao.deviceId || 'geral'
+      ensureDevice(acc, deviceId)
       acc[deviceId].operacoes.push(operacao)
       
       if (operacao.tipo === 'abertura') {
@@ -129,8 +133,21 @@ export default function Caixa() {
       acc[deviceId].saldo = acc[deviceId].totalAbertura - acc[deviceId].totalFechamento + acc[deviceId].totalSuprimento - acc[deviceId].totalSangria
       return acc
     }, {})
+
+    // Incluir dispositivos que têm vendas mas não têm operações
+    vendas.forEach(v => {
+      const deviceId = v.deviceId || 'geral'
+      ensureDevice(porDispositivo, deviceId)
+    })
+
+    // Incluir dispositivos conectados que não têm vendas nem operações
+    dispositivosConectados.forEach(d => {
+      const deviceId = d.deviceId
+      if (deviceId) ensureDevice(porDispositivo, deviceId)
+    })
+
     return { dispositivos: Object.values(porDispositivo), operacoesPorDispositivo: porDispositivo }
-  }, [operacoes])
+  }, [operacoes, vendas, dispositivosConectados])
 
   // Determinar período do caixa atual (última abertura até agora)
   const caixaAtual = useMemo(() => {
