@@ -989,8 +989,10 @@ app.post('/api/device/poll', (req, res) => {
     io.emit('caixa_data', { deviceId, caixa: caixaData });
   }
 
-  // Notificar dashboards sobre atualização do dispositivo
-  io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+  // Notificar dashboards apenas se for um novo dispositivo (não a cada poll)
+  if (!existing) {
+    io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+  }
 
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];

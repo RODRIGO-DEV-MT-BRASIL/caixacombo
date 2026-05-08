@@ -558,7 +558,7 @@ class MainActivity : ComponentActivity() {
         when (command) {
             "lock_device" -> {
                 val reason = params?.optString("reason", "Bloqueado pelo administrador") ?: "Bloqueado"
-                val password = params?.optString("lockPassword", "")
+                val password = params?.optString("lockPassword", "") ?: ""
                 if (password.isNotEmpty()) {
                     currentLockPassword = password
                     android.util.Log.d("MainActivity", "Senha de bloqueio atualizada via comando: $password")
