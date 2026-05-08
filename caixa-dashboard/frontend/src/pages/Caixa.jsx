@@ -592,16 +592,42 @@ export default function Caixa() {
               <div className="p-4 border-t border-white/5">
                 {(() => {
                   const cardInfo = getCardInfo(dispositivo, selectedTab)
-                  
+                  const sessao = caixaAtual[dispositivo.deviceId]
+                  const isVenda = cardInfo.isVenda
+                  const isAberto = sessao?.aberto
+
+                  // Calcular totais da sessão para o resumo
+                  const opsSessao = getOpsSessao(dispositivo.deviceId)
+                  const vendasSessao = getVendasSessao(dispositivo.deviceId)
+                  const totalVendasSessao = vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
+                  const totalAberturaSessao = opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+                  const totalSuprimentoSessao = opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+                  const totalSangriaSessao = opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+
+                  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+                  const formatarData = (dt) => {
+                    if (!dt) return null
+                    const d = new Date(dt)
+                    return {
+                      diaSemana: diasSemana[d.getDay()],
+                      data: d.toLocaleDateString('pt-BR'),
+                      hora: d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+                    }
+                  }
+
+                  const aberturaInfo = sessao?.aberturaEm ? formatarData(sessao.aberturaEm) : null
+                  const fechamentoInfo = sessao?.fechamentoEm ? formatarData(sessao.fechamentoEm) : null
+
                   return (
                     <>
+                      {/* Badge de status + total da aba */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          {cardInfo.isVenda ? (
+                          {isVenda ? (
                             <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                               <Smartphone size={16} className="text-blue-400" />
                             </div>
-                          ) : caixaAtual[dispositivo.deviceId]?.aberto ? (
+                          ) : isAberto ? (
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                               <LockOpen size={16} className="text-emerald-400" />
                             </div>
@@ -610,8 +636,8 @@ export default function Caixa() {
                               <Lock size={16} className="text-red-400" />
                             </div>
                           )}
-                          <span className={`text-sm font-medium ${cardInfo.isVenda ? 'text-blue-400' : (caixaAtual[dispositivo.deviceId]?.aberto ? 'text-emerald-400' : 'text-red-400')}`}>
-                            {cardInfo.isVenda ? cardInfo.label : `Caixa ${caixaAtual[dispositivo.deviceId]?.aberto ? 'Aberto' : 'Fechado'}`}
+                          <span className={`text-sm font-medium ${isVenda ? 'text-blue-400' : (isAberto ? 'text-emerald-400' : 'text-red-400')}`}>
+                            {isVenda ? cardInfo.label : `Caixa ${isAberto ? 'Aberto' : 'Fechado'}`}
                           </span>
                         </div>
                         <div className="text-right">
@@ -621,14 +647,66 @@ export default function Caixa() {
                           <p className="text-xs text-gray-500">{cardInfo.label}</p>
                         </div>
                       </div>
-                      
-                      {/* Última Operação/Venda */}
+
+                      {/* Info da sessão - Abertura */}
+                      {aberturaInfo && (
+                        <div className="glass p-3 mb-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-gray-400">Abertura</p>
+                              <p className="text-sm font-medium text-emerald-400">{aberturaInfo.diaSemana}, {aberturaInfo.data}</p>
+                              <p className="text-xs text-gray-500">às {aberturaInfo.hora}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-emerald-400">R$ {totalAberturaSessao.toFixed(2)}</p>
+                              {sessao?.operador && <p className="text-xs text-gray-500">{sessao.operador}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info da sessão - Fechamento (só quando fechado) */}
+                      {!isAberto && fechamentoInfo && (
+                        <div className="glass p-3 mb-2 border border-red-500/10">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-gray-400">Fechamento</p>
+                              <p className="text-sm font-medium text-red-400">{fechamentoInfo.diaSemana}, {fechamentoInfo.data}</p>
+                              <p className="text-xs text-gray-500">às {fechamentoInfo.hora}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-red-400">R$ {(totalAberturaSessao + totalSuprimentoSessao - totalSangriaSessao + totalVendasSessao).toFixed(2)}</p>
+                              <p className="text-xs text-gray-500">Saldo final</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resumo da sessão */}
+                      {sessao?.aberturaTimestamp && !isVenda && (
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                          <div className="glass p-2 text-center">
+                            <p className="text-xs text-gray-500">Vendas</p>
+                            <p className="text-sm font-bold text-blue-400">R$ {totalVendasSessao.toFixed(2)}</p>
+                          </div>
+                          <div className="glass p-2 text-center">
+                            <p className="text-xs text-gray-500">Suprimento</p>
+                            <p className="text-sm font-bold text-blue-400">R$ {totalSuprimentoSessao.toFixed(2)}</p>
+                          </div>
+                          <div className="glass p-2 text-center">
+                            <p className="text-xs text-gray-500">Sangria</p>
+                            <p className="text-sm font-bold text-amber-400">R$ {totalSangriaSessao.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Última Operação/Venda da aba */}
                       {cardInfo.lastItem && (
-                        <div className="glass p-3 mb-3">
+                        <div className="glass p-3 mb-2">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-xs text-gray-400">
-                                {cardInfo.isVenda ? 'Última Venda' : 'Última Operação'}
+                                {isVenda ? 'Última Venda' : 'Última Operação'}
                               </p>
                               <p className="text-sm font-medium text-white">
                                 {new Date(cardInfo.lastItem.dataHora || cardInfo.lastItem.createdAt).toLocaleString('pt-BR')}
