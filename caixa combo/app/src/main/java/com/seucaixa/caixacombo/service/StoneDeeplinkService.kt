@@ -24,16 +24,20 @@ object StoneDeeplinkService {
     // Return scheme configurado no AndroidManifest
     private const val RETURN_SCHEME = "caixacombo"
 
-    // Tipos de transacao Stone
+    // Tipos de transacao Stone (conforme documentacao)
     object TransactionType {
         const val CREDIT = "CREDIT"
         const val DEBIT = "DEBIT"
+        const val VOUCHER = "VOUCHER"
+        const val INSTANT_PAYMENT = "INSTANT_PAYMENT"
+        const val PIX = "PIX"
     }
 
-    // Tipos de pagamento Stone (cartao, qrcode)
-    object PaymentType {
-        const val CARD = "CARD"
-        const val QRCODE = "QRCODE"
+    // Tipos de parcelamento Stone
+    object InstallmentType {
+        const val NONE = "NONE"       // à vista
+        const val MERCHANT = "MERCHANT" // parcelado sem juros
+        const val ISSUER = "ISSUER"    // parcelado com juros
     }
 
     /**
@@ -76,15 +80,14 @@ object StoneDeeplinkService {
     )
 
     /**
-     * Mapeia FormaPagamento do app para tipo do Stone
-     * Retorna Pair(transactionType, paymentType)
-     * PIX = CREDIT + QRCODE, Cartão = CREDIT/DEBIT + CARD
+     * Mapeia FormaPagamento do app para transaction_type do Stone
+     * Conforme documentação: DEBIT, CREDIT, VOUCHER, INSTANT_PAYMENT, PIX
      */
-    fun mapFormaPagamentoToStone(forma: com.seucaixa.caixacombo.data.model.FormaPagamento): Pair<String, String>? {
+    fun mapFormaPagamentoToStone(forma: com.seucaixa.caixacombo.data.model.FormaPagamento): String? {
         return when (forma) {
-            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_CREDITO -> Pair(TransactionType.CREDIT, PaymentType.CARD)
-            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_DEBITO -> Pair(TransactionType.DEBIT, PaymentType.CARD)
-            com.seucaixa.caixacombo.data.model.FormaPagamento.PIX -> Pair(TransactionType.CREDIT, PaymentType.QRCODE)
+            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_CREDITO -> TransactionType.CREDIT
+            com.seucaixa.caixacombo.data.model.FormaPagamento.CARTAO_DEBITO -> TransactionType.DEBIT
+            com.seucaixa.caixacombo.data.model.FormaPagamento.PIX -> TransactionType.PIX
             else -> null // DINHEIRO, BOLETO, FIADO não usam Stone
         }
     }
@@ -121,33 +124,30 @@ object StoneDeeplinkService {
 
     /**
      * Cria a Intent de pagamento para o Stone deeplink
-     *
-     * @param amount valor em centavos (ex: 1000 = R$ 10,00)
-     * @param type CREDIT, DEBIT ou PIX
-     * @param installmentCount número de parcelas (0 para débito/PIX, 1+ para crédito)
-     * @param orderId ID do pedido (opcional)
+     * Conforme documentação oficial:
+     *   scheme: payment-app, authority: pay
+     *   Parâmetros: return_scheme, amount, editable_amount, transaction_type,
+     *              installment_type, installment_count, order_id
      */
     fun createPaymentIntent(
         amount: Long,
         transactionType: String,
-        paymentType: String = PaymentType.CARD,
+        installmentType: String = InstallmentType.NONE,
         installmentCount: Int = 0,
-        orderId: String = ""
+        orderId: String = "",
+        editableAmount: Boolean = false
     ): Intent {
         val uriBuilder = Uri.Builder().apply {
             authority("pay")
             scheme("payment-app")
+            appendQueryParameter("return_scheme", RETURN_SCHEME)
             appendQueryParameter("amount", amount.toString())
-            appendQueryParameter("type", transactionType)
-            appendQueryParameter("payment_type", paymentType)
-            appendQueryParameter("returnscheme", RETURN_SCHEME)
-            appendQueryParameter("third_party_theme_enabled", "true")
-            // Parcelamento: crédito à vista = NONE, parcelado = MERCHANT_INSTALLMENTS
+            appendQueryParameter("editable_amount", if (editableAmount) "1" else "0")
+            appendQueryParameter("transaction_type", transactionType.lowercase())
+            // Parcelamento apenas para crédito
             if (transactionType == TransactionType.CREDIT) {
-                if (installmentCount <= 1) {
-                    appendQueryParameter("installment_type", "NONE")
-                } else {
-                    appendQueryParameter("installment_type", "MERCHANT_INSTALLMENTS")
+                appendQueryParameter("installment_type", installmentType.lowercase())
+                if (installmentCount >= 2) {
                     appendQueryParameter("installment_count", installmentCount.toString())
                 }
             }
@@ -159,7 +159,10 @@ object StoneDeeplinkService {
         val uri = uriBuilder.build()
         Log.d(TAG, "Criando intent de pagamento: $uri")
 
-        return Intent(Intent.ACTION_VIEW, uri)
+        return Intent(Intent.ACTION_VIEW).apply {
+            data = uri
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
     }
 
     /**
@@ -173,10 +176,10 @@ object StoneDeeplinkService {
     /**
      * Envia o pagamento via deeplink para o app da Stone
      */
-    fun sendPayment(activity: Activity, amount: Long, transactionType: String, paymentType: String = PaymentType.CARD, installmentCount: Int = 0, orderId: String = "") {
-        val intent = createPaymentIntent(amount, transactionType, paymentType, installmentCount, orderId)
+    fun sendPayment(activity: Activity, amount: Long, transactionType: String, installmentType: String = InstallmentType.NONE, installmentCount: Int = 0, orderId: String = "") {
+        val intent = createPaymentIntent(amount, transactionType, installmentType, installmentCount, orderId)
         try {
-            Log.d(TAG, "Enviando pagamento: amount=$amount, type=$transactionType, paymentType=$paymentType")
+            Log.d(TAG, "Enviando pagamento: amount=$amount, transaction_type=$transactionType")
             activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar pagamento via Stone deeplink. App Stone instalado?", e)
