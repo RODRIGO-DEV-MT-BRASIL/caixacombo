@@ -439,6 +439,48 @@ app.get('/api/vendas', authenticateToken, (req, res) => {
   res.json(db.vendas);
 });
 
+// Endpoint admin para limpar dados antigos
+app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
+  
+  const today = new Date().toDateString();
+  const beforeVendas = (db.vendas || []).length;
+  const beforeOperacoes = (db.operacoes || []).length;
+  const beforeAuditoria = (db.auditoria || []).length;
+  
+  // Manter só vendas de hoje
+  db.vendas = (db.vendas || []).filter(v => {
+    const d = new Date(v.createdAt || v.dataHora);
+    return d.toDateString() === today;
+  });
+  
+  // Manter só operações de hoje
+  db.operacoes = (db.operacoes || []).filter(o => {
+    const d = new Date(o.dataHora || o.timestamp);
+    return d.toDateString() === today;
+  });
+  
+  // Limpar auditoria
+  db.auditoria = [];
+  
+  // Remover dispositivos de teste
+  db.dispositivos = (db.dispositivos || []).filter(d => 
+    d.serialNumber === 'PB59237K70640' || d.serialNumber === 'TC04209140208' ||
+    d.deviceId === 'PB59237K70640' || d.deviceId === 'TC04209140208'
+  );
+  
+  saveData();
+  
+  res.json({
+    success: true,
+    vendasRemovidas: beforeVendas - db.vendas.length,
+    operacoesRemovidas: beforeOperacoes - db.operacoes.length,
+    auditoriaRemovidas: beforeAuditoria,
+    vendasRestantes: db.vendas.length,
+    operacoesRestantes: db.operacoes.length
+  });
+});
+
 app.post('/api/produtos', authenticateToken, (req, res) => {
   const produto = {
     id: Date.now(),
