@@ -566,14 +566,9 @@ app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
   // Limpar auditoria
   db.auditoria = [];
   
-  // Corrigir dispositivos com deviceId null (usar serialNumber)
-  db.dispositivos = (db.dispositivos || []).map(d => {
-    if (!d.deviceId && d.serialNumber) {
-      console.log(`🔧 Corrigindo deviceId null para ${d.deviceName}: ${d.serialNumber}`);
-      return { ...d, deviceId: d.serialNumber };
-    }
-    return d;
-  });
+  // Remover dispositivos com deviceId null (o app re-registra com ANDROID_ID correto no próximo poll)
+  const nullCount = db.dispositivos.filter(d => !d.deviceId).length;
+  db.dispositivos = (db.dispositivos || []).filter(d => d.deviceId);
 
   // Remover dispositivos de teste (por deviceId ou serialNumber)
   const testIds = ['test-check', 'test-local', 'test-render', 'deploy-check'];
@@ -581,9 +576,18 @@ app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
     !testIds.includes(d.deviceId) && !testIds.includes(d.serialNumber)
   );
 
+  // Remover do mapa de conectados também
+  testIds.forEach(id => connectedDevices.delete(id));
+  // Remover dispositivos com deviceId null do mapa
+  for (const [key, val] of connectedDevices.entries()) {
+    if (!key || testIds.includes(key)) connectedDevices.delete(key);
+  }
+
   // Remover vendas e operações de teste
   db.vendas = (db.vendas || []).filter(v => !testIds.includes(v.deviceId));
   db.operacoes = (db.operacoes || []).filter(o => !testIds.includes(o.deviceId));
+
+  console.log(`🧹 Limpeza: ${nullCount} dispositivos com deviceId null removidos, testes removidos`);
   
   saveData();
   
@@ -1249,12 +1253,20 @@ app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
 
 // ==================== POLLING REST API (Stone Compliance - sem WebSocket no POS) ====================
 
+// Blocklist de deviceIds de teste
+const BLOCKED_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check'];
+
 // Dispositivo faz heartbeat e recebe comandos pendentes
 app.post('/api/device/poll', (req, res) => {
   const { deviceId, deviceName, deviceType, serialNumber, status, caixaData } = req.body;
   
   if (!deviceId) {
     return res.status(400).json({ error: 'deviceId obrigatório' });
+  }
+
+  // Bloquear dispositivos de teste
+  if (BLOCKED_DEVICE_IDS.includes(deviceId)) {
+    return res.status(403).json({ error: 'Dispositivo bloqueado' });
   }
 
   // Registrar/atualizar dispositivo no mapa
