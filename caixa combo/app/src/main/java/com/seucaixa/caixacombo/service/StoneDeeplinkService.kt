@@ -109,6 +109,7 @@ object StoneDeeplinkService {
             appendQueryParameter("amount", amount.toString())
             appendQueryParameter("installment_count", installmentCount.toString())
             appendQueryParameter("type", type)
+            appendQueryParameter("returnscheme", RETURN_SCHEME)
             if (orderId.isNotBlank()) {
                 appendQueryParameter("order_id", orderId)
             }
@@ -135,7 +136,9 @@ object StoneDeeplinkService {
         val intent = createPaymentIntent(amount, type, installmentCount, orderId)
         try {
             Log.d(TAG, "Enviando pagamento: amount=$amount, type=$type, installmentCount=$installmentCount")
-            activity.startActivityForResult(intent, REQUEST_CODE_PAYMENT)
+            // Usar startActivity em vez de startActivityForResult pois launchMode=singleTask
+            // O retorno vem via onNewIntent com scheme caixacombo
+            activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar pagamento via Stone deeplink. App Stone instalado?", e)
         }
@@ -227,7 +230,7 @@ object StoneDeeplinkService {
         val intent = createCancelIntent(atk, amount, editableAmount)
         try {
             Log.d(TAG, "Enviando cancelamento: atk=$atk, amount=$amount")
-            activity.startActivityForResult(intent, REQUEST_CODE_CANCEL)
+            activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar cancelamento via Stone deeplink. App Stone instalado?", e)
         }
@@ -304,7 +307,7 @@ object StoneDeeplinkService {
         val intent = createReprintIntent(atk)
         try {
             Log.d(TAG, "Enviando reimpressão: atk=$atk")
-            activity.startActivityForResult(intent, REQUEST_CODE_REPRINT)
+            activity.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar reimpressão via Stone deeplink. App Stone instalado?", e)
         }
