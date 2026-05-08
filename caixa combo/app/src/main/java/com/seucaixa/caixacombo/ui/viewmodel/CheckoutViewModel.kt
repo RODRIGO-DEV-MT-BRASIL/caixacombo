@@ -312,6 +312,7 @@ class CheckoutViewModel(
             val vendaJson = org.json.JSONObject().apply {
                 put("id", venda.numero)
                 put("dataHora", venda.dataHora)
+                put("createdAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(java.util.Date(venda.dataHora)))
                 put("total", venda.total)
                 put("formaPagamento", venda.formaPagamento.name)
                 put("valorRecebido", venda.valorRecebido)
