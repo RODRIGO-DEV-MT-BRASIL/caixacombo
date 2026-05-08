@@ -368,7 +368,7 @@ export default function Dashboard() {
                   <Activity size={20} className="text-blue-400" />
                   Dispositivos
                 </h3>
-                {devices.length === 0 ? (
+                {onlineDevices.length === 0 ? (
                   <div className="glass p-12 text-center">
                     <Monitor size={48} className="mx-auto text-gray-600 mb-3" />
                     <p className="text-gray-400">Nenhum dispositivo conectado</p>
@@ -376,7 +376,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {devices.map(device => {
+                    {onlineDevices.map(device => {
                       const status = getDeviceStatus(device)
                       const cfg = statusConfig[status] || statusConfig.offline
                       const StatusIcon = cfg.icon

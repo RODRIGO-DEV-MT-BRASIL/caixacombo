@@ -12,8 +12,12 @@ export default function Terminais() {
   const isAdmin = user?.role === 'admin'
   const userEmpresaId = user?.role === 'empresa' ? user.empresaId : null
 
-  // Filtrar dispositivos
+  // Filtrar dispositivos (apenas conectados)
   const filteredDevices = devices.filter(device => {
+    // Mostrar apenas dispositivos online/conectados
+    const isConnected = device.online || device.status === 'online' || device.status === 'locked' || device.status === 'in_use'
+    if (!isConnected) return false
+
     const matchesSearch = device.deviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          device.deviceId?.toLowerCase().includes(searchTerm.toLowerCase())
     
