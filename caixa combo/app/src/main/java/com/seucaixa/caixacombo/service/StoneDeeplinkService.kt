@@ -154,8 +154,10 @@ object StoneDeeplinkService {
         val uri = data.data ?: return null
         Log.d(TAG, "URI de resposta: $uri")
 
-        // Verificar se é resposta do Stone
-        if (uri.scheme != "payment-app" || uri.authority != "pay-response") {
+        // Verificar se é resposta do Stone - pode vir via returnscheme (caixacombo) ou payment-app
+        val isPayResponse = uri.authority == "pay-response" &&
+            (uri.scheme == "payment-app" || uri.scheme == RETURN_SCHEME)
+        if (!isPayResponse) {
             Log.w(TAG, "URI não é resposta do Stone: $uri")
             return null
         }
