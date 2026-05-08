@@ -6,7 +6,7 @@ import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monito
 
 export default function Vendas() {
   const { token } = useAuth()
-  const { vendas, setVendas } = useSocket()
+  const { vendas, setVendas, devices } = useSocket()
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [expandedDevice, setExpandedDevice] = useState(null)
@@ -21,14 +21,21 @@ export default function Vendas() {
   // Agrupar vendas por dispositivo
   const vendasPorDispositivo = vendas.reduce((acc, venda) => {
     const deviceId = venda.deviceId || 'sem_dispositivo'
+    // Resolver nome do dispositivo a partir da lista de conectados
+    const connectedDevice = devices.find(d => d.deviceId === deviceId)
+    const deviceName = venda.deviceName || connectedDevice?.deviceName || null
     if (!acc[deviceId]) {
       acc[deviceId] = {
         deviceId,
-        deviceName: venda.deviceName || null,
+        deviceName,
         vendas: [],
         total: 0,
         count: 0
       }
+    }
+    // Atualizar nome se encontrado
+    if (deviceName && !acc[deviceId].deviceName) {
+      acc[deviceId].deviceName = deviceName
     }
     acc[deviceId].vendas.push(venda)
     acc[deviceId].total += (venda.total || 0)
@@ -123,7 +130,7 @@ export default function Vendas() {
                     <Monitor size={24} className="text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">{dispositivo.deviceName || dispositivo.deviceId.substring(0, 16)}{dispositivo.deviceId.length > 16 ? '...' : ''}</p>
+                    <p className="font-semibold text-white">{dispositivo.deviceName || `Terminal ${dispositivo.deviceId.substring(0, 8)}`}</p>
                     <p className="text-xs text-gray-500">{dispositivo.count} vendas</p>
                   </div>
                 </div>
