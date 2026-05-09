@@ -54,7 +54,8 @@ fun CheckoutScreenMobile(
     onNavigateToHome: () -> Unit,
     onNavigateToProdutos: () -> Unit,
     onNavigateToVendas: () -> Unit,
-    onNavigateToCaixa: () -> Unit
+    onNavigateToCaixa: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     val produtos by viewModel.produtos.collectAsState()
     val carrinho by viewModel.carrinho.collectAsState()
@@ -104,23 +105,23 @@ fun CheckoutScreenMobile(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Apenas botão Home
+                        // Botão Sair
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onNavigateToHome() }
+                            modifier = Modifier.clickable { onLogout() }
                         ) {
                             IconButton(
-                                onClick = onNavigateToHome,
+                                onClick = onLogout,
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
-                                    Icons.Default.Home,
-                                    "Home",
+                                    Icons.Default.Logout,
+                                    "Sair",
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
                             Text(
-                                "Home",
+                                "Sair",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )

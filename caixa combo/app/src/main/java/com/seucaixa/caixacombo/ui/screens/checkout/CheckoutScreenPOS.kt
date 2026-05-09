@@ -61,7 +61,8 @@ fun CheckoutScreenPOS(
     onNavigateToConfiguracaoTipoImpressao: () -> Unit = {},
     onNavigateToAcessos: () -> Unit = {},
     onNavigateToCadastro: () -> Unit = {},
-    onSendStonePayment: ((Long, String, String, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null
+    onSendStonePayment: ((Long, String, String, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null,
+    onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
@@ -157,6 +158,7 @@ fun CheckoutScreenPOS(
             primaryColor = primaryColor,
             currentTime = currentTime,
             onNavigateToHome = onNavigateToHome,
+            onLogout = onLogout,
             logoBitmap = logoBitmap,
             operadorNome = sharedPreferences.getString("operador_nome", null),
             isSmallScreen = isSmallScreen,
@@ -568,6 +570,7 @@ private fun TopBarPDV(
     primaryColor: Color,
     currentTime: String,
     onNavigateToHome: () -> Unit,
+    onLogout: () -> Unit = {},
     logoBitmap: android.graphics.Bitmap? = null,
     operadorNome: String? = null,
     isSmallScreen: Boolean = false,
@@ -618,12 +621,12 @@ private fun TopBarPDV(
                     )
                 }
             }
-            // Direita: Hora + Home
+            // Direita: Hora + Sair
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
                 Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                IconButton(onClick = onNavigateToHome, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                IconButton(onClick = onLogout, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -674,12 +677,12 @@ private fun TopBarPDV(
                 }
             }
 
-            // Direita: Hora + Home
+            // Direita: Hora + Sair
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
                 Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 16.sp, fontFamily = FontFamily.Monospace)
-                IconButton(onClick = onNavigateToHome) {
-                    Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                IconButton(onClick = onLogout) {
+                    Icon(Icons.Default.Logout, null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
         }
