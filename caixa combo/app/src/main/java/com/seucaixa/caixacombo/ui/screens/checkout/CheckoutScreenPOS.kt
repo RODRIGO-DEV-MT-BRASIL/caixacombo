@@ -167,7 +167,8 @@ fun CheckoutScreenPOS(
         ProdutoNomeBar(
             produto = produtoSelecionado,
             primaryColor = primaryColor,
-            isSmallScreen = isSmallScreen
+            isSmallScreen = isSmallScreen,
+            vendidosPorProduto = vendidosPorProduto
         )
 
         // ==================== CONTEÚDO PRINCIPAL ====================
@@ -264,12 +265,31 @@ fun CheckoutScreenPOS(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    Icon(
-                                        Icons.Default.Inventory,
-                                        null,
-                                        modifier = Modifier.size(80.dp),
-                                        tint = primaryColor
-                                    )
+                                    // Imagem do produto
+                                    Box(
+                                        modifier = Modifier
+                                            .size(120.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(MaterialTheme.colorScheme.surface),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (produtoSelecionado!!.imagem != null) {
+                                            val imageUrl = if (produtoSelecionado!!.imagem!!.startsWith("http")) produtoSelecionado!!.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produtoSelecionado!!.imagem}"
+                                            coil.compose.AsyncImage(
+                                                model = imageUrl,
+                                                contentDescription = produtoSelecionado!!.nome,
+                                                modifier = Modifier.fillMaxSize().padding(4.dp),
+                                                contentScale = ContentScale.Fit
+                                            )
+                                        } else {
+                                            Icon(
+                                                Icons.Default.Inventory,
+                                                null,
+                                                modifier = Modifier.size(60.dp),
+                                                tint = primaryColor.copy(alpha = 0.5f)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         produtoSelecionado!!.nome,
@@ -298,6 +318,14 @@ fun CheckoutScreenPOS(
                                         fontWeight = FontWeight.Medium,
                                         color = estoqueCor
                                     )
+                                    val vendidos = vendidosPorProduto[produtoSelecionado!!.id] ?: 0
+                                    if (vendidos > 0) {
+                                        Text(
+                                            "Vendidos: $vendidos",
+                                            fontSize = 14.sp,
+                                            color = primaryColor
+                                        )
+                                    }
                                 }
                             }
                         } else {
@@ -662,7 +690,8 @@ private fun TopBarPDV(
 private fun ProdutoNomeBar(
     produto: Produto?,
     primaryColor: Color,
-    isSmallScreen: Boolean = false
+    isSmallScreen: Boolean = false,
+    vendidosPorProduto: Map<Long, Int> = emptyMap()
 ) {
     if (isSmallScreen) {
         // P2: Nome + preço + estoque inline
@@ -709,6 +738,15 @@ private fun ProdutoNomeBar(
                     fontWeight = FontWeight.Bold,
                     color = primaryColor
                 )
+                val vendidos = vendidosPorProduto[produto.id] ?: 0
+                if (vendidos > 0) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Vend:$vendidos",
+                        fontSize = 9.sp,
+                        color = primaryColor
+                    )
+                }
             }
         }
     } else {
@@ -1009,7 +1047,7 @@ private fun ProdutoGridDialog(
             modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize().background(Color(0xFF0F1117))) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 // Header
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1020,10 +1058,10 @@ private fun ProdutoGridDialog(
                         "Produtos",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = primaryColor
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.7f))
+                        Icon(Icons.Default.Close, null)
                     }
                 }
 
@@ -1031,17 +1069,10 @@ private fun ProdutoGridDialog(
                 OutlinedTextField(
                     value = busca,
                     onValueChange = onBuscaChange,
-                    placeholder = { Text("Buscar produto...", color = Color.White.copy(alpha = 0.4f)) },
+                    placeholder = { Text("Buscar produto...") },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = primaryColor.copy(alpha = 0.5f),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                        cursorColor = primaryColor,
-                        focusedContainerColor = Color.White.copy(alpha = 0.05f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
-                    ),
                     singleLine = true
                 )
 
@@ -1099,7 +1130,7 @@ private fun ProdutoGridDialog(
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             shape = RoundedCornerShape(10.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (semEstque) Color(0xFF1A1A2E) else Color(0xFF1C1F2E)
+                                containerColor = if (semEstque) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Box(modifier = Modifier.fillMaxWidth()) {
@@ -1111,9 +1142,9 @@ private fun ProdutoGridDialog(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(48.dp)
+                                            .height(52.dp)
                                             .clip(RoundedCornerShape(8.dp))
-                                            .background(Color(0xFF252840)),
+                                            .background(MaterialTheme.colorScheme.surface),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (produto.imagem != null) {
@@ -1121,14 +1152,14 @@ private fun ProdutoGridDialog(
                                             coil.compose.AsyncImage(
                                                 model = imageUrl,
                                                 contentDescription = produto.nome,
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                                modifier = Modifier.fillMaxSize().padding(4.dp),
+                                                contentScale = androidx.compose.ui.layout.ContentScale.Fit
                                             )
                                         } else {
                                             Icon(
                                                 Icons.Default.Inventory, null,
                                                 modifier = Modifier.size(22.dp),
-                                                tint = Color.White.copy(alpha = 0.3f)
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -1140,7 +1171,7 @@ private fun ProdutoGridDialog(
                                         produto.nome,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (semEstque) Color.White.copy(alpha = 0.3f) else Color.White,
+                                        color = if (semEstque) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center,
@@ -1152,7 +1183,7 @@ private fun ProdutoGridDialog(
                                         produto.precoFormatado(),
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (semEstque) Color.White.copy(alpha = 0.3f) else primaryColor
+                                        color = if (semEstque) primaryColor.copy(alpha = 0.3f) else primaryColor
                                     )
 
                                     // Estoque

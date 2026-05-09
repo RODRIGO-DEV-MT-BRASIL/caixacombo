@@ -170,17 +170,10 @@ fun CheckoutScreenMobile(
             OutlinedTextField(
                 value = busca,
                 onValueChange = viewModel::buscarProdutos,
-                placeholder = { Text("Buscar produto...", color = Color.White.copy(alpha = 0.4f)) },
+                placeholder = { Text("Buscar produto...") },
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedContainerColor = Color.White.copy(alpha = 0.05f),
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
-                ),
                 singleLine = true
             )
             
@@ -578,7 +571,7 @@ fun ProdutoItemMobile(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (semEstoque) Color(0xFF1A1A2E) else Color(0xFF1C1F2E)
+            containerColor = if (semEstoque) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -591,7 +584,7 @@ fun ProdutoItemMobile(
                     .fillMaxWidth()
                     .height(64.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF252840)),
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
                 if (produto.imagem != null) {
@@ -599,15 +592,15 @@ fun ProdutoItemMobile(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = produto.nome,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
                     )
                 } else {
                     Icon(
                         Icons.Default.Inventory,
                         contentDescription = null,
                         modifier = Modifier.size(28.dp),
-                        tint = Color.White.copy(alpha = 0.3f)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -619,7 +612,7 @@ fun ProdutoItemMobile(
                 produto.nome,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (semEstoque) Color.White.copy(alpha = 0.3f) else Color.White,
+                color = if (semEstoque) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -631,7 +624,7 @@ fun ProdutoItemMobile(
                 produto.precoFormatado(),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (semEstoque) Color.White.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
+                color = if (semEstoque) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
             )
 
             // Estoque
