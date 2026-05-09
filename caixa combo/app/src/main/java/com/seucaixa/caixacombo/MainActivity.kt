@@ -12,10 +12,26 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -60,6 +76,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var configuracaoImpressaoViewModel: ConfiguracaoImpressaoViewModel
 
     private lateinit var lockPrefs: android.content.SharedPreferences
+
+    // Estado de sincronização para o dialog
+    private val syncResultState = androidx.compose.runtime.mutableStateOf<SyncResult?>(null)
 
     // Callback para resultado do Stone deeplink
     private var stonePaymentCallback: ((StoneDeeplinkService.PaymentResult?) -> Unit)? = null
@@ -191,6 +210,12 @@ class MainActivity : ComponentActivity() {
                     android.util.Log.d("MainActivity", "Recebidas ${categoriasJson.length()} categorias do servidor para sincronização")
                     syncCategoriasFromServer(categoriasJson)
                 }
+            },
+            onSyncComplete = { produtos, categorias, clientes ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Sincronização completa: $produtos produtos, $categorias categorias, $clientes clientes")
+                    syncResultState.value = SyncResult(produtos, categorias, clientes)
+                }
             }
         )
         
@@ -239,6 +264,13 @@ class MainActivity : ComponentActivity() {
 
                     val deviceType = rememberDeviceType()
                     val caixaAberto by caixaViewModel.caixaAberto.collectAsState()
+
+                    // Dialog de sincronização automática
+                    val syncResult by syncResultState
+                    SyncDialog(
+                        syncResult = syncResult,
+                        onDismiss = { syncResultState.value = null }
+                    )
 
                     NavHost(
                         navController = navController,
@@ -1099,18 +1131,30 @@ class MainActivity : ComponentActivity() {
      */
     private fun updateProdutosFromServer(produtos: org.json.JSONArray) {
         try {
-            android.util.Log.d("MainActivity", "Atualizando ${produtos.length()} produtos do servidor")
+            android.util.Log.e("SYNC_DEBUG", "Atualizando ${produtos.length()} produtos do servidor")
             
             // Converter JSONArray para lista de produtos
             val produtosList = mutableListOf<Produto>()
             for (i in 0 until produtos.length()) {
                 val produtoJson = produtos.getJSONObject(i)
+                val categoriaId: Long? = when {
+                    !produtoJson.has("categoriaId") -> null
+                    produtoJson.isNull("categoriaId") -> null
+                    else -> {
+                        val catVal = produtoJson.opt("categoriaId")
+                        when (catVal) {
+                            is Number -> catVal.toLong().takeIf { it != 0L }
+                            is String -> catVal.toLongOrNull()?.takeIf { it != 0L }
+                            else -> null
+                        }
+                    }
+                }
                 val produto = Produto(
                     id = produtoJson.getLong("id"),
                     nome = produtoJson.getString("nome"),
                     descricao = produtoJson.optString("descricao", ""),
                     precoVenda = produtoJson.getDouble("preco"),
-                    categoriaId = produtoJson.optLong("categoriaId", 0),
+                    categoriaId = categoriaId,
                     codigoBarras = produtoJson.optString("codigoBarras", ""),
                     estoque = produtoJson.optDouble("estoque", 0.0),
                     imagem = produtoJson.optString("imagem", ""),
@@ -1119,14 +1163,22 @@ class MainActivity : ComponentActivity() {
                 produtosList.add(produto)
             }
             
+            // Limpar produtos antigos do banco local e inserir os do servidor
+            val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
+            val produtoDao = db.produtoDao()
+            lifecycleScope.launch(Dispatchers.IO) {
+                produtoDao.deleteAll()
+                produtoDao.insertAll(produtosList)
+            }
+            
             // Atualizar ViewModels
             caixaViewModel.atualizarProdutos(produtosList)
             checkoutViewModel.atualizarProdutosServidor(produtosList)
             
-            android.util.Log.d("MainActivity", "✅ Produtos atualizados com sucesso")
+            android.util.Log.e("SYNC_DEBUG", "✅ ${produtosList.size} produtos salvos - primeiro: ${produtosList.firstOrNull()?.nome} catId=${produtosList.firstOrNull()?.categoriaId}")
             
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Erro ao atualizar produtos do servidor", e)
+            android.util.Log.e("SYNC_DEBUG", "❌ Erro ao atualizar produtos: ${e.message}", e)
         }
     }
 
@@ -1176,9 +1228,7 @@ class MainActivity : ComponentActivity() {
             val categoriaDao = db.categoriaDao()
 
             lifecycleScope.launch(Dispatchers.IO) {
-                // Limpar categorias locais e substituir pelas do servidor
                 categoriaDao.deleteAll()
-
                 for (i in 0 until categoriasJson.length()) {
                     val c = categoriasJson.getJSONObject(i)
                     val categoria = com.seucaixa.caixacombo.data.model.Categoria(
@@ -1223,4 +1273,95 @@ class MainActivity : ComponentActivity() {
         // Reativar modo imersivo ao retornar
         setupImmersiveMode()
     }
+}
+
+data class SyncResult(
+    val produtos: Int,
+    val categorias: Int,
+    val clientes: Int
+)
+
+@Composable
+fun SyncDialog(
+    syncResult: SyncResult?,
+    onDismiss: () -> Unit
+) {
+    if (syncResult == null) return
+
+    // Auto-dismiss após 5 segundos
+    val dismissKey = syncResult // recompor quando mudar
+    LaunchedEffect(dismissKey) {
+        kotlinx.coroutines.delay(5000)
+        onDismiss()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Sync,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = {
+            Text(
+                "Sincronização Automática",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Dados atualizados com o servidor:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Produtos
+                if (syncResult.produtos > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Inventory, null, modifier = Modifier.size(20.dp), tint = Color(0xFF4CAF50))
+                        Text("${syncResult.produtos} produtos cadastrados", fontWeight = FontWeight.Medium)
+                    }
+                }
+                // Categorias
+                if (syncResult.categorias > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Category, null, modifier = Modifier.size(20.dp), tint = Color(0xFF2196F3))
+                        Text("${syncResult.categorias} categorias", fontWeight = FontWeight.Medium)
+                    }
+                }
+                // Clientes
+                if (syncResult.clientes > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.People, null, modifier = Modifier.size(20.dp), tint = Color(0xFFFF9800))
+                        Text("${syncResult.clientes} clientes", fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK")
+            }
+        },
+        shape = RoundedCornerShape(16.dp)
+    )
 }

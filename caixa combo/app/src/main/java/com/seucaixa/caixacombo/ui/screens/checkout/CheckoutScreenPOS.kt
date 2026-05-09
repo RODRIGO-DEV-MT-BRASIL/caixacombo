@@ -12,6 +12,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -1061,31 +1064,93 @@ private fun ProdutoGridDialog(
                 ) {
                     items(produtos, key = { it.id }) { produto ->
                         val qtdNoCarrinho = carrinho.find { it.produtoId == produto.id }?.quantidade?.toInt() ?: 0
+                        val vendidos = vendidosPorProduto[produto.id] ?: 0
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 70.dp, max = 90.dp)
                                 .clickable { onProdutoClick(produto) },
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                Column(
-                                    modifier = Modifier.padding(6.dp),
-                                    verticalArrangement = Arrangement.Center
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                    verticalAlignment = Alignment.Top
                                 ) {
-                                    Text(produto.nome, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                    val estoqueCor = when {
-                                        produto.estoque <= 0 -> MaterialTheme.colorScheme.error
-                                        produto.estoque <= 5 -> Color(0xFFFF9800)
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    // Imagem do produto
+                                    Box(
+                                        modifier = Modifier.size(56.dp).clip(RoundedCornerShape(6.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (produto.imagem != null) {
+                                            val imageUrl = if (produto.imagem!!.startsWith("http")) produto.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produto.imagem}"
+                                            coil.compose.AsyncImage(
+                                                model = imageUrl,
+                                                contentDescription = produto.nome,
+                                                modifier = Modifier.size(56.dp),
+                                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                            )
+                                        } else {
+                                            Icon(Icons.Default.Inventory, null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    // Info do produto
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        // Nome
+                                        Text(
+                                            produto.nome,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1
+                                        )
+                                        // Descrição
+                                        produto.descricao?.let {
+                                            Text(
+                                                it,
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1
+                                            )
+                                        }
+                                        // Estoque + Vendidos na mesma linha
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            val estoqueCor = when {
+                                                produto.estoque <= 0 -> MaterialTheme.colorScheme.error
+                                                produto.estoque <= 5 -> Color(0xFFFF9800)
+                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
+                                            Text(
+                                                if (produto.estoque <= 0) "ESGOTADO" else "Estq: ${produto.estoqueFormatado()}",
+                                                fontSize = 10.sp,
+                                                color = estoqueCor
+                                            )
+                                            if (vendidos > 0) {
+                                                Text(
+                                                    "Vend: $vendidos",
+                                                    fontSize = 10.sp,
+                                                    color = primaryColor
+                                                )
+                                            }
+                                        }
+                                    }
+                                    // Valor à direita
                                     Text(
-                                        if (produto.estoque <= 0) "ESGOTADO" else "Estq: ${produto.estoqueFormatado()}",
-                                        fontSize = 10.sp, color = estoqueCor
+                                        produto.precoFormatado(),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = primaryColor,
+                                        modifier = Modifier.align(Alignment.CenterVertically)
                                     )
-                                    Text(produto.precoFormatado(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                                 }
+                                // Badge quantidade no carrinho
                                 if (qtdNoCarrinho > 0) {
                                     Badge(
                                         modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),

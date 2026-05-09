@@ -91,7 +91,7 @@ fun HomeScreen(
         mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt())))
     }
     val backgroundColor by remember {
-        mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFF121212.toInt())))
+        mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFFFFBFE.toInt())))
     }
 
     // Login
