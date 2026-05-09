@@ -37,16 +37,14 @@ export default function Login() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-lg px-6">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <img src="/controle.png" alt="CaixaCombo" className="w-[515px] h-[515px] rounded-2xl object-contain mx-auto mb-4 shadow-2xl shadow-blue-500/30" />
-          <h1 className="text-3xl font-bold gradient-text">CaixaCombo</h1>
-          <p className="text-gray-400 mt-1">Dashboard de Gerenciamento</p>
+      <div className="relative z-10 w-full max-w-4xl px-6 flex items-center gap-12">
+        {/* Logo - coluna esquerda */}
+        <div className="flex-1 flex items-center justify-center">
+          <img src="/controle.png" alt="CaixaCombo" className="w-full max-w-[400px] object-contain" />
         </div>
 
-        {/* Login Card */}
-        <div className="glass p-8 glow-blue">
+        {/* Login Card - coluna direita */}
+        <div className="flex-1 glass p-8 glow-blue">
           <h2 className="text-xl font-semibold text-white mb-6">Entrar na sua conta</h2>
           
           {error && (
