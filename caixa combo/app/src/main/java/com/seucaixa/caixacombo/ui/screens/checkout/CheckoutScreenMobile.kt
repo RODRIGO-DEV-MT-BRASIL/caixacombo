@@ -227,12 +227,14 @@ fun CheckoutScreenMobile(
                 onRemover = viewModel::removerDoCarrinho,
                 onLimpar = viewModel::limparCarrinho,
                 onFinalizar = {
-                    showBottomSheet = false
-                    if (!caixaAberto) {
-                        // Ir para tela de caixa se não estiver aberto
-                        onNavigateToCaixa()
-                    } else {
-                        showFormaPagamentoDialog = true
+                    scope.launch {
+                        sheetState.hide()
+                        showBottomSheet = false
+                        if (!caixaAberto) {
+                            onNavigateToCaixa()
+                        } else {
+                            showFormaPagamentoDialog = true
+                        }
                     }
                 }
             )
