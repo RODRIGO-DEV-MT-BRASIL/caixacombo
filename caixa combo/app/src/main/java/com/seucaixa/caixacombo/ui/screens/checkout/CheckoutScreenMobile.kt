@@ -12,6 +12,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seucaixa.caixacombo.data.model.Categoria
 import com.seucaixa.caixacombo.data.model.FormaPagamento
@@ -165,44 +170,62 @@ fun CheckoutScreenMobile(
             OutlinedTextField(
                 value = busca,
                 onValueChange = viewModel::buscarProdutos,
-                label = { Text("Buscar produto...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                modifier = Modifier.fillMaxWidth()
+                placeholder = { Text("Buscar produto...", color = Color.White.copy(alpha = 0.4f)) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedContainerColor = Color.White.copy(alpha = 0.05f),
+                    unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
+                ),
+                singleLine = true
             )
             
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Abas de categorias
+            // Categorias - chips horizontais
             if (categorias.isNotEmpty()) {
-                ScrollableTabRow(
-                    selectedTabIndex = if (categoriaSelecionada == null) 0 else categorias.indexOf(categoriaSelecionada) + 1,
+                LazyRow(
                     modifier = Modifier.fillMaxWidth(),
-                    edgePadding = 0.dp
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Aba "Todos"
-                    Tab(
-                        selected = categoriaSelecionada == null,
-                        onClick = { viewModel.selecionarCategoria(null) },
-                        text = { Text("Todos") }
-                    )
-                    // Abas por categoria
-                    categorias.forEach { categoria ->
-                        Tab(
-                            selected = categoriaSelecionada?.id == categoria.id,
-                            onClick = { viewModel.selecionarCategoria(categoria) },
-                            text = { Text(categoria.nome) }
+                    item {
+                        FilterChip(
+                            selected = categoriaSelecionada == null,
+                            onClick = { viewModel.selecionarCategoria(null) },
+                            label = { Text("Todos", fontSize = 12.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+                    items(categorias) { cat ->
+                        FilterChip(
+                            selected = categoriaSelecionada?.id == cat.id,
+                            onClick = { viewModel.selecionarCategoria(if (categoriaSelecionada?.id == cat.id) null else cat) },
+                            label = { Text(cat.nome, fontSize = 12.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Lista de produtos (compacta)
-            LazyColumn(
+            // Grid de produtos - 2 colunas
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(produtos) { produto ->
+                items(produtos, key = { it.id }) { produto ->
                     ProdutoItemMobile(
                         produto = produto,
                         vendidos = vendidosPorProduto[produto.id] ?: 0,
@@ -547,25 +570,28 @@ fun ProdutoItemMobile(
     vendidos: Int = 0,
     onClick: () -> Unit
 ) {
+    val semEstoque = produto.estoque <= 0
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable { if (!semEstoque) onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (semEstoque) Color(0xFF1A1A2E) else Color(0xFF1C1F2E)
+        )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Imagem do produto
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .fillMaxWidth()
+                    .height(64.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(Color(0xFF252840)),
                 contentAlignment = Alignment.Center
             ) {
                 if (produto.imagem != null) {
@@ -573,81 +599,54 @@ fun ProdutoItemMobile(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = produto.nome,
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop
                     )
                 } else {
                     Icon(
                         Icons.Default.Inventory,
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(28.dp),
+                        tint = Color.White.copy(alpha = 0.3f)
                     )
                 }
             }
-            
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Nome
+            Text(
+                produto.nome,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (semEstoque) Color.White.copy(alpha = 0.3f) else Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Preço
+            Text(
+                produto.precoFormatado(),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (semEstoque) Color.White.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
+            )
+
+            // Estoque
+            if (semEstoque) {
                 Text(
-                    produto.nome,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
-                )
-                produto.descricao?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
-                produto.codigoBarras?.let { codigo ->
-                    Text(
-                        "Cód: $codigo",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                }
-                val estoqueCor = when {
-                    produto.estoque <= 0 -> MaterialTheme.colorScheme.error
-                    produto.estoque <= 5 -> Color(0xFFFF9800)
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                }
-                val estoqueLabel = if (produto.estoque <= 0) "ESGOTADO" else "Estoque: ${produto.estoqueFormatado()}"
-                Text(
-                    estoqueLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = if (produto.estoque <= 5) FontWeight.Bold else FontWeight.Normal,
-                    color = estoqueCor
-                )
-                if (vendidos > 0) {
-                    Text(
-                        "Vendidos: $vendidos",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    produto.precoFormatado(),
-                    style = MaterialTheme.typography.titleMedium,
+                    "ESGOTADO",
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.error
                 )
-                
-                Icon(
-                    Icons.Default.Add,
-                    null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+            } else if (produto.estoque <= 5) {
+                Text(
+                    "Estq: ${produto.estoque.toInt()}",
+                    fontSize = 9.sp,
+                    color = Color(0xFFFF9800)
                 )
             }
         }
