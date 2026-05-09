@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -1005,82 +1007,113 @@ private fun ProdutoGridDialog(
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                // Header com busca
+            Column(modifier = Modifier.fillMaxSize().background(Color(0xFF0F1117))) {
+                // Header
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("PRODUTOS", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                    Text(
+                        "Produtos",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, null)
+                        Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.7f))
                     }
                 }
 
+                // Campo de busca estilizado
                 OutlinedTextField(
                     value = busca,
                     onValueChange = onBuscaChange,
-                    label = { Text("Buscar produto...") },
+                    placeholder = { Text("Buscar produto...", color = Color.White.copy(alpha = 0.4f)) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor.copy(alpha = 0.5f),
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                        cursorColor = primaryColor,
+                        focusedContainerColor = Color.White.copy(alpha = 0.05f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.03f)
+                    ),
+                    singleLine = true
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Abas de categorias
+                // Abas de categorias - chips horizontais
                 if (categorias.isNotEmpty()) {
-                    ScrollableTabRow(
-                        selectedTabIndex = if (categoriaSelecionada == null) 0 else categorias.indexOf(categoriaSelecionada) + 1,
-                        containerColor = Color.Transparent,
-                        contentColor = primaryColor,
-                        edgePadding = 0.dp
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Tab(
-                            selected = categoriaSelecionada == null,
-                            onClick = { onCategoriaChange(null) },
-                            text = { Text("Todos") }
-                        )
-                        categorias.forEach {
-                            Tab(
-                                selected = categoriaSelecionada?.id == it.id,
-                                onClick = { onCategoriaChange(it) },
-                                text = { Text(it.nome) }
+                        item {
+                            FilterChip(
+                                selected = categoriaSelecionada == null,
+                                onClick = { onCategoriaChange(null) },
+                                label = { Text("Todos", fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = primaryColor.copy(alpha = 0.2f),
+                                    selectedLabelColor = primaryColor
+                                )
+                            )
+                        }
+                        items(categorias) { cat ->
+                            FilterChip(
+                                selected = categoriaSelecionada?.id == cat.id,
+                                onClick = { onCategoriaChange(if (categoriaSelecionada?.id == cat.id) null else cat) },
+                                label = { Text(cat.nome, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = primaryColor.copy(alpha = 0.2f),
+                                    selectedLabelColor = primaryColor
+                                )
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Grid de produtos
+                // Grid de produtos - 4 colunas compactas
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    modifier = Modifier.fillMaxSize(),
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(produtos, key = { it.id }) { produto ->
                         val qtdNoCarrinho = carrinho.find { it.produtoId == produto.id }?.quantidade?.toInt() ?: 0
                         val vendidos = vendidosPorProduto[produto.id] ?: 0
+                        val semEstque = produto.estoque <= 0
+
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onProdutoClick(produto) },
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                            shape = RoundedCornerShape(8.dp)
+                                .clickable { if (!semEstque) onProdutoClick(produto) },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (semEstque) Color(0xFF1A1A2E) else Color(0xFF1C1F2E)
+                            )
                         ) {
                             Box(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                    verticalAlignment = Alignment.Top
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     // Imagem do produto
                                     Box(
-                                        modifier = Modifier.size(56.dp).clip(RoundedCornerShape(6.dp))
-                                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(48.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFF252840)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (produto.imagem != null) {
@@ -1088,75 +1121,64 @@ private fun ProdutoGridDialog(
                                             coil.compose.AsyncImage(
                                                 model = imageUrl,
                                                 contentDescription = produto.nome,
-                                                modifier = Modifier.size(56.dp),
+                                                modifier = Modifier.fillMaxSize(),
                                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
                                             )
                                         } else {
-                                            Icon(Icons.Default.Inventory, null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    // Info do produto
-                                    Column(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        // Nome
-                                        Text(
-                                            produto.nome,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1
-                                        )
-                                        // Descrição
-                                        produto.descricao?.let {
-                                            Text(
-                                                it,
-                                                fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1
+                                            Icon(
+                                                Icons.Default.Inventory, null,
+                                                modifier = Modifier.size(22.dp),
+                                                tint = Color.White.copy(alpha = 0.3f)
                                             )
                                         }
-                                        // Estoque + Vendidos na mesma linha
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            val estoqueCor = when {
-                                                produto.estoque <= 0 -> MaterialTheme.colorScheme.error
-                                                produto.estoque <= 5 -> Color(0xFFFF9800)
-                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                            }
-                                            Text(
-                                                if (produto.estoque <= 0) "ESGOTADO" else "Estq: ${produto.estoqueFormatado()}",
-                                                fontSize = 10.sp,
-                                                color = estoqueCor
-                                            )
-                                            if (vendidos > 0) {
-                                                Text(
-                                                    "Vend: $vendidos",
-                                                    fontSize = 10.sp,
-                                                    color = primaryColor
-                                                )
-                                            }
-                                        }
                                     }
-                                    // Valor à direita
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // Nome do produto
+                                    Text(
+                                        produto.nome,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (semEstque) Color.White.copy(alpha = 0.3f) else Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    // Preço
                                     Text(
                                         produto.precoFormatado(),
-                                        fontSize = 15.sp,
+                                        fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = primaryColor,
-                                        modifier = Modifier.align(Alignment.CenterVertically)
+                                        color = if (semEstque) Color.White.copy(alpha = 0.3f) else primaryColor
                                     )
+
+                                    // Estoque
+                                    if (semEstque) {
+                                        Text(
+                                            "ESGOTADO",
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    } else if (produto.estoque <= 5) {
+                                        Text(
+                                            "Estq: ${produto.estoque.toInt()}",
+                                            fontSize = 8.sp,
+                                            color = Color(0xFFFF9800)
+                                        )
+                                    }
                                 }
+
                                 // Badge quantidade no carrinho
                                 if (qtdNoCarrinho > 0) {
                                     Badge(
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(2.dp),
                                         containerColor = Color(0xFF4CAF50)
                                     ) {
-                                        Text("${qtdNoCarrinho}x", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        Text("${qtdNoCarrinho}x", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
