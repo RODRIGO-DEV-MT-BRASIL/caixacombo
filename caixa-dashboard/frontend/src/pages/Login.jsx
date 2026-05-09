@@ -40,7 +40,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-6xl px-8 flex flex-row items-center gap-8">
         {/* Logo - coluna esquerda, maior que o card */}
         <div className="flex-[1.5] flex items-center justify-center">
-          <img src="/controle.png" alt="CaixaCombo" className="w-full max-w-[600px] object-contain" />
+          <img src="/controle.png" alt="CaixaCombo" className="w-full h-auto object-contain" />
         </div>
 
         {/* Login Card - coluna direita */}
