@@ -101,23 +101,31 @@ export default function Produtos() {
   const handleSave = async (produtoData) => {
     try {
       if (editingProduto) {
-        await fetch(apiUrl(`/api/produtos/${editingProduto.id}`), {
+        const res = await fetch(apiUrl(`/api/produtos/${editingProduto.id}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(produtoData)
         })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Erro ao atualizar produto')
+        }
         toast.success('Produto atualizado com sucesso!')
       } else {
-        await fetch(apiUrl('/api/produtos'), {
+        const res = await fetch(apiUrl('/api/produtos'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(produtoData)
         })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Erro ao criar produto')
+        }
         toast.success('Produto criado com sucesso!')
       }
       fetchProdutos()
     } catch (error) {
-      toast.error('Erro ao salvar produto')
+      toast.error(error.message || 'Erro ao salvar produto')
       throw error
     }
   }

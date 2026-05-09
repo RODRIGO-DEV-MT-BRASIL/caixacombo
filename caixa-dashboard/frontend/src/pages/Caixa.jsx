@@ -223,17 +223,8 @@ export default function Caixa() {
     sangria: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   }
 
-  const filteredDispositivos = dispositivos.filter(d => {
-    const s = search.toLowerCase()
-    const matchSearch = d.deviceId.toLowerCase().includes(s)
-    // Só mostrar dispositivos com sessão aberta OU com dados na última sessão
-    const sessao = caixaAtual[d.deviceId]
-    const temSessao = sessao?.aberturaTimestamp
-    const temDados = d.operacoes.length > 0 || getVendasSessao(d.deviceId).length > 0
-    return matchSearch && (temSessao || temDados)
-  })
-
   // Vendas da sessão de um dispositivo (aberta ou fechada)
+  // Deve ser declarado ANTES de filteredDispositivos para evitar TDZ (Temporal Dead Zone)
   const getVendasSessao = (deviceId) => {
     const sessao = caixaAtual[deviceId]
     if (!sessao || !sessao.aberturaTimestamp) return []
@@ -259,6 +250,16 @@ export default function Caixa() {
     if (!dev) return []
     return dev.operacoes.filter(o => o.timestamp >= ts && o.timestamp <= tf)
   }
+
+  const filteredDispositivos = dispositivos.filter(d => {
+    const s = search.toLowerCase()
+    const matchSearch = d.deviceId.toLowerCase().includes(s)
+    // Só mostrar dispositivos com sessão aberta OU com dados na última sessão
+    const sessao = caixaAtual[d.deviceId]
+    const temSessao = sessao?.aberturaTimestamp
+    const temDados = d.operacoes.length > 0 || getVendasSessao(d.deviceId).length > 0
+    return matchSearch && (temSessao || temDados)
+  })
 
   // Filtrar operações/vendas por aba selecionada (por dispositivo, sessão atual)
   const getOperacoesByTab = (dispositivo, tab) => {

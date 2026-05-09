@@ -100,7 +100,9 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
           const data = await res.json()
           imagemUrl = data.url
         } else {
-          console.error('Erro no upload da imagem:', res.status)
+          const errText = await res.text().catch(() => '')
+          console.error('Erro no upload da imagem:', res.status, errText)
+          alert('Erro ao enviar imagem. O produto será salvo sem imagem.')
         }
       }
 

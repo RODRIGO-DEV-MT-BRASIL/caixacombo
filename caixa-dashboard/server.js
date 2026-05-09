@@ -18,7 +18,7 @@ app.use(cors({
   origin: allowedOrigins.length > 0 ? allowedOrigins : true, 
   credentials: true 
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -1435,6 +1435,16 @@ app.post('/api/device/poll', (req, res) => {
   const now = new Date();
   const isPollingRecent = connectedDevices.get(deviceId)?.lastPoll && (now - new Date(connectedDevices.get(deviceId).lastPoll)) < 120000;
   io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+
+  // Se dispositivo é novo ou reconectando após cold start, enviar sync inicial de dados
+  // (equivalente ao que o WebSocket faz em device_connect com socket.emit('produtos_sync'))
+  if (!existing || !existing.lastPoll) {
+    console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} novo/reconectando - enviando sync inicial`);
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: db.produtos || [] });
+    if (db.clientes && db.clientes.length > 0) {
+      enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: db.clientes });
+    }
+  }
 
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];

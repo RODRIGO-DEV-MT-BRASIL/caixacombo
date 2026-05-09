@@ -113,8 +113,10 @@ class MainActivity : ComponentActivity() {
         val cn = android.content.ComponentName(this, AdminReceiver::class.java)
         PollingService.setAdminInfo(dpm, cn)
 
-        // Verificar e solicitar ativação automática do Device Admin
-        checkAndRequestDeviceAdmin(dpm, cn)
+        // Verificar e solicitar ativação automática do Device Admin (pular no D2S)
+        if (!android.os.Build.MODEL.equals("D2s", ignoreCase = true)) {
+            checkAndRequestDeviceAdmin(dpm, cn)
+        }
 
         // Configurar callbacks do WebSocket para bloqueio/desbloqueio
         PollingService.setCallbacks(
@@ -543,7 +545,7 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
                 putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
                 putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                    "Ative para permitir:\n• Bloquear tela remotamente\n• Reiniciar dispositivo\n• Desligar dispositivo")
+                    "Ative para permitir o gerenciamento do dispositivo")
             }
 
             try {
