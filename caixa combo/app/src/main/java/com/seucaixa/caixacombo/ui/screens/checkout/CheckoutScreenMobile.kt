@@ -55,7 +55,8 @@ fun CheckoutScreenMobile(
     onNavigateToProdutos: () -> Unit,
     onNavigateToVendas: () -> Unit,
     onNavigateToCaixa: () -> Unit,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {}
 ) {
     val produtos by viewModel.produtos.collectAsState()
     val carrinho by viewModel.carrinho.collectAsState()
@@ -105,6 +106,27 @@ fun CheckoutScreenMobile(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Botão Dashboard
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.clickable { onNavigateToDashboard() }
+                        ) {
+                            IconButton(
+                                onClick = onNavigateToDashboard,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Dashboard,
+                                    "Dashboard",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            Text(
+                                "Dashboard",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         // Botão Sair
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,

@@ -62,7 +62,8 @@ fun CheckoutScreenPOS(
     onNavigateToAcessos: () -> Unit = {},
     onNavigateToCadastro: () -> Unit = {},
     onSendStonePayment: ((Long, String, String, String, (StoneDeeplinkService.PaymentResult?) -> Unit) -> Unit)? = null,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
@@ -446,7 +447,8 @@ fun CheckoutScreenPOS(
             onNavigateToConfiguracaoTipoImpressao = onNavigateToConfiguracaoTipoImpressao,
             onNavigateToAcessos = onNavigateToAcessos,
             onNavigateToCadastro = onNavigateToCadastro,
-            onBuscarCliente = { showBuscarClienteDialog = true }
+            onBuscarCliente = { showBuscarClienteDialog = true },
+            onNavigateToDashboard = onNavigateToDashboard
         )
     }
 
@@ -849,7 +851,8 @@ private fun RodapePDV(
     onNavigateToConfiguracaoTipoImpressao: () -> Unit = {},
     onNavigateToAcessos: () -> Unit = {},
     onNavigateToCadastro: () -> Unit = {},
-    onBuscarCliente: () -> Unit = {}
+    onBuscarCliente: () -> Unit = {},
+    onNavigateToDashboard: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -912,7 +915,7 @@ private fun RodapePDV(
                     horizontalArrangement = Arrangement.spacedBy(1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    FuncaoBotao("F1", "Home", Icons.Default.Home, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToHome() }
+                    FuncaoBotao("F1", "Dashboard", Icons.Default.Dashboard, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToDashboard() }
                     if (permCaixa) FuncaoBotao("F2", "Caixa", Icons.Default.AccountBalance, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCaixa() }
                     if (permVendas) FuncaoBotao("F3", "Vendas", Icons.Default.Receipt, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToVendas() }
                     if (permProdutos) FuncaoBotao("F4", "Produtos", Icons.Default.Inventory, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToProdutos() }
@@ -966,7 +969,7 @@ private fun RodapePDV(
                 horizontalArrangement = Arrangement.spacedBy(1.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FuncaoBotao("F1", "Home", Icons.Default.Home, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToHome() }
+                FuncaoBotao("F1", "Dashboard", Icons.Default.Dashboard, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToDashboard() }
                 if (permCaixa) FuncaoBotao("F2", "Caixa", Icons.Default.AccountBalance, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToCaixa() }
                 if (permVendas) FuncaoBotao("F3", "Vendas", Icons.Default.Receipt, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToVendas() }
                 if (permProdutos) FuncaoBotao("F4", "Produtos", Icons.Default.Inventory, Color.White, Modifier.weight(1f), isSmallScreen) { onNavigateToProdutos() }
