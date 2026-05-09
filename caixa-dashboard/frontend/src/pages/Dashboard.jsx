@@ -8,7 +8,7 @@ import {
   ChevronRight, Activity, TrendingUp, AlertTriangle, CheckCircle2,
   Search, RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
   Settings,
-  Play as PlayIcon, X as CloseIcon, Power, History, Building2
+  Play as PlayIcon, X as CloseIcon, Power, History, Building2, Users
 } from 'lucide-react'
 import Produtos from './Produtos'
 import Categorias from './Categorias'
@@ -22,7 +22,7 @@ import Configuracoes from './Configuracoes'
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'terminais', label: 'Terminais', icon: Monitor, permission: 'dashboard' },
-  { id: 'empresas', label: 'Empresas', icon: Building2, permission: 'empresas' },
+  { id: 'empresas', label: 'Clientes/Empresas', icon: Building2, permission: 'empresas' },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
