@@ -408,9 +408,11 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
 });
 
 app.get('/api/dispositivos', authenticateToken, (req, res) => {
-  const list = Array.from(connectedDevices.entries()).map(([id, d]) => ({
-    deviceId: id, ...d, online: d.socketId !== null
-  }));
+  const list = Array.from(connectedDevices.entries())
+    .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
+    .map(([id, d]) => ({
+      deviceId: id, ...d, online: d.socketId !== null
+    }));
   res.json(list);
 });
 
@@ -2134,11 +2136,13 @@ io.on('connection', (socket) => {
     
     // Enviar dispositivos conectados (WebSocket ou polling recente)
     const now = new Date();
-    const list = Array.from(connectedDevices.entries()).map(([id, d]) => {
-      const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000; // 2 min
-      const isOnline = d.socketId !== null || isPollingRecent;
-      return { deviceId: id, ...d, online: isOnline };
-    });
+    const list = Array.from(connectedDevices.entries())
+      .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
+      .map(([id, d]) => {
+        const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000; // 2 min
+        const isOnline = d.socketId !== null || isPollingRecent;
+        return { deviceId: id, ...d, online: isOnline };
+      });
     
     console.log(`📊 [DEBUG] Dispositivos conectados: ${list.length}`);
     console.log(`📊 [DEBUG] DeviceIds:`, list.map(d => d.deviceId));
