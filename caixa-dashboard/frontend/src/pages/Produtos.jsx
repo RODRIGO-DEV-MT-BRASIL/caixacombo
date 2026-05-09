@@ -212,7 +212,7 @@ export default function Produtos() {
             </button>
           ))}
         </div>
-      )
+      )}
 
       {loading ? (
         <div className="glass p-12 text-center">
