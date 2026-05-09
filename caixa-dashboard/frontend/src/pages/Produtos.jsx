@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { useToastContext } from '../contexts/ToastContext'
 import { apiUrl } from '../utils/api'
 import ProdutoModal from '../components/ProdutoModal'
-import { Package, Plus, Pencil, Trash2, Search, Image as ImageIcon, ShoppingCart } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, Search, Image as ImageIcon, ShoppingCart, Download, Upload, FileText, Loader2 } from 'lucide-react'
+import Papa from 'papaparse'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default function Produtos() {
   const { token } = useAuth()
@@ -18,6 +21,8 @@ export default function Produtos() {
   const [showModal, setShowModal] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
   const [vendasLocais, setVendasLocais] = useState([])
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = useRef(null)
 
   const fetchProdutos = async () => {
     try {
@@ -167,6 +172,127 @@ export default function Produtos() {
     return matchSearch && matchCategoria
   })
 
+  // ===== DOWNLOAD CSV =====
+  const handleDownloadCSV = () => {
+    const csvData = filtered.map(p => ({
+      Nome: p.nome || '',
+      Descricao: p.descricao || '',
+      CodigoBarras: p.codigoBarras || '',
+      Categoria: getCategoriaNome(p.categoriaId),
+      Preco: p.preco || 0,
+      Estoque: p.estoque || 0,
+      Unidade: p.unidade || 'un',
+      Vendidos: getQuantidadeVendida(p.id)
+    }))
+    const csv = Papa.unparse(csvData)
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `produtos_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('CSV exportado com sucesso!')
+  }
+
+  // ===== UPLOAD CSV =====
+  const handleUploadCSV = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImporting(true)
+    try {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          const rows = results.data
+          let created = 0, updated = 0, errors = 0
+          for (const row of rows) {
+            try {
+              const produtoData = {
+                nome: row.Nome || row.nome || '',
+                descricao: row.Descricao || row.descricao || '',
+                codigoBarras: row.CodigoBarras || row.codigoBarras || row.codigo_barras || undefined,
+                preco: parseFloat(row.Preco || row.preco || '0'),
+                estoque: parseInt(row.Estoque || row.estoque || '0'),
+                unidade: row.Unidade || row.unidade || 'un',
+                categoriaId: null,
+                imagem: null
+              }
+              // Buscar categoria pelo nome
+              const catNome = row.Categoria || row.categoria || ''
+              if (catNome) {
+                const cat = categorias.find(c => c.nome.toLowerCase() === catNome.toLowerCase())
+                if (cat) produtoData.categoriaId = cat.id
+              }
+              // Se tem ID, atualizar; senão criar
+              const existing = produtos.find(p => p.nome.toLowerCase() === produtoData.nome.toLowerCase())
+              if (existing) {
+                await fetch(apiUrl(`/api/produtos/${existing.id}`), {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify(produtoData)
+                })
+                updated++
+              } else {
+                await fetch(apiUrl('/api/produtos'), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                  body: JSON.stringify(produtoData)
+                })
+                created++
+              }
+            } catch { errors++ }
+          }
+          fetchProdutos()
+          toast.success(`Importação concluída: ${created} criados, ${updated} atualizados${errors ? `, ${errors} erros` : ''}`)
+          setImporting(false)
+        }
+      })
+    } catch (err) {
+      toast.error('Erro ao importar CSV')
+      setImporting(false)
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // ===== GERAR PDF =====
+  const handleGeneratePDF = () => {
+    const doc = new jsPDF('landscape')
+    const title = 'Relatório de Produtos'
+    const date = new Date().toLocaleDateString('pt-BR')
+
+    doc.setFontSize(18)
+    doc.setTextColor(40, 40, 40)
+    doc.text(title, 14, 22)
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Gerado em: ${date} | Total: ${filtered.length} produtos`, 14, 30)
+
+    const categoriaNome = categoriaFiltro ? getCategoriaNome(categoriaFiltro) : 'Todas'
+    doc.text(`Categoria: ${categoriaNome}`, 14, 36)
+
+    autoTable(doc, {
+      startY: 42,
+      head: [['Produto', 'Cód. Barras', 'Categoria', 'Preço', 'Estoque', 'Vendidos']],
+      body: filtered.map(p => [
+        p.nome || '-',
+        p.codigoBarras || '-',
+        getCategoriaNome(p.categoriaId),
+        `R$ ${(p.preco || 0).toFixed(2)}`,
+        `${p.estoque || 0} ${p.unidade || 'un'}`,
+        getQuantidadeVendida(p.id).toString()
+      ]),
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      theme: 'grid'
+    })
+
+    doc.save(`produtos_${new Date().toISOString().slice(0, 10)}.pdf`)
+    toast.success('PDF gerado com sucesso!')
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -180,9 +306,21 @@ export default function Produtos() {
             placeholder="Buscar produto..."
           />
         </div>
-        <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm">
-          <Plus size={16} /> Novo Produto
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm">
+            <Plus size={16} /> Novo Produto
+          </button>
+          <button onClick={handleDownloadCSV} className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm transition-colors">
+            <Download size={16} /> Exportar CSV
+          </button>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleUploadCSV} className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-2 px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50">
+            {importing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} Importar CSV
+          </button>
+          <button onClick={handleGeneratePDF} className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm transition-colors">
+            <FileText size={16} /> Gerar PDF
+          </button>
+        </div>
       </div>
 
       {/* Filtro por categorias */}
