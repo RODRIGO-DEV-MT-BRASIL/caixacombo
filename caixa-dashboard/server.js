@@ -126,6 +126,21 @@ function saveAuditoria() {
 let db = loadData();
 db.auditoria = loadAuditoria();
 
+// Corrigir categoriaId string para Number nos produtos existentes
+if (db.produtos && Array.isArray(db.produtos)) {
+  let needsSave = false;
+  db.produtos.forEach(p => {
+    if (p.categoriaId !== undefined && p.categoriaId !== null && typeof p.categoriaId === 'string') {
+      p.categoriaId = Number(p.categoriaId);
+      needsSave = true;
+    }
+  });
+  if (needsSave) {
+    console.log('🔧 Corrigindo categoriaId string -> Number nos produtos');
+    saveData();
+  }
+}
+
 // Seed do admin padrão a partir de variáveis de ambiente (se não existir nenhum usuário)
 if (!db.usuarios || db.usuarios.length === 0) {
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
@@ -144,6 +159,7 @@ if (!db.usuarios || db.usuarios.length === 0) {
   }
 }
 
+const serverStartTime = new Date(); // Para detectar restart e forçar sync inicial
 const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
 const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
@@ -618,7 +634,7 @@ app.post('/api/produtos', authenticateToken, (req, res) => {
     nome: req.body.nome,
     descricao: req.body.descricao,
     preco: req.body.preco,
-    categoriaId: req.body.categoriaId,
+    categoriaId: req.body.categoriaId ? Number(req.body.categoriaId) : null,
     codigoBarras: req.body.codigoBarras || Date.now().toString(),
     estoque: req.body.estoque || 0,
     unidade: req.body.unidade || 'un',
@@ -637,7 +653,11 @@ app.put('/api/produtos/:id', authenticateToken, (req, res) => {
   const index = db.produtos.findIndex(p => p.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
   
-  db.produtos[index] = { ...db.produtos[index], ...req.body };
+  const updateData = { ...req.body };
+  if (updateData.categoriaId !== undefined) {
+    updateData.categoriaId = updateData.categoriaId ? Number(updateData.categoriaId) : null;
+  }
+  db.produtos[index] = { ...db.produtos[index], ...updateData };
   saveData(); // Salvar imediatamente
   io.emit('produto_updated', db.produtos[index]);
   broadcastProdutosSync('updated', db.produtos[index]);
@@ -1432,10 +1452,15 @@ app.post('/api/device/poll', (req, res) => {
   const isPollingRecent = connectedDevices.get(deviceId)?.lastPoll && (now - new Date(connectedDevices.get(deviceId).lastPoll)) < 120000;
   io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
 
-  // Se dispositivo é novo ou reconectando após cold start, enviar sync inicial de dados
+  // Se dispositivo é novo, reconectando após cold start, ou não sincronizou desde o restart do servidor
   // (equivalente ao que o WebSocket faz em device_connect com socket.emit('produtos_sync'))
-  if (!existing || !existing.lastPoll) {
-    console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} novo/reconectando - enviando sync inicial`);
+  const deviceLastPoll = existing?.lastPoll ? new Date(existing.lastPoll) : null;
+  const needsInitialSync = !existing || !existing.lastPoll || (deviceLastPoll && deviceLastPoll < serverStartTime);
+  const appRequestedSync = req.body.needsProductSync === true;
+  
+  if (needsInitialSync || appRequestedSync) {
+    const reason = !existing ? 'novo' : !existing.lastPoll ? 'sem lastPoll' : appRequestedSync ? 'app solicitou' : 'pós-restart servidor';
+    console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} (${reason}) - enviando sync inicial`);
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: db.produtos || [] });
     if (db.categorias && db.categorias.length > 0) {
       enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: db.categorias });

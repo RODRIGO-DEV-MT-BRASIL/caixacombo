@@ -17,11 +17,35 @@ class CheckoutViewModel(
     private val categoriaRepository: CategoriaRepository
 ) : ViewModel() {
     
-    // Lista completa de produtos (nunca filtrada)
-    private val _todosProdutos = MutableStateFlow<List<Produto>>(emptyList())
-    // Lista filtrada para UI (por categoria/busca)
+    // StateFlow para UI reativa
     private val _produtos = MutableStateFlow<List<Produto>>(emptyList())
-    val produtos: StateFlow<List<Produto>> = _produtos.asStateFlow()
+    private val _produtosBase = MutableStateFlow<List<Produto>>(emptyList())
+
+    private val _busca = MutableStateFlow("")
+    val busca: StateFlow<String> = _busca.asStateFlow()
+
+    private val _categoriaSelecionada = MutableStateFlow<Categoria?>(null)
+    val categoriaSelecionada: StateFlow<Categoria?> = _categoriaSelecionada.asStateFlow()
+
+    val produtos: StateFlow<List<Produto>> = combine(
+        _produtosBase,
+        _busca,
+        _categoriaSelecionada
+    ) { base, busca, categoria ->
+        var out = base
+        val cat = categoria
+        if (cat != null) {
+            out = out.filter { it.categoriaId == cat.id }
+        }
+        val q = busca.trim()
+        if (q.isNotEmpty()) {
+            out = out.filter { produto ->
+                produto.nome.contains(q, ignoreCase = true) ||
+                    (produto.codigoBarras?.contains(q, ignoreCase = true) == true)
+            }
+        }
+        out
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     
     // Flag para usar produtos do servidor
     private var _usandoProdutosServidor = false
@@ -40,9 +64,6 @@ class CheckoutViewModel(
     private val _total = MutableStateFlow(0.0)
     val total: StateFlow<Double> = _total.asStateFlow()
     
-    private val _busca = MutableStateFlow("")
-    val busca: StateFlow<String> = _busca.asStateFlow()
-    
     private val _vendaFinalizada = MutableStateFlow(false)
     val vendaFinalizada: StateFlow<Boolean> = _vendaFinalizada.asStateFlow()
 
@@ -56,9 +77,6 @@ class CheckoutViewModel(
     // Categorias para abas
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias.asStateFlow()
-
-    private val _categoriaSelecionada = MutableStateFlow<Categoria?>(null)
-    val categoriaSelecionada: StateFlow<Categoria?> = _categoriaSelecionada.asStateFlow()
 
     init {
         // Carregar produtos locais primeiro como fallback
@@ -78,9 +96,9 @@ class CheckoutViewModel(
             produtos.forEach { produto ->
                 produtoRepository.insert(produto)
             }
-            _todosProdutos.value = produtos
+            _produtosBase.value = produtos
+            _produtos.value = produtos
             _usandoProdutosServidor = true
-            aplicarFiltros()
             _precisaSincronizar.value = false
             _produtosPendentes.value = 0
         }
@@ -96,23 +114,6 @@ class CheckoutViewModel(
 
     fun selecionarCategoria(categoria: Categoria?) {
         _categoriaSelecionada.value = categoria
-        aplicarFiltros()
-    }
-
-    private fun aplicarFiltros() {
-        var resultado = _todosProdutos.value
-        val cat = _categoriaSelecionada.value
-        if (cat != null) {
-            resultado = resultado.filter { it.categoriaId == cat.id }
-        }
-        val query = _busca.value
-        if (query.isNotEmpty()) {
-            resultado = resultado.filter {
-                it.nome.contains(query, ignoreCase = true) ||
-                it.codigoBarras?.contains(query, ignoreCase = true) == true
-            }
-        }
-        _produtos.value = resultado
     }
 
     private fun carregarVendasHoje() {
@@ -150,8 +151,8 @@ class CheckoutViewModel(
             produtoRepository.allProdutos.collect { lista ->
                 // Se não estiver usando produtos do servidor, usar locais
                 if (!_usandoProdutosServidor) {
-                    _todosProdutos.value = lista
-                    aplicarFiltros()
+                    _produtosBase.value = lista
+                    _produtos.value = lista
                 }
             }
         }
@@ -159,7 +160,6 @@ class CheckoutViewModel(
     
     fun buscarProdutos(query: String) {
         _busca.value = query
-        aplicarFiltros()
     }
     
     fun adicionarAoCarrinho(produto: Produto, quantidade: Double = 1.0) {
@@ -266,7 +266,7 @@ class CheckoutViewModel(
             
             // Atualizar produtos do servidor com novo estoque
             if (_usandoProdutosServidor) {
-                val produtosAtualizados = _todosProdutos.value.map { produto ->
+                val produtosAtualizados = _produtos.value.map { produto ->
                     val itemVendido = _carrinho.value.find { it.produtoId == produto.id }
                     if (itemVendido != null) {
                         val novoEstoque = produto.estoque - itemVendido.quantidade
@@ -277,8 +277,7 @@ class CheckoutViewModel(
                         produto
                     }
                 }
-                _todosProdutos.value = produtosAtualizados
-                aplicarFiltros()
+                _produtos.value = produtosAtualizados
             }
 
             // Guardar referência da última venda para impressão

@@ -9,7 +9,7 @@ import androidx.room.Index
     indices = [Index(value = ["codigoBarras"], unique = true)]
 )
 data class Produto(
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     val id: Long = 0,
     
     val nome: String,

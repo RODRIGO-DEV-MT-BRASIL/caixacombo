@@ -56,10 +56,13 @@ class PollingService : Service() {
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
         private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
+        private var onSyncComplete: ((Int, Int, Int) -> Unit)? = null     // produtos, categorias, clientes
 
         private var isRunning = false
         private var consecutiveErrors = 0
         private var pendingCaixaData: JSONObject? = null
+        private var needsProductSync = true // Solicitar sync de produtos na primeira conexão
+        private var wasDisconnected = false  // Rastrear se estava desconectado para detectar reconexão
 
         fun configureServer(url: String) {
             SERVER_URL = url.trimEnd('/')
@@ -102,7 +105,8 @@ class PollingService : Service() {
             onReprintRequested: ((String?) -> Unit)? = null,
             onCancelRequested: ((String, Long?) -> Unit)? = null,
             onClientesReceived: ((JSONArray) -> Unit)? = null,
-            onCategoriasReceived: ((JSONArray) -> Unit)? = null
+            onCategoriasReceived: ((JSONArray) -> Unit)? = null,
+            onSyncComplete: ((Int, Int, Int) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -114,9 +118,16 @@ class PollingService : Service() {
             this.onCancelRequested = onCancelRequested
             this.onClientesReceived = onClientesReceived
             this.onCategoriasReceived = onCategoriasReceived
+            this.onSyncComplete = onSyncComplete
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
+
+        /** Forçar solicitação de sync de produtos no próximo poll */
+        fun requestProductSync() {
+            needsProductSync = true
+            Log.d(TAG, "requestProductSync: flag needsProductSync ativada")
+        }
 
         // ==================== MÉTODOS DE ENVIO (REST) ====================
 
@@ -430,15 +441,28 @@ class PollingService : Service() {
         thread(name = "PollingThread") {
             while (isRunning) {
                 try {
-                    doPoll()
+                    val syncResult = doPoll()
                     consecutiveErrors = 0
-                    onConnectionChange?.invoke(true)
+                    // Detectar reconexão após desconexão
+                    if (wasDisconnected) {
+                        wasDisconnected = false
+                        onConnectionChange?.invoke(true)
+                        // Se houve sync na reconexão, notificar
+                        if (syncResult != null && (syncResult.first > 0 || syncResult.second > 0 || syncResult.third > 0)) {
+                            onSyncComplete?.invoke(syncResult.first, syncResult.second, syncResult.third)
+                        }
+                    } else {
+                        onConnectionChange?.invoke(true)
+                    }
                 } catch (e: Exception) {
                     consecutiveErrors++
                     Log.e(TAG, "Poll erro #$consecutiveErrors: ${e.message}")
                     if (consecutiveErrors >= MAX_RETRIES) {
+                        wasDisconnected = true
                         onConnectionChange?.invoke(false)
                     }
+                    // Após erro de conexão, marcar que precisa re-sincronizar produtos quando reconectar
+                    needsProductSync = true
                 }
 
                 try {
@@ -450,8 +474,9 @@ class PollingService : Service() {
         }
     }
 
-    private fun doPoll() {
-        val id = pollingDeviceId ?: return
+    /** Retorna Triple(produtos, categorias, clientes) se houve sync, ou null */
+    private fun doPoll(): Triple<Int, Int, Int>? {
+        val id = pollingDeviceId ?: return null
         val name = deviceName ?: "Dispositivo"
 
         val url = URL("$SERVER_URL/api/device/poll")
@@ -470,6 +495,10 @@ class PollingService : Service() {
             serialNumber?.let { put("serialNumber", it) }
             // Incluir dados de caixa pendentes
             pendingCaixaData?.let { put("caixaData", it) }
+            // Solicitar sync de produtos se necessário
+            if (needsProductSync) {
+                put("needsProductSync", true)
+            }
         }
 
         // Limpar caixa data após incluir no poll
@@ -485,6 +514,12 @@ class PollingService : Service() {
         val response = conn.inputStream.bufferedReader().readText()
         val json = JSONObject(response)
         val commands = json.optJSONArray("commands")
+        Log.e("SYNC_DEBUG", "Poll OK - commands: ${commands?.length() ?: 0}")
+
+        var syncProdutos = 0
+        var syncCategorias = 0
+        var syncClientes = 0
+        var hadSync = false
 
         if (commands != null && commands.length() > 0) {
             for (i in 0 until commands.length()) {
@@ -494,8 +529,28 @@ class PollingService : Service() {
 
                 Log.d(TAG, "Comando recebido via poll: $command")
                 handleCommand(command, params)
+                
+                // Contar itens sincronizados
+                when (command) {
+                    "produtos_sync" -> {
+                        needsProductSync = false
+                        syncProdutos = params?.optJSONArray("produtos")?.length() ?: 0
+                        hadSync = true
+                        Log.d(TAG, "Sync de produtos recebido ($syncProdutos itens) - flag needsProductSync resetada")
+                    }
+                    "categorias_sync" -> {
+                        syncCategorias = params?.optJSONArray("categorias")?.length() ?: 0
+                        hadSync = true
+                    }
+                    "clientes_sync" -> {
+                        syncClientes = params?.optJSONArray("clientes")?.length() ?: 0
+                        hadSync = true
+                    }
+                }
             }
         }
+        
+        return if (hadSync) Triple(syncProdutos, syncCategorias, syncClientes) else null
     }
 
     private fun handleCommand(command: String, params: JSONObject?) {
@@ -575,6 +630,7 @@ class PollingService : Service() {
             }
             "produtos_sync" -> {
                 val produtos = params?.optJSONArray("produtos")
+                Log.e("SYNC_DEBUG", "produtos_sync recebido: ${produtos?.length() ?: 0} produtos")
                 if (produtos != null) {
                     onProdutosReceived?.invoke(produtos)
                 }
@@ -588,8 +644,8 @@ class PollingService : Service() {
             }
             "categorias_sync" -> {
                 val categorias = params?.optJSONArray("categorias")
+                Log.e("SYNC_DEBUG", "categorias_sync recebido: ${categorias?.length() ?: 0} categorias")
                 if (categorias != null) {
-                    Log.d(TAG, "Recebidas ${categorias.length()} categorias do servidor")
                     onCategoriasReceived?.invoke(categorias)
                 }
             }

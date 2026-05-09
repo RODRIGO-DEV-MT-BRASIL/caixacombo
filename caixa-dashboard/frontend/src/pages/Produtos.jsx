@@ -14,6 +14,7 @@ export default function Produtos() {
   const [categorias, setCategorias] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [categoriaFiltro, setCategoriaFiltro] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
   const [vendasLocais, setVendasLocais] = useState([])
@@ -159,10 +160,12 @@ export default function Produtos() {
     setEditingProduto(null)
   }
 
-  const filtered = produtos.filter(p =>
-    (p.nome || '').toLowerCase().includes(search.toLowerCase()) ||
-    getCategoriaNome(p.categoriaId).toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = produtos.filter(p => {
+    const matchSearch = (p.nome || '').toLowerCase().includes(search.toLowerCase()) ||
+      getCategoriaNome(p.categoriaId).toLowerCase().includes(search.toLowerCase())
+    const matchCategoria = !categoriaFiltro || p.categoriaId == categoriaFiltro
+    return matchSearch && matchCategoria
+  })
 
   return (
     <div className="space-y-6">
@@ -181,6 +184,35 @@ export default function Produtos() {
           <Plus size={16} /> Novo Produto
         </button>
       </div>
+
+      {/* Filtro por categorias */}
+      {categorias.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setCategoriaFiltro(null)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              !categoriaFiltro
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+            }`}
+          >
+            Todos
+          </button>
+          {categorias.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setCategoriaFiltro(categoriaFiltro == c.id ? null : c.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                categoriaFiltro == c.id
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              {c.nome}
+            </button>
+          ))}
+        </div>
+      )
 
       {loading ? (
         <div className="glass p-12 text-center">

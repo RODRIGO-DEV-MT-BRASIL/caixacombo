@@ -123,9 +123,18 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Limpar produtos e categorias para re-sincronizar com IDs do servidor
+        // (antes autoGenerate gerava IDs locais que não correspondiam aos do servidor)
+        database.execSQL("DELETE FROM produtos")
+        database.execSQL("DELETE FROM categorias")
+    }
+}
+
 @Database(
     entities = [Produto::class, Categoria::class, Venda::class, OperacaoCaixa::class, ConfiguracaoImpressao::class, Usuario::class, Cliente::class, Empresa::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -151,7 +160,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "caixa_combo_database"
                 )
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                 .fallbackToDestructiveMigration()
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {

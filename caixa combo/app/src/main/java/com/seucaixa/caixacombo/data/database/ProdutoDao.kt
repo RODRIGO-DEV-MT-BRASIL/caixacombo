@@ -49,6 +49,9 @@ interface ProdutoDao {
     
     @Query("SELECT COUNT(*) FROM produtos WHERE ativo = 1")
     suspend fun countProdutos(): Int
+
+    @Query("DELETE FROM produtos")
+    suspend fun deleteAll()
     
     @Query("SELECT * FROM produtos WHERE tipoPreco = :tipo AND ativo = 1")
     fun getProdutosByTipo(tipo: TipoPreco): Flow<List<Produto>>
