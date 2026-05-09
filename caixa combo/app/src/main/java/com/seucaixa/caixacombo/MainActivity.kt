@@ -185,6 +185,12 @@ class MainActivity : ComponentActivity() {
                     android.util.Log.d("MainActivity", "Recebidos ${clientesJson.length()} clientes do servidor para sincronização")
                     syncClientesFromServer(clientesJson)
                 }
+            },
+            onCategoriasReceived = { categoriasJson ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Recebidas ${categoriasJson.length()} categorias do servidor para sincronização")
+                    syncCategoriasFromServer(categoriasJson)
+                }
             }
         )
         
@@ -1158,6 +1164,35 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao sincronizar clientes do servidor", e)
+        }
+    }
+
+    /**
+     * Sincroniza categorias recebidas do servidor para o banco local
+     */
+    private fun syncCategoriasFromServer(categoriasJson: org.json.JSONArray) {
+        try {
+            val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
+            val categoriaDao = db.categoriaDao()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                for (i in 0 until categoriasJson.length()) {
+                    val c = categoriasJson.getJSONObject(i)
+                    val categoria = com.seucaixa.caixacombo.data.model.Categoria(
+                        id = c.optLong("id", System.currentTimeMillis()),
+                        nome = c.optString("nome", ""),
+                        cor = c.optString("cor", null),
+                        icone = c.optString("icone", null),
+                        ordem = c.optInt("ordem", 0),
+                        ativa = c.optBoolean("ativa", true)
+                    )
+                    categoriaDao.insert(categoria)
+                }
+
+                android.util.Log.d("MainActivity", "✅ ${categoriasJson.length()} categorias sincronizadas do servidor")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao sincronizar categorias do servidor", e)
         }
     }
 
