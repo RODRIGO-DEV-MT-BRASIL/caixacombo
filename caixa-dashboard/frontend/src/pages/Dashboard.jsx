@@ -39,6 +39,7 @@ export default function Dashboard() {
   const { success } = useToast()
   const [page, setPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [usageModal, setUsageModal] = useState(null)
   const [usageMinutes, setUsageMinutes] = useState('')
   const [lockModal, setLockModal] = useState(null)
@@ -218,15 +219,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 glass border-r border-white/5 transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-40 glass border-r border-white/5 transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 flex items-center gap-3">
-            <img src="/controle.png" alt="CaixaCombo" className="w-14 h-14 rounded-xl object-contain" />
-            <div>
-              <h1 className="font-bold text-white text-lg leading-tight">CaixaCombo</h1>
-              <p className="text-xs text-gray-500">Dashboard v1.1</p>
-            </div>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'p-4 justify-center' : 'p-6'}`}>
+            <img src="/controle.png" alt="CaixaCombo" className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-14 h-14'} rounded-xl object-contain shrink-0`} />
+            {!sidebarCollapsed && (
+              <div>
+                <h1 className="font-bold text-white text-lg leading-tight">CaixaCombo</h1>
+                <p className="text-xs text-gray-500">Dashboard v1.1</p>
+              </div>
+            )}
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-gray-400 hover:text-white">
               <X size={20} />
             </button>
@@ -238,42 +241,66 @@ export default function Dashboard() {
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-3 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
                   page === item.id 
                     ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
+                title={sidebarCollapsed ? item.label : ''}
               >
-                <item.icon size={18} />
-                {item.label}
+                <item.icon size={18} className="shrink-0" />
+                {!sidebarCollapsed && item.label}
               </button>
             ))}
           </nav>
 
           {/* Connection Status */}
           <div className="px-3 mb-3">
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium ${
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'} rounded-xl text-xs font-medium ${
               connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
             }`}>
-              {connected ? <Wifi size={14} /> : <WifiOff size={14} />}
-              {connected ? 'WebSocket Conectado' : 'WebSocket Desconectado'}
+              {connected ? <Wifi size={14} className="shrink-0" /> : <WifiOff size={14} className="shrink-0" />}
+              {!sidebarCollapsed && (connected ? 'WebSocket Conectado' : 'WebSocket Desconectado')}
             </div>
           </div>
 
           {/* User */}
           <div className="p-3 border-t border-white/5">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
+            <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-3 py-2'} py-2`}>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.username}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-              </div>
-              <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-                <LogOut size={16} />
-              </button>
+              {!sidebarCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user?.username}</p>
+                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                  </div>
+                  <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
+                    <LogOut size={16} />
+                  </button>
+                </>
+              )}
+              {sidebarCollapsed && (
+                <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
+                  <LogOut size={16} />
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Collapse Toggle */}
+          <div className="hidden lg:block p-3 border-t border-white/5">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-white hover:bg-white/5 transition-all"
+              title={sidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+            >
+              <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+              {!sidebarCollapsed && 'Recolher'}
+            </button>
           </div>
         </div>
       </aside>
