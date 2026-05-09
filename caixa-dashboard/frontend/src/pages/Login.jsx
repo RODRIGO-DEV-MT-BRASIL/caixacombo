@@ -37,10 +37,10 @@ export default function Login() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md px-6">
+      <div className="relative z-10 w-full max-w-lg px-6">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/controle.png" alt="CaixaCombo" className="w-40 h-40 rounded-2xl object-contain mx-auto mb-4 shadow-2xl shadow-blue-500/30" />
+          <img src="/controle.png" alt="CaixaCombo" className="w-[515px] h-[515px] rounded-2xl object-contain mx-auto mb-4 shadow-2xl shadow-blue-500/30" />
           <h1 className="text-3xl font-bold gradient-text">CaixaCombo</h1>
           <p className="text-gray-400 mt-1">Dashboard de Gerenciamento</p>
         </div>
