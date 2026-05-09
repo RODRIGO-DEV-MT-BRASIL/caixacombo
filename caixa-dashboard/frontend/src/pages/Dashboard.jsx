@@ -220,7 +220,7 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 flex items-center gap-3">
-            <img src="/controle.png" alt="CaixaCombo" className="w-10 h-10 rounded-xl object-contain" />
+            <img src="/controle.png" alt="CaixaCombo" className="w-14 h-14 rounded-xl object-contain" />
             <div>
               <h1 className="font-bold text-white text-lg leading-tight">CaixaCombo</h1>
               <p className="text-xs text-gray-500">Dashboard v1.1</p>
