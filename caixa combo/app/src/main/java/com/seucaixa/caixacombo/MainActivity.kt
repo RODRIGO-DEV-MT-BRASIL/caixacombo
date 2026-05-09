@@ -60,6 +60,8 @@ import com.seucaixa.caixacombo.ui.viewmodel.ConfiguracaoImpressaoViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ProdutosViewModel
 import com.seucaixa.caixacombo.data.model.Produto
 import com.seucaixa.caixacombo.ui.viewmodel.VendasViewModel
+import com.seucaixa.caixacombo.ui.screens.dashboard.DashboardScreen
+import com.seucaixa.caixacombo.ui.screens.dashboard.DashboardViewModel
 import com.seucaixa.caixacombo.data.backup.BackupScheduler
 import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
@@ -72,6 +74,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var produtosViewModel: ProdutosViewModel
     private lateinit var vendasViewModel: VendasViewModel
     private lateinit var caixaViewModel: CaixaViewModel
+    private lateinit var dashboardViewModel: DashboardViewModel
     private var pollingService: PollingService? = null
     private lateinit var configuracaoImpressaoViewModel: ConfiguracaoImpressaoViewModel
 
@@ -254,6 +257,11 @@ class MainActivity : ComponentActivity() {
             ConfiguracaoImpressaoViewModel.Factory(app.configuracaoImpressaoRepository)
         )[ConfiguracaoImpressaoViewModel::class.java]
 
+        dashboardViewModel = ViewModelProvider(
+            this,
+            DashboardViewModel.Factory(app.vendaRepository)
+        )[DashboardViewModel::class.java]
+
         setContent {
             CaixaComboTheme {
                 Surface(
@@ -349,6 +357,10 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("home") {
                                                 popUpTo(0) { inclusive = true }
                                             }
+                                        },
+                                        onNavigateToDashboard = {
+                                            dashboardViewModel.refresh()
+                                            navController.navigate("dashboard")
                                         }
                                     )
                                 }
@@ -379,6 +391,10 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("home") {
                                                 popUpTo(0) { inclusive = true }
                                             }
+                                        },
+                                        onNavigateToDashboard = {
+                                            dashboardViewModel.refresh()
+                                            navController.navigate("dashboard")
                                         }
                                     )
                                 }
@@ -440,6 +456,16 @@ class MainActivity : ComponentActivity() {
                                 onBack = {
                                     navController.popBackStack()
                                 }
+                            )
+                        }
+
+                        composable("dashboard") {
+                            val dashboardData by dashboardViewModel.data.collectAsState()
+                            val primaryColor = Color(getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).getInt("primary_color", 0xFF6200EE.toInt()))
+                            DashboardScreen(
+                                data = dashboardData,
+                                primaryColor = primaryColor,
+                                onBack = { navController.popBackStack() }
                             )
                         }
 
