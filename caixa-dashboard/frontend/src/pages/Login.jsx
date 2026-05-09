@@ -40,9 +40,7 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-2xl shadow-blue-500/30 mb-4">
-            <span className="text-3xl font-black text-white">CC</span>
-          </div>
+          <img src="/controle.png" alt="CaixaCombo" className="w-20 h-20 rounded-2xl object-contain mx-auto mb-4 shadow-2xl shadow-blue-500/30" />
           <h1 className="text-3xl font-bold gradient-text">CaixaCombo</h1>
           <p className="text-gray-400 mt-1">Dashboard de Gerenciamento</p>
         </div>

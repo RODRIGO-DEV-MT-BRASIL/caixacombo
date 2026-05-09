@@ -114,9 +114,78 @@
       "status": "online",
       "lockPassword": null,
       "lastPoll": "2026-05-08T20:37:20.577Z"
+    },
+    {
+      "deviceId": "test-local",
+      "deviceName": "Teste",
+      "deviceType": "Android",
+      "serialNumber": null,
+      "status": "online",
+      "lockPassword": null,
+      "lastPoll": "2026-05-08T22:14:49.306Z"
     }
   ],
   "auditoria": [
+    {
+      "id": 1778278527668,
+      "timestamp": "2026-05-08T22:15:27.668Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-local",
+      "deviceName": "Teste",
+      "detalhes": "Comando de controle enviado: close_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
+    {
+      "id": 1778278526887,
+      "timestamp": "2026-05-08T22:15:26.887Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-local",
+      "deviceName": "Teste",
+      "detalhes": "Comando de controle enviado: open_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
+    {
+      "id": 1778278525733,
+      "timestamp": "2026-05-08T22:15:25.733Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-check",
+      "deviceName": "Dispositivo",
+      "detalhes": "Comando de controle enviado: open_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
+    {
+      "id": 1778278524846,
+      "timestamp": "2026-05-08T22:15:24.846Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-check",
+      "deviceName": "Dispositivo",
+      "detalhes": "Comando de controle enviado: close_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
+    {
+      "id": 1778274867679,
+      "timestamp": "2026-05-08T21:14:27.679Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-check",
+      "deviceName": "Dispositivo",
+      "detalhes": "Comando de controle enviado: close_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
+    {
+      "id": 1778274866400,
+      "timestamp": "2026-05-08T21:14:26.400Z",
+      "tipo": "mudanca_status",
+      "deviceId": "test-check",
+      "deviceName": "Dispositivo",
+      "detalhes": "Comando de controle enviado: open_app",
+      "usuario": "dashboard",
+      "ip": null
+    },
     {
       "id": 1778272446899,
       "timestamp": "2026-05-08T20:34:06.899Z",
@@ -10055,66 +10124,6 @@
       "deviceName": "PB59237K70640",
       "detalhes": "Dispositivo conectado - Android (PB59237K70640)",
       "usuario": "Sistema",
-      "ip": null
-    },
-    {
-      "id": 1777056291520,
-      "timestamp": "2026-04-24T18:44:51.520Z",
-      "tipo": "conexao",
-      "deviceId": "PBF921CE70402",
-      "deviceName": "PBF921CE70402",
-      "detalhes": "Dispositivo conectado - Android (PBF921CE70402)",
-      "usuario": "Sistema",
-      "ip": null
-    },
-    {
-      "id": 1777056291189,
-      "timestamp": "2026-04-24T18:44:51.189Z",
-      "tipo": "conexao",
-      "deviceId": "TC04209140208",
-      "deviceName": "TC04209140208",
-      "detalhes": "Dispositivo conectado - Android (TC04209140208)",
-      "usuario": "Sistema",
-      "ip": null
-    },
-    {
-      "id": 1777056247089,
-      "timestamp": "2026-04-24T18:44:07.089Z",
-      "tipo": "bloqueio",
-      "deviceId": "PB59237K70640",
-      "deviceName": "P2-B",
-      "detalhes": "Bloqueado: bloqueado",
-      "usuario": "rodrigodevmt",
-      "ip": null
-    },
-    {
-      "id": 1777056184867,
-      "timestamp": "2026-04-24T18:43:04.867Z",
-      "tipo": "mudanca_status",
-      "deviceId": "PB59237K70640",
-      "deviceName": "P2-B",
-      "detalhes": "Status alterado: locked → online",
-      "usuario": "P2-B",
-      "ip": null
-    },
-    {
-      "id": 1777056184866,
-      "timestamp": "2026-04-24T18:43:04.866Z",
-      "tipo": "desbloqueio",
-      "deviceId": "PB59237K70640",
-      "deviceName": "P2-B",
-      "detalhes": "Desbloqueado via terminal (detectado automaticamente)",
-      "usuario": "P2-B",
-      "ip": null
-    },
-    {
-      "id": 1777056094264,
-      "timestamp": "2026-04-24T18:41:34.264Z",
-      "tipo": "bloqueio",
-      "deviceId": "PB59237K70640",
-      "deviceName": "P2-B",
-      "detalhes": "Bloqueado: oi",
-      "usuario": "rodrigodevmt",
       "ip": null
     }
   ],

@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
         val deviceName = "${manufacturer.capitalize()} $model"
         val serialNumber = android.os.Build.SERIAL ?: "UNKNOWN"
         PollingService.setDeviceInfo(deviceId, deviceName, serialNumber)
+        PollingService.loadServerUrl(this)
         
         // Configurar Admin para reboot sem root
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager

@@ -100,7 +100,7 @@ fun ConfiguracaoTipoImpressaoScreen(
         mutableStateOf(sharedPreferences.getFloat("titulo_tamanho", 31f)) 
     }
     var tituloTexto by remember { 
-        mutableStateOf(sharedPreferences.getString("titulo_texto", "☀ QUINTAL BAR ☀") ?: "☀ QUINTAL BAR ☀") 
+        mutableStateOf(sharedPreferences.getString("titulo_texto", "Rodrigo Dev MT") ?: "Rodrigo Dev MT") 
     }
     var rodapeTexto by remember { 
         mutableStateOf(sharedPreferences.getString("rodape_texto", "") ?: "") 
@@ -329,7 +329,7 @@ fun ConfiguracaoTipoImpressaoScreen(
                                 OutlinedTextField(
                                     value = configuracao?.titulo ?: "",
                                     onValueChange = viewModel::updateTitulo,
-                                    label = { Text("Título (ex: Quintal Bar)") },
+                                    label = { Text("Título (ex: Rodrigo Dev MT)") },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)

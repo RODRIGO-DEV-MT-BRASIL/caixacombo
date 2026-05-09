@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.seucaixa.caixacombo.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,11 +60,14 @@ fun HomeScreen(
             val logoFile = java.io.File(context.filesDir, "logo.png")
             if (logoFile.exists()) {
                 logoBitmap = BitmapFactory.decodeFile(logoFile.absolutePath)
+            } else {
+                // Logo padrão caixacombo
+                logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.caixacombo)
             }
         } catch (_: Exception) {}
     }
 
-    var titulo by remember { mutableStateOf(sharedPreferences.getString("titulo_texto", "☀ QUINTAL BAR ☀") ?: "☀ QUINTAL BAR ☀") }
+    var titulo by remember { mutableStateOf(sharedPreferences.getString("titulo_texto", "Rodrigo Dev MT") ?: "Rodrigo Dev MT") }
     var rodape by remember { mutableStateOf(sharedPreferences.getString("rodape_texto", "") ?: "") }
     var editandoTitulo by remember { mutableStateOf(false) }
     val deviceType = LocalContext.current.resources.configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
@@ -106,8 +110,8 @@ fun HomeScreen(
                     painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
                     contentDescription = "Logo",
                     modifier = Modifier
-                        .height((logoConfig?.logoAltura ?: 80f).dp)
-                        .width((logoConfig?.logoLargura ?: 300f).dp)
+                        .height((logoConfig?.logoAltura ?: 347f).dp)
+                        .width((logoConfig?.logoLargura ?: 567f).dp)
                 )
                 Spacer(modifier = Modifier.height((logoConfig?.logoEspacamentoAbaixo ?: 16f).dp))
             }
