@@ -29,7 +29,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 relative overflow-hidden">
+    <div className="min-h-screen flex flex-row items-center justify-center bg-gray-950 relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse" />
@@ -37,14 +37,14 @@ export default function Login() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-800/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-4xl px-6 flex items-center gap-12">
-        {/* Logo - coluna esquerda */}
-        <div className="flex-1 flex items-center justify-center">
-          <img src="/controle.png" alt="CaixaCombo" className="w-full max-w-[400px] object-contain" />
+      <div className="relative z-10 w-full max-w-6xl px-8 flex flex-row items-center gap-8">
+        {/* Logo - coluna esquerda, maior que o card */}
+        <div className="flex-[1.5] flex items-center justify-center">
+          <img src="/controle.png" alt="CaixaCombo" className="w-full max-w-[600px] object-contain" />
         </div>
 
         {/* Login Card - coluna direita */}
-        <div className="flex-1 glass p-8 glow-blue">
+        <div className="flex-1 max-w-sm glass p-8 glow-blue">
           <h2 className="text-xl font-semibold text-white mb-6">Entrar na sua conta</h2>
           
           {error && (
