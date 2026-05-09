@@ -27,12 +27,12 @@ fun rememberDeviceType(): DeviceType {
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
     
-    // Se for flavor checkoutpos (D2S), usa dimensões menores
-    val isCheckoutpos = BuildConfig.FLAVOR == "checkoutpos"
+    // Se for D2S, usa dimensões menores
+    val isD2s = android.os.Build.MODEL.equals("D2s", ignoreCase = true)
     
     return when {
-        // D2S (checkoutpos): Usa dimensões menores mesmo em telas grandes
-        isCheckoutpos && screenWidth >= 800.dp -> DeviceType.TABLET
+        // D2S: Usa dimensões menores mesmo em telas grandes
+        isD2s && screenWidth >= 800.dp -> DeviceType.TABLET
         // SUNMI V1/V2: Telas grandes (mais de 1000dp de largura)
         screenWidth >= 1000.dp -> DeviceType.POS
         // Tablets/P2B: 400dp a 999dp (ajustado para incluir P2B)
@@ -78,7 +78,7 @@ object CheckoutDimensions {
         return when (rememberDeviceType()) {
             DeviceType.POS -> 24.dp
             DeviceType.TABLET -> 16.dp
-            DeviceType.MOBILE -> 8.dp
+            DeviceType.MOBILE -> 12.dp
         }
     }
     

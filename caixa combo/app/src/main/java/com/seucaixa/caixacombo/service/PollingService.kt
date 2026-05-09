@@ -1,11 +1,18 @@
 package com.seucaixa.caixacombo.service
 
 import android.app.Service
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.os.Build
 import android.util.Log
+import com.seucaixa.caixacombo.MainActivity
+import com.seucaixa.caixacombo.R
 import org.json.JSONObject
 import org.json.JSONArray
 import java.net.HttpURLConnection
@@ -51,6 +58,7 @@ class PollingService : Service() {
 
         private var isRunning = false
         private var consecutiveErrors = 0
+        private var pendingCaixaData: JSONObject? = null
 
         fun configureServer(url: String) {
             SERVER_URL = url.trimEnd('/')
@@ -136,8 +144,8 @@ class PollingService : Service() {
         }
 
         fun sendCaixaData(caixa: JSONObject) {
-            // Enviado junto com o poll
-            Log.d(TAG, "Caixa data será enviada no próximo poll")
+            pendingCaixaData = caixa
+            Log.d(TAG, "Caixa data armazenada para envio no próximo poll")
         }
 
         fun sendDeviceStatus(status: String) {
@@ -357,12 +365,57 @@ class PollingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
+        val notification = createNotification()
+        startForeground(1, notification)
         isRunning = true
+        Log.d(TAG, "PollingService iniciado como foreground service")
         startPolling()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "polling_service",
+                "Sincronização",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Sincronização com o dashboard"
+                setShowBadge(false)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun createNotification(): Notification {
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, "polling_service")
+                .setContentTitle("CaixaCombo")
+                .setContentText("Sincronizando com dashboard...")
+                .setSmallIcon(R.drawable.caixacombo)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+                .setContentTitle("CaixaCombo")
+                .setContentText("Sincronizando com dashboard...")
+                .setSmallIcon(R.drawable.caixacombo)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .build()
+        }
     }
 
     override fun onDestroy() {
@@ -412,7 +465,12 @@ class PollingService : Service() {
             put("deviceType", "Android")
             put("status", "online")
             serialNumber?.let { put("serialNumber", it) }
+            // Incluir dados de caixa pendentes
+            pendingCaixaData?.let { put("caixaData", it) }
         }
+
+        // Limpar caixa data após incluir no poll
+        pendingCaixaData = null
 
         conn.outputStream.use { it.write(data.toString().toByteArray()) }
 

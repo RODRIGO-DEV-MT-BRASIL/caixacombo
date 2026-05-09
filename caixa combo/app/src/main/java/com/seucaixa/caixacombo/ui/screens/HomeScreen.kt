@@ -9,8 +9,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -73,7 +73,7 @@ fun HomeScreen(
     val deviceType = LocalContext.current.resources.configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
     val dm = LocalContext.current.resources.displayMetrics
     val isSmallScreen = (dm.widthPixels / dm.density) < 600
-    val isD2s = com.seucaixa.caixacombo.BuildConfig.FLAVOR == "checkoutpos"
+    val isD2s = android.os.Build.MODEL.equals("D2s", ignoreCase = true)
     var tituloTamanho by remember { mutableStateOf(sharedPreferences.getFloat("titulo_tamanho", if (isSmallScreen) 28f else 48f)) }
     var espacamentoAcima by remember { mutableStateOf(sharedPreferences.getFloat("espacamento_acima", 5f)) }
 
@@ -99,34 +99,40 @@ fun HomeScreen(
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
+    // Detectar se teclado está aberto
+    val isKeyboardOpen = remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor),
+            .background(backgroundColor)
+            .imePadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(if (isSmallScreen) 0.9f else 0.65f)
-                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp)
-                .verticalScroll(rememberScrollState())
-                .imePadding(),
+                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Espaçamento acima configurável
-            Spacer(modifier = Modifier.height(espacamentoAcima.dp))
+            // Espaçamento acima - reduzido quando teclado aberto
+            if (!isKeyboardOpen.value) {
+                Spacer(modifier = Modifier.height(espacamentoAcima.dp))
+            }
 
-            // Logo
+            // Logo - reduzir tamanho quando teclado aberto
             if (logoBitmap != null) {
+                val logoAltura = if (isKeyboardOpen.value) (logoConfig?.logoAltura ?: 347f) * 0.3f else (logoConfig?.logoAltura ?: 347f)
+                val logoLargura = if (isKeyboardOpen.value) (logoConfig?.logoLargura ?: 567f) * 0.3f else (logoConfig?.logoLargura ?: 567f)
                 Image(
                     painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
                     contentDescription = "Logo",
                     modifier = Modifier
-                        .height((logoConfig?.logoAltura ?: 347f).dp)
-                        .width((logoConfig?.logoLargura ?: 567f).dp)
+                        .height(logoAltura.dp)
+                        .width(logoLargura.dp)
                 )
-                Spacer(modifier = Modifier.height((logoConfig?.logoEspacamentoAbaixo ?: 16f).dp))
+                Spacer(modifier = Modifier.height(if (isKeyboardOpen.value) 4.dp else (logoConfig?.logoEspacamentoAbaixo ?: 16f).dp))
             }
 
             // Título
@@ -160,12 +166,17 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
             // Campo PIN
+            val focusRequester = remember { FocusRequester() }
             OutlinedTextField(
                 value = codigo,
                 onValueChange = { codigo = it; erro = "" },
                 label = { Text("Código de Acesso") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusEvent { focusState ->
+                        isKeyboardOpen.value = focusState.isFocused
+                    },
                 leadingIcon = {
                     Icon(Icons.Default.Key, null, modifier = Modifier.size(20.dp))
                 },
