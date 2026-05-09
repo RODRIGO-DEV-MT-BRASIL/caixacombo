@@ -1229,23 +1229,26 @@ class MainActivity : ComponentActivity() {
 
             lifecycleScope.launch(Dispatchers.IO) {
                 categoriaDao.deleteAll()
+                val categoriasList = mutableListOf<com.seucaixa.caixacombo.data.model.Categoria>()
                 for (i in 0 until categoriasJson.length()) {
                     val c = categoriasJson.getJSONObject(i)
+                    val catId = c.optLong("id", 0L)
                     val categoria = com.seucaixa.caixacombo.data.model.Categoria(
-                        id = c.optLong("id", System.currentTimeMillis()),
+                        id = catId,
                         nome = c.optString("nome", ""),
                         cor = c.optString("cor", null),
                         icone = c.optString("icone", null),
                         ordem = c.optInt("ordem", 0),
                         ativa = c.optBoolean("ativa", true)
                     )
+                    categoriasList.add(categoria)
                     categoriaDao.insert(categoria)
                 }
 
-                android.util.Log.d("MainActivity", "✅ ${categoriasJson.length()} categorias sincronizadas do servidor")
+                android.util.Log.e("SYNC_DEBUG", "✅ ${categoriasJson.length()} categorias salvas: ${categoriasList.map { "${it.nome}(id=${it.id})" }}")
             }
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Erro ao sincronizar categorias do servidor", e)
+            android.util.Log.e("SYNC_DEBUG", "❌ Erro ao sincronizar categorias: ${e.message}", e)
         }
     }
 
