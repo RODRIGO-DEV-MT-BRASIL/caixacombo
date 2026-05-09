@@ -20,6 +20,7 @@ export default function FechamentoGeral({ onBack }) {
   const [loading, setLoading] = useState(true)
   const [confirming, setConfirming] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [expandedTerminal, setExpandedTerminal] = useState(null)
 
   useEffect(() => {
     fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
@@ -403,6 +404,7 @@ export default function FechamentoGeral({ onBack }) {
                   const sessao = caixaAtual[d.deviceId]
                   const ts = sessao?.aberturaTimestamp
                   const tf = sessao?.aberto ? Date.now() : (sessao?.fechamentoTimestamp || Date.now())
+                  const opsSessao = d.operacoes.filter(o => o.timestamp >= (ts || 0) && o.timestamp <= tf)
                   const vDev = vendas.filter(v => {
                     if (!ts) return (v.deviceId || 'geral') === d.deviceId
                     const vTime = new Date(v.createdAt || v.dataHora).getTime()
@@ -410,48 +412,176 @@ export default function FechamentoGeral({ onBack }) {
                     const matchDevice = d.deviceId === 'geral' || vDev2 === d.deviceId
                     return vTime >= ts && vTime <= tf && matchDevice
                   })
-                  const totalDev = vDev.reduce((s, v) => s + (v.total || 0), 0)
+                  const totalVendasDev = vDev.reduce((s, v) => s + (v.total || 0), 0)
                   const dinDev = vDev.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
                   const pixDev = vDev.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
                   const credDev = vDev.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0)
                   const debDev = vDev.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
-                  const isAberto = caixaAtual[d.deviceId]?.aberto
+                  const aberturaDev = opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+                  const suprimentoDev = opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+                  const sangriaDev = opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+                  const fechamentoDev = opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
+                  const saldoDev = aberturaDev + suprimentoDev - sangriaDev + totalVendasDev - fechamentoDev
+                  const isAberto = sessao?.aberto
                   const name = d.deviceId === 'geral' ? 'Geral' : d.deviceName || d.deviceId
+                  const isExpanded = expandedTerminal === d.deviceId
+
+                  // Produtos vendidos neste terminal
+                  const produtosVendidos = {}
+                  vDev.forEach(v => {
+                    if (v.itens && Array.isArray(v.itens)) {
+                      v.itens.forEach(item => {
+                        const key = item.produtoNome || item.nome || 'N/A'
+                        if (!produtosVendidos[key]) produtosVendidos[key] = { qtd: 0, total: 0 }
+                        produtosVendidos[key].qtd += item.quantidade || 0
+                        produtosVendidos[key].total += item.total || (item.quantidade * item.precoUnitario) || 0
+                      })
+                    }
+                  })
+                  const topProdutos = Object.entries(produtosVendidos).sort((a, b) => b[1].total - a[1].total)
 
                   return (
-                    <div key={d.deviceId} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isAberto ? 'bg-emerald-500/20' : 'bg-gray-500/20'}`}>
-                            <Monitor size={14} className={isAberto ? 'text-emerald-400' : 'text-gray-400'} />
+                    <div key={d.deviceId} className={`rounded-xl bg-white/[0.02] border transition-colors cursor-pointer ${isExpanded ? 'border-blue-500/30 bg-blue-500/[0.03]' : 'border-white/5 hover:border-white/10'}`}>
+                      <div className="p-4" onClick={() => setExpandedTerminal(isExpanded ? null : d.deviceId)}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isAberto ? 'bg-emerald-500/20' : 'bg-gray-500/20'}`}>
+                              <Monitor size={14} className={isAberto ? 'text-emerald-400' : 'text-gray-400'} />
+                            </div>
+                            <span className="text-sm font-medium text-white">{name}</span>
                           </div>
-                          <span className="text-sm font-medium text-white">{name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${isAberto ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                              {isAberto ? 'ABERTO' : 'FECHADO'}
+                            </span>
+                            <span className={`font-bold text-sm ${saldoDev >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>R$ {saldoDev.toFixed(2)}</span>
+                            <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${isAberto ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                            {isAberto ? 'ABERTO' : 'FECHADO'}
-                          </span>
-                          <span className="text-emerald-400 font-bold text-sm">R$ {totalDev.toFixed(2)}</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Vendas</span>
+                            <span className="text-emerald-400">R$ {totalVendasDev.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Abertura</span>
+                            <span className="text-emerald-400">R$ {aberturaDev.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Suprimento</span>
+                            <span className="text-blue-400">R$ {suprimentoDev.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Sangria</span>
+                            <span className="text-amber-400">R$ {sangriaDev.toFixed(2)}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Dinheiro</span>
-                          <span className="text-emerald-400">R$ {dinDev.toFixed(2)}</span>
+
+                      {/* Detalhes expandidos */}
+                      {isExpanded && (
+                        <div className="border-t border-white/5 p-4 space-y-4">
+                          {/* Pagamentos */}
+                          <div>
+                            <p className="text-xs font-semibold text-gray-400 mb-2">Formas de Pagamento</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex justify-between text-xs p-2 rounded-lg bg-emerald-500/5">
+                                <span className="text-gray-400">Dinheiro</span>
+                                <span className="text-emerald-400 font-medium">R$ {dinDev.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs p-2 rounded-lg bg-blue-500/5">
+                                <span className="text-gray-400">PIX</span>
+                                <span className="text-blue-400 font-medium">R$ {pixDev.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs p-2 rounded-lg bg-amber-500/5">
+                                <span className="text-gray-400">Crédito</span>
+                                <span className="text-amber-400 font-medium">R$ {credDev.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs p-2 rounded-lg bg-cyan-500/5">
+                                <span className="text-gray-400">Débito</span>
+                                <span className="text-cyan-400 font-medium">R$ {debDev.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Operações */}
+                          {opsSessao.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-400 mb-2">Operações ({opsSessao.length})</p>
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {opsSessao.map(op => (
+                                  <div key={op.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/[0.02]">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${op.tipo === 'abertura' ? 'bg-emerald-500/10 text-emerald-400' : op.tipo === 'suprimento' ? 'bg-blue-500/10 text-blue-400' : op.tipo === 'sangria' ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'}`}>{op.tipo}</span>
+                                      <span className="text-gray-400">{new Date(op.dataHora || op.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                                      {op.nomeOperador && <span className="text-gray-600">• {op.nomeOperador}</span>}
+                                    </div>
+                                    <span className={op.tipo === 'abertura' || op.tipo === 'suprimento' ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+                                      {op.tipo === 'abertura' || op.tipo === 'suprimento' ? '+' : '-'}R$ {(op.valor || 0).toFixed(2)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Produtos vendidos */}
+                          {topProdutos.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-400 mb-2">Produtos Vendidos ({topProdutos.length})</p>
+                              <div className="space-y-1 max-h-40 overflow-y-auto">
+                                {topProdutos.map(([nome, data]) => (
+                                  <div key={nome} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/[0.02]">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      <span className="text-white truncate">{nome}</span>
+                                      <span className="text-gray-600 shrink-0">{data.qtd}x</span>
+                                    </div>
+                                    <span className="text-emerald-400 font-medium shrink-0 ml-2">R$ {data.total.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Vendas */}
+                          {vDev.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-400 mb-2">Vendas ({vDev.length})</p>
+                              <div className="space-y-1 max-h-40 overflow-y-auto">
+                                {vDev.map(v => (
+                                  <div key={v.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-lg bg-white/[0.02]">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${v.formaPagamento === 'DINHEIRO' ? 'bg-emerald-500/10 text-emerald-400' : v.formaPagamento === 'PIX' ? 'bg-blue-500/10 text-blue-400' : v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO' ? 'bg-amber-500/10 text-amber-400' : 'bg-cyan-500/10 text-cyan-400'}`}>{v.formaPagamento === 'CARTAO_CREDITO' ? 'Crédito' : v.formaPagamento === 'CARTAO_DEBITO' ? 'Débito' : v.formaPagamento}</span>
+                                      <span className="text-gray-400">{new Date(v.createdAt || v.dataHora).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                                    </div>
+                                    <span className="text-emerald-400 font-medium">R$ {(v.total || 0).toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Resumo do caixa */}
+                          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-400">Abertura + Suprimento</span>
+                              <span className="text-emerald-400">R$ {(aberturaDev + suprimentoDev).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-400">Sangria + Fechamento</span>
+                              <span className="text-red-400">R$ {(sangriaDev + fechamentoDev).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-400">Total Vendas</span>
+                              <span className="text-blue-400">R$ {totalVendasDev.toFixed(2)}</span>
+                            </div>
+                            <div className="border-t border-white/10 pt-2 mt-2 flex justify-between">
+                              <span className="text-white font-bold text-sm">Saldo</span>
+                              <span className={`font-bold text-sm ${saldoDev >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>R$ {saldoDev.toFixed(2)}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">PIX</span>
-                          <span className="text-blue-400">R$ {pixDev.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Crédito</span>
-                          <span className="text-amber-400">R$ {credDev.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500">Débito</span>
-                          <span className="text-cyan-400">R$ {debDev.toFixed(2)}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )
                 })}
