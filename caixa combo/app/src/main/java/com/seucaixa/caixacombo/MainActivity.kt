@@ -274,7 +274,9 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "home"
+                        startDestination = if (com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
+                            if (caixaAberto) "checkout" else "caixa"
+                        } else "home"
                     ) {
                         composable("home") {
                             HomeScreen(
@@ -336,6 +338,17 @@ class MainActivity : ComponentActivity() {
                                         onSendStonePayment = { amount, transactionType, installmentType, orderId, callback ->
                                             stonePaymentCallback = callback
                                             StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, installmentType, 0, orderId)
+                                        },
+                                        onLogout = {
+                                            com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
+                                            getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
+                                                .remove("operador_nome")
+                                                .remove("operador_cargo")
+                                                .remove("operador_id")
+                                                .apply()
+                                            navController.navigate("home") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                     )
                                 }
@@ -355,6 +368,17 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onNavigateToCaixa = {
                                             navController.navigate("caixa")
+                                        },
+                                        onLogout = {
+                                            com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
+                                            getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
+                                                .remove("operador_nome")
+                                                .remove("operador_cargo")
+                                                .remove("operador_id")
+                                                .apply()
+                                            navController.navigate("home") {
+                                                popUpTo(0) { inclusive = true }
+                                            }
                                         }
                                     )
                                 }
