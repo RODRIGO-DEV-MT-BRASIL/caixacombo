@@ -1176,6 +1176,9 @@ class MainActivity : ComponentActivity() {
             val categoriaDao = db.categoriaDao()
 
             lifecycleScope.launch(Dispatchers.IO) {
+                // Limpar categorias locais e substituir pelas do servidor
+                categoriaDao.deleteAll()
+
                 for (i in 0 until categoriasJson.length()) {
                     val c = categoriasJson.getJSONObject(i)
                     val categoria = com.seucaixa.caixacombo.data.model.Categoria(

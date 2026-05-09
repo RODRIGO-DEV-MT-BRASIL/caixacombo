@@ -56,6 +56,7 @@ fun CheckoutScreenMobile(
     val total by viewModel.total.collectAsState()
     val busca by viewModel.busca.collectAsState()
     val vendaFinalizada by viewModel.vendaFinalizada.collectAsState()
+    val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
     val ultimaVenda by viewModel.ultimaVenda.collectAsState()
     val categorias by viewModel.categorias.collectAsState()
     val categoriaSelecionada by viewModel.categoriaSelecionada.collectAsState()
@@ -204,6 +205,7 @@ fun CheckoutScreenMobile(
                 items(produtos) { produto ->
                     ProdutoItemMobile(
                         produto = produto,
+                        vendidos = vendidosPorProduto[produto.id] ?: 0,
                         onClick = { 
                             viewModel.adicionarAoCarrinho(produto)
                             // Carrinho só abre quando clicar no botão do carrinho
@@ -542,6 +544,7 @@ fun CheckoutScreenMobile(
 @Composable
 fun ProdutoItemMobile(
     produto: Produto,
+    vendidos: Int = 0,
     onClick: () -> Unit
 ) {
     Card(
@@ -620,6 +623,13 @@ fun ProdutoItemMobile(
                     fontWeight = if (produto.estoque <= 5) FontWeight.Bold else FontWeight.Normal,
                     color = estoqueCor
                 )
+                if (vendidos > 0) {
+                    Text(
+                        "Vendidos: $vendidos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             
             Column(
