@@ -47,6 +47,7 @@ class PollingService : Service() {
         private var onUnlockResponse: ((Boolean, String?) -> Unit)? = null
         private var onReprintRequested: ((String?) -> Unit)? = null      // atk da venda
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
+        private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -90,7 +91,8 @@ class PollingService : Service() {
             onProdutosReceived: ((JSONArray) -> Unit)? = null,
             onUnlockResponse: ((Boolean, String?) -> Unit)? = null,
             onReprintRequested: ((String?) -> Unit)? = null,
-            onCancelRequested: ((String, Long?) -> Unit)? = null
+            onCancelRequested: ((String, Long?) -> Unit)? = null,
+            onClientesReceived: ((JSONArray) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -100,6 +102,7 @@ class PollingService : Service() {
             this.onUnlockResponse = onUnlockResponse
             this.onReprintRequested = onReprintRequested
             this.onCancelRequested = onCancelRequested
+            this.onClientesReceived = onClientesReceived
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -513,6 +516,13 @@ class PollingService : Service() {
                 val produtos = params?.optJSONArray("produtos")
                 if (produtos != null) {
                     onProdutosReceived?.invoke(produtos)
+                }
+            }
+            "clientes_sync" -> {
+                val clientes = params?.optJSONArray("clientes")
+                if (clientes != null) {
+                    Log.d(TAG, "Recebidos ${clientes.length()} clientes do servidor")
+                    onClientesReceived?.invoke(clientes)
                 }
             }
             else -> {
