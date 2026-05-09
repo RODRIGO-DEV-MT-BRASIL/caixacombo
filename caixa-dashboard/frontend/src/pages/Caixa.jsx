@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
 import { DollarSign, Search, Loader2, TrendingUp, Monitor, ChevronDown, ChevronUp, Plus, ArrowUpCircle, ArrowDownCircle, Lock, LockOpen, Wallet, CreditCard, Smartphone, PiggyBank } from 'lucide-react'
 
-export default function Caixa() {
+export default function Caixa({ onNavigateToFechamento }) {
   const { token } = useAuth()
   const { socket } = useSocket()
   const [operacoes, setOperacoes] = useState([])
@@ -557,7 +557,7 @@ export default function Caixa() {
           <button onClick={() => { setShowHistorico(!showHistorico); setShowFaturamento(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showHistorico ? 'bg-amber-600 text-white' : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/20'}`}>
             <Wallet size={16} /> Histórico
           </button>
-          <button onClick={() => setShowFechamentoModal(true)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
+          <button onClick={onNavigateToFechamento} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
             <Lock size={16} /> Fechamento Geral
           </button>
           <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 text-sm">
@@ -1012,131 +1012,6 @@ export default function Caixa() {
         </div>
       )}
 
-      {/* Modal Fechamento Geral */}
-      {showFechamentoModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setShowFechamentoModal(false)}>
-          <div className="glass p-6 w-full max-w-lg glow-red max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-semibold text-white">Fechamento Geral do Caixa</h3>
-              <button onClick={() => setShowFechamentoModal(false)} className="text-gray-400 hover:text-white"><Plus size={20} className="rotate-45" /></button>
-            </div>
-            <div className="space-y-4">
-              {/* Resumo de Operações de Caixa */}
-              <div className="glass p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-gray-300 mb-2">Operações de Caixa</h4>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Abertura</span>
-                  <span className="text-emerald-400 font-medium">R$ {operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Suprimento</span>
-                  <span className="text-emerald-400 font-medium">R$ {operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Sangria</span>
-                  <span className="text-red-400 font-medium">R$ {operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Fechamento Anterior</span>
-                  <span className="text-red-400 font-medium">R$ {operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0).toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Resumo de Vendas por Forma de Pagamento */}
-              <div className="glass p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-gray-300 mb-2">Vendas por Forma de Pagamento</h4>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Dinheiro</span>
-                  <span className="text-emerald-400 font-medium">R$ {totalDinheiro.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">PIX</span>
-                  <span className="text-blue-400 font-medium">R$ {totalPix.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Crédito</span>
-                  <span className="text-amber-400 font-medium">R$ {totalCredito.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Débito</span>
-                  <span className="text-cyan-400 font-medium">R$ {totalDebito.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-white/10 pt-3 flex justify-between">
-                  <span className="text-white font-medium">Total Vendas</span>
-                  <span className="text-emerald-400 font-bold">R$ {totalVendas.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Detalhamento por Terminal */}
-              <div className="glass p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-gray-300 mb-2">Detalhamento por Terminal</h4>
-                {dispositivos.map(d => {
-                  const vendasDispositivo = vendas.filter(v => v.deviceId === d.deviceId)
-                  const totalVendasDispositivo = vendasDispositivo.reduce((sum, v) => sum + (v.total || 0), 0)
-                  const dinheiroDispositivo = vendasDispositivo.filter(v => v.formaPagamento === 'DINHEIRO').reduce((sum, v) => sum + (v.total || 0), 0)
-                  const pixDispositivo = vendasDispositivo.filter(v => v.formaPagamento === 'PIX').reduce((sum, v) => sum + (v.total || 0), 0)
-                  const creditoDispositivo = vendasDispositivo.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((sum, v) => sum + (v.total || 0), 0)
-                  const debitoDispositivo = vendasDispositivo.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((sum, v) => sum + (v.total || 0), 0)
-                  
-                  return (
-                    <div key={d.deviceId} className="border border-white/10 rounded-lg p-3 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-white">{dispositivosConectados.find(dc => dc.deviceId === d.deviceId)?.deviceName || d.deviceId}</span>
-                        <span className="text-emerald-400 font-bold">R$ {totalVendasDispositivo.toFixed(2)}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Dinheiro:</span>
-                          <span className="text-emerald-400">R$ {dinheiroDispositivo.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">PIX:</span>
-                          <span className="text-blue-400">R$ {pixDispositivo.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Crédito:</span>
-                          <span className="text-amber-400">R$ {creditoDispositivo.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Débito:</span>
-                          <span className="text-cyan-400">R$ {debitoDispositivo.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Resumo Final */}
-              <div className="glass p-4 space-y-3 border-2 border-red-500/30">
-                <h4 className="text-sm font-semibold text-red-400 mb-2">Resumo Final</h4>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Entradas (Abertura + Suprimento)</span>
-                  <span className="text-emerald-400 font-medium">R$ {(operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0) + operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0)).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Saídas (Sangria + Fechamento)</span>
-                  <span className="text-red-400 font-medium">R$ {(operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0) + operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Vendas</span>
-                  <span className="text-blue-400 font-medium">R$ {totalVendas.toFixed(2)}</span>
-                </div>
-                <div className="border-t border-white/10 pt-3 flex justify-between">
-                  <span className="text-white font-bold">Saldo Final do Caixa</span>
-                  <span className="text-red-400 font-bold text-lg">R$ {(operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0) + operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0) - operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0) - operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)).toFixed(2)}</span>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-500 text-center">Este fechamento será registrado como operação geral com o saldo calculado acima.</p>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowFechamentoModal(false)} className="btn-ghost flex-1">Cancelar</button>
-                <button onClick={handleFechamentoGeral} className="btn-primary flex-1">Confirmar Fechamento</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
