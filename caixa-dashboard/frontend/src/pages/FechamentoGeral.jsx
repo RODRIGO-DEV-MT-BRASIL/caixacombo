@@ -75,11 +75,19 @@ export default function FechamentoGeral({ onBack }) {
       const aberturas = opsSorted.filter(o => o.tipo === 'abertura')
       const ultimaAbertura = aberturas[aberturas.length - 1] || null
       if (!ultimaAbertura) {
-        sessoes[d.deviceId] = { aberto: false, aberturaTimestamp: null }
+        sessoes[d.deviceId] = { aberto: false, aberturaTimestamp: null, fechamentoTimestamp: null, aberturaEm: null, fechamentoEm: null, operador: null }
         return
       }
       const fechamentosApos = opsSorted.filter(o => o.tipo === 'fechamento' && o.timestamp > ultimaAbertura.timestamp)
-      sessoes[d.deviceId] = { aberto: fechamentosApos.length === 0, aberturaTimestamp: ultimaAbertura.timestamp, operador: ultimaAbertura.nomeOperador }
+      const ultimoFechamento = fechamentosApos.length > 0 ? fechamentosApos[fechamentosApos.length - 1] : null
+      sessoes[d.deviceId] = {
+        aberto: fechamentosApos.length === 0,
+        aberturaTimestamp: ultimaAbertura.timestamp,
+        fechamentoTimestamp: ultimoFechamento ? ultimoFechamento.timestamp : null,
+        aberturaEm: ultimaAbertura.dataHora,
+        fechamentoEm: ultimoFechamento ? ultimoFechamento.dataHora : null,
+        operador: ultimaAbertura.nomeOperador
+      }
     })
     return sessoes
   }, [dispositivos])
@@ -392,7 +400,16 @@ export default function FechamentoGeral({ onBack }) {
             ) : (
               <div className="space-y-3">
                 {dispositivos.map(d => {
-                  const vDev = vendas.filter(v => (v.deviceId || 'geral') === d.deviceId)
+                  const sessao = caixaAtual[d.deviceId]
+                  const ts = sessao?.aberturaTimestamp
+                  const tf = sessao?.aberto ? Date.now() : (sessao?.fechamentoTimestamp || Date.now())
+                  const vDev = vendas.filter(v => {
+                    if (!ts) return (v.deviceId || 'geral') === d.deviceId
+                    const vTime = new Date(v.createdAt || v.dataHora).getTime()
+                    const vDev2 = v.deviceId || 'geral'
+                    const matchDevice = d.deviceId === 'geral' || vDev2 === d.deviceId
+                    return vTime >= ts && vTime <= tf && matchDevice
+                  })
                   const totalDev = vDev.reduce((s, v) => s + (v.total || 0), 0)
                   const dinDev = vDev.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
                   const pixDev = vDev.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
