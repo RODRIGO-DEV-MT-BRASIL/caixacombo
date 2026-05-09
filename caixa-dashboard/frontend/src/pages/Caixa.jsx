@@ -175,8 +175,11 @@ export default function Caixa() {
   }, [operacoes, vendas, dispositivosConectados])
 
   // Totais consolidados (soma de todos os terminais com sessão — aberta ou fechada)
+  // Usa Set de IDs para evitar duplicação entre sessão 'geral' e sessões específicas
   const { totalAbertura, totalFechamento, saldoGeral, totalSuprimento, totalSangria, totalVendas, totalDinheiro, totalPix, totalCredito, totalDebito } = useMemo(() => {
-    let ab = 0, ft = 0, sup = 0, san = 0, tv = 0, din = 0, pix = 0, cred = 0, deb = 0
+    let ab = 0, ft = 0, sup = 0, san = 0
+    const vendasContadas = new Set()
+    let tv = 0, din = 0, pix = 0, cred = 0, deb = 0
     
     dispositivos.forEach(d => {
       const sessao = caixaAtual[d.deviceId]
@@ -194,14 +197,20 @@ export default function Caixa() {
       const vendasSessao = vendas.filter(v => {
         const vTime = new Date(v.createdAt || v.dataHora).getTime()
         const vDev = v.deviceId || 'geral'
-        const matchDevice = vDev === d.deviceId || (d.deviceId === 'geral' && !v.deviceId) || (vDev === 'geral' && d.deviceId !== 'geral')
+        const matchDevice = d.deviceId === 'geral' || vDev === d.deviceId
         return vTime >= ts && vTime <= tf && matchDevice
       })
-      tv += vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
-      din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
-      pix += vendasSessao.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
-      cred += vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0)
-      deb += vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+      // Contar cada venda apenas uma vez (evitar duplicação entre 'geral' e específicos)
+      vendasSessao.forEach(v => {
+        const vid = v.id || v.numero
+        if (vendasContadas.has(vid)) return
+        vendasContadas.add(vid)
+        tv += v.total || 0
+        if (v.formaPagamento === 'DINHEIRO') din += v.total || 0
+        else if (v.formaPagamento === 'PIX') pix += v.total || 0
+        else if (v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO') cred += v.total || 0
+        else if (v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO') deb += v.total || 0
+      })
     })
     
     return { totalAbertura: ab, totalFechamento: ft, saldoGeral: ab + sup - san - ft, totalSuprimento: sup, totalSangria: san, totalVendas: tv, totalDinheiro: din, totalPix: pix, totalCredito: cred, totalDebito: deb }
@@ -233,8 +242,9 @@ export default function Caixa() {
     return vendas.filter(v => {
       const vTime = new Date(v.createdAt || v.dataHora).getTime()
       const vDev = v.deviceId || 'geral'
-      // Match flexível: mesmo deviceId OU ambos são 'geral'/null
-      const matchDevice = vDev === deviceId || (deviceId === 'geral' && !v.deviceId) || (vDev === 'geral' && deviceId !== 'geral')
+      // Sessão 'geral' inclui todas as vendas (abertura sem dispositivo específico)
+      // Sessão específica inclui apenas vendas do próprio dispositivo
+      const matchDevice = deviceId === 'geral' || vDev === deviceId
       return vTime >= ts && vTime <= tf && matchDevice
     })
   }
