@@ -467,13 +467,22 @@ fun CheckoutScreenPOS(
                     onSendStonePayment?.invoke(centavos, transactionType, StoneDeeplinkService.InstallmentType.NONE, "") { result ->
                         if (result != null && result.success) {
                             stonePaymentResult = result
+                            formaPagamentoSelecionada = null
                             val stoneAtk = result.authorizationCode.ifEmpty { null }
                             if (viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)) {
-                                formaPagamentoSelecionada = null
                                 produtoSelecionado = null
                             }
                         } else {
-                            stonePaymentError = result?.reason ?: "Pagamento recusado no terminal"
+                            // Tratar erro 401 (Stone não ativado/autenticado)
+                            val code = result?.code ?: -1
+                            val reason = result?.reason ?: ""
+                            stonePaymentError = when {
+                                code == 401 -> "Terminal não ativado na Stone. Ative o terminal antes de usar cartão/débito."
+                                code == 1000 -> "App Stone não encontrado. Instale o Stone Payment App no terminal."
+                                reason.contains("NOT_FOUND", ignoreCase = true) -> "App de pagamento não encontrado no terminal."
+                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
+                                else -> "Pagamento recusado no terminal (código: $code)"
+                            }
                         }
                     }
                 } else {
@@ -517,22 +526,6 @@ fun CheckoutScreenPOS(
         )
     }
 
-    // Erro de pagamento Stone
-    if (stonePaymentError != null) {
-        AlertDialog(
-            onDismissRequest = { stonePaymentError = null },
-            title = { Text("Pagamento") },
-            text = { Text(stonePaymentError ?: "Erro desconhecido") },
-            confirmButton = {
-                Button(onClick = {
-                    stonePaymentError = null
-                    formaPagamentoSelecionada = null
-                }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 }
 
 // ==================== COMPONENTES DO LAYOUT PDV ====================

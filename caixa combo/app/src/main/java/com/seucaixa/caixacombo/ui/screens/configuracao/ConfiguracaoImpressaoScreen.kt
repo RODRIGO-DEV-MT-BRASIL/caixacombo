@@ -185,7 +185,7 @@ fun ConfiguracaoImpressaoScreen(
                                 OutlinedTextField(
                                     value = configuracao?.titulo ?: "",
                                     onValueChange = viewModel::updateTitulo,
-                                    label = { Text("Título (ex: Quintal Bar)") },
+                                    label = { Text("Título (ex: Rodrigo Dev MT)") },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)

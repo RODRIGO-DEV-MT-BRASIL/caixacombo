@@ -218,7 +218,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoAbertura == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
@@ -341,7 +341,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoFechamento == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
@@ -622,7 +622,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoSangria == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
@@ -723,7 +723,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoSuprimento == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
@@ -836,7 +836,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoFicha == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
@@ -944,7 +944,7 @@ class SunmiPrintProviderX(private val context: Context) {
                 imprimirLogoSeConfigurado(configuracao, configuracao?.logoVenda == true, this)
                 
                 // Título ou configuracao.titulo
-                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "☀ QUINTAL BAR ☀"
+                val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
                 addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 

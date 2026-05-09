@@ -125,9 +125,9 @@ class PollingService : Service() {
 
                     conn.outputStream.use { it.write(data.toString().toByteArray()) }
                     val code = conn.responseCode
-                    Log.d(TAG, "Venda enviada: code=$code")
+                    System.out.println("[SALE] Venda enviada: code=$code, deviceId=$id, url=$SERVER_URL/api/device/sale")
                 } catch (e: Exception) {
-                    Log.e(TAG, "Erro ao enviar venda", e)
+                    System.out.println("[SALE] Erro ao enviar venda: ${e.message}")
                 }
             }
         }

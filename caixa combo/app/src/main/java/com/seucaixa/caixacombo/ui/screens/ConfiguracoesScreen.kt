@@ -2,22 +2,55 @@ package com.seucaixa.caixacombo.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Switch
+import com.seucaixa.caixacombo.service.PollingService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfiguracoesScreen(
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var darkMode by remember { mutableStateOf(false) }
-    
+    var serverUrl by remember {
+        mutableStateOf(PollingService.getServerUrl())
+    }
+    var showServerDialog by remember { mutableStateOf(false) }
+
+    if (showServerDialog) {
+        AlertDialog(
+            onDismissRequest = { showServerDialog = false },
+            title = { Text("URL do Servidor") },
+            text = {
+                OutlinedTextField(
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it },
+                    label = { Text("URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    PollingService.configureServer(context, serverUrl)
+                    showServerDialog = false
+                }) { Text("Salvar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showServerDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -34,9 +67,20 @@ fun ConfiguracoesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Servidor
+            ConfiguracaoItem(
+                icon = Icons.Default.Cloud,
+                titulo = "Servidor Dashboard",
+                subtitulo = PollingService.getServerUrl(),
+                onClick = { showServerDialog = true }
+            )
+
+            HorizontalDivider()
+
             // Tema Escuro
             ConfiguracaoSwitchItem(
                 icon = Icons.Default.DarkMode,
@@ -45,9 +89,9 @@ fun ConfiguracoesScreen(
                 checked = darkMode,
                 onCheckedChange = { darkMode = it }
             )
-            
+
             HorizontalDivider()
-            
+
             // Idioma
             ConfiguracaoItem(
                 icon = Icons.Default.Language,
@@ -55,7 +99,7 @@ fun ConfiguracoesScreen(
                 subtitulo = "Português (Brasil) - Em breve",
                 onClick = { }
             )
-            
+
             // Moeda
             ConfiguracaoItem(
                 icon = Icons.Default.AttachMoney,
@@ -63,7 +107,7 @@ fun ConfiguracoesScreen(
                 subtitulo = "Real (R$) - Em breve",
                 onClick = { }
             )
-            
+
             // Impressora
             ConfiguracaoItem(
                 icon = Icons.Default.Print,
@@ -71,9 +115,9 @@ fun ConfiguracoesScreen(
                 subtitulo = "Configurar impressora de recibos - Em breve",
                 onClick = { }
             )
-            
+
             HorizontalDivider()
-            
+
             // Backup
             ConfiguracaoItem(
                 icon = Icons.Default.Backup,
@@ -81,7 +125,7 @@ fun ConfiguracoesScreen(
                 subtitulo = "Exportar/importar dados - Em breve",
                 onClick = { }
             )
-            
+
             // Sobre
             ConfiguracaoItem(
                 icon = Icons.Default.Info,

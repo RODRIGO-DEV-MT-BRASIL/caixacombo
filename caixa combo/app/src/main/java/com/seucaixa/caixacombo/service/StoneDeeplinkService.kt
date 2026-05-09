@@ -161,7 +161,8 @@ object StoneDeeplinkService {
 
         return Intent(Intent.ACTION_VIEW).apply {
             data = uri
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Não usar FLAG_ACTIVITY_NEW_TASK - causa tela branca na transição
+            // startActivityForResult faz a transição suave
         }
     }
 
@@ -180,7 +181,8 @@ object StoneDeeplinkService {
         val intent = createPaymentIntent(amount, transactionType, installmentType, installmentCount, orderId)
         try {
             Log.d(TAG, "Enviando pagamento: amount=$amount, transaction_type=$transactionType")
-            activity.startActivity(intent)
+            // Usar startActivityForResult para transição suave e receber resultado corretamente
+            activity.startActivityForResult(intent, REQUEST_CODE_PAYMENT)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao enviar pagamento via Stone deeplink. App Stone instalado?", e)
         }
