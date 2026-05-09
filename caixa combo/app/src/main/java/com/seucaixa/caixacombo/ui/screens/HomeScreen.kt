@@ -73,7 +73,18 @@ fun HomeScreen(
     val deviceType = LocalContext.current.resources.configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
     val dm = LocalContext.current.resources.displayMetrics
     val isSmallScreen = (dm.widthPixels / dm.density) < 600
+    val isD2s = com.seucaixa.caixacombo.BuildConfig.FLAVOR == "checkoutpos"
     var tituloTamanho by remember { mutableStateOf(sharedPreferences.getFloat("titulo_tamanho", if (isSmallScreen) 28f else 48f)) }
+    var espacamentoAcima by remember { mutableStateOf(sharedPreferences.getFloat("espacamento_acima", 5f)) }
+
+    // Relê SharedPreferences quando a tela fica visível (título pode ter mudado na config)
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
+        titulo = prefs.getString("titulo_texto", "Rodrigo Dev MT") ?: "Rodrigo Dev MT"
+        rodape = prefs.getString("rodape_texto", "") ?: ""
+        tituloTamanho = prefs.getFloat("titulo_tamanho", if (isSmallScreen) 28f else 48f)
+        espacamentoAcima = prefs.getFloat("espacamento_acima", 5f)
+    }
 
     // Cores do sistema
     val primaryColor by remember {
@@ -97,12 +108,14 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth(if (isSmallScreen) 0.9f else 0.65f)
-                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp),
+                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp)
+                .verticalScroll(rememberScrollState())
+                .imePadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             // Espaçamento acima configurável
-            Spacer(modifier = Modifier.height((logoConfig?.logoEspacamentoAcima ?: 32f).dp))
+            Spacer(modifier = Modifier.height(espacamentoAcima.dp))
 
             // Logo
             if (logoBitmap != null) {
@@ -144,7 +157,7 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
+            Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
             // Campo PIN
             OutlinedTextField(
@@ -276,6 +289,10 @@ fun HomeScreen(
                     fontWeight = FontWeight.Medium,
                     color = primaryColor.copy(alpha = 0.45f)
                 )
+            }
+            // Espaçamento extra no final para D2S
+            if (isD2s) {
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

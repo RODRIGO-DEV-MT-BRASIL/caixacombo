@@ -500,6 +500,9 @@ class MainActivity : ComponentActivity() {
                     val id = dao.insert(com.seucaixa.caixacombo.data.model.Usuario(
                         nome = "Admin",
                         codigo = "1234",
+                        cpf = "",
+                        telefone = "",
+                        email = "",
                         cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN,
                         ativo = true,
                         permVender = true,
