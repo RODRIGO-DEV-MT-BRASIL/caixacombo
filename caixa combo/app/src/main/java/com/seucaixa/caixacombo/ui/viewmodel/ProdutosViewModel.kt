@@ -49,6 +49,8 @@ class ProdutosViewModel(
         carregarVendasHoje()
     }
 
+    fun recarregarVendas() = carregarVendasHoje()
+
     private fun carregarVendasHoje() {
         viewModelScope.launch {
             val inicioDia = Calendar.getInstance().apply {

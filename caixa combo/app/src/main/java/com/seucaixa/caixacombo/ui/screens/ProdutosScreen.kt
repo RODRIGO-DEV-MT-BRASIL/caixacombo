@@ -55,6 +55,11 @@ fun ProdutosScreen(
     val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
     val context = LocalContext.current
 
+    // Recarregar vendas quando a tela fica visível
+    LaunchedEffect(Unit) {
+        viewModel.recarregarVendas()
+    }
+
     var showAddDialog by remember { mutableStateOf(false) }
     var showCategoriaDialog by remember { mutableStateOf(false) }
     var selectedTabIndex by remember { mutableStateOf(0) }

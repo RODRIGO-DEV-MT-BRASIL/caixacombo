@@ -17,7 +17,9 @@ class CheckoutViewModel(
     private val categoriaRepository: CategoriaRepository
 ) : ViewModel() {
     
-    // StateFlow para UI reativa
+    // Lista completa de produtos (nunca filtrada)
+    private val _todosProdutos = MutableStateFlow<List<Produto>>(emptyList())
+    // Lista filtrada para UI (por categoria/busca)
     private val _produtos = MutableStateFlow<List<Produto>>(emptyList())
     val produtos: StateFlow<List<Produto>> = _produtos.asStateFlow()
     
@@ -76,8 +78,9 @@ class CheckoutViewModel(
             produtos.forEach { produto ->
                 produtoRepository.insert(produto)
             }
-            _produtos.value = produtos
+            _todosProdutos.value = produtos
             _usandoProdutosServidor = true
+            aplicarFiltros()
             _precisaSincronizar.value = false
             _produtosPendentes.value = 0
         }
@@ -93,25 +96,23 @@ class CheckoutViewModel(
 
     fun selecionarCategoria(categoria: Categoria?) {
         _categoriaSelecionada.value = categoria
-        
-        // Se estiver usando produtos do servidor, filtrar localmente
-        if (_usandoProdutosServidor) {
-            val produtosAtuais = _produtos.value
-            if (categoria == null) {
-                // Já tem todos os produtos
-                return
-            } else {
-                // Filtrar por categoria
-                val filtrados = produtosAtuais.filter { it.categoriaId == categoria.id }
-                _produtos.value = filtrados
+        aplicarFiltros()
+    }
+
+    private fun aplicarFiltros() {
+        var resultado = _todosProdutos.value
+        val cat = _categoriaSelecionada.value
+        if (cat != null) {
+            resultado = resultado.filter { it.categoriaId == cat.id }
+        }
+        val query = _busca.value
+        if (query.isNotEmpty()) {
+            resultado = resultado.filter {
+                it.nome.contains(query, ignoreCase = true) ||
+                it.codigoBarras?.contains(query, ignoreCase = true) == true
             }
-            return
         }
-        
-        // Se não estiver usando produtos do servidor, não fazer nada
-        if (!_usandoProdutosServidor) {
-            return
-        }
+        _produtos.value = resultado
     }
 
     private fun carregarVendasHoje() {
@@ -149,7 +150,8 @@ class CheckoutViewModel(
             produtoRepository.allProdutos.collect { lista ->
                 // Se não estiver usando produtos do servidor, usar locais
                 if (!_usandoProdutosServidor) {
-                    _produtos.value = lista
+                    _todosProdutos.value = lista
+                    aplicarFiltros()
                 }
             }
         }
@@ -157,35 +159,7 @@ class CheckoutViewModel(
     
     fun buscarProdutos(query: String) {
         _busca.value = query
-        
-        // Se estiver usando produtos do servidor, filtrar localmente
-        if (_usandoProdutosServidor) {
-            val produtosAtuais = if (_categoriaSelecionada.value != null) {
-                // Se tiver categoria selecionada, buscar todos os produtos da categoria
-                _produtos.value
-            } else {
-                // Senão, buscar todos os produtos já carregados
-                _produtos.value
-            }
-            
-            if (query.isEmpty()) {
-                // Se busca vazia, manter produtos atuais
-                return
-            } else {
-                // Filtrar por nome ou código de barras
-                val filtrados = produtosAtuais.filter { produto ->
-                    produto.nome.contains(query, ignoreCase = true) ||
-                    produto.codigoBarras?.contains(query, ignoreCase = true) == true
-                }
-                _produtos.value = filtrados
-            }
-            return
-        }
-        
-        // Se não estiver usando produtos do servidor, não fazer nada
-        if (!_usandoProdutosServidor) {
-            return
-        }
+        aplicarFiltros()
     }
     
     fun adicionarAoCarrinho(produto: Produto, quantidade: Double = 1.0) {
@@ -292,7 +266,7 @@ class CheckoutViewModel(
             
             // Atualizar produtos do servidor com novo estoque
             if (_usandoProdutosServidor) {
-                val produtosAtualizados = _produtos.value.map { produto ->
+                val produtosAtualizados = _todosProdutos.value.map { produto ->
                     val itemVendido = _carrinho.value.find { it.produtoId == produto.id }
                     if (itemVendido != null) {
                         val novoEstoque = produto.estoque - itemVendido.quantidade
@@ -303,7 +277,8 @@ class CheckoutViewModel(
                         produto
                     }
                 }
-                _produtos.value = produtosAtualizados
+                _todosProdutos.value = produtosAtualizados
+                aplicarFiltros()
             }
 
             // Guardar referência da última venda para impressão
