@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { X, Package, ImageIcon, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Package, ImageIcon, Loader2, Upload } from 'lucide-react'
 import { apiUrl } from '../utils/api'
 
 export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, token }) {
@@ -15,6 +15,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
   const [imagemFile, setImagemFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -22,13 +23,13 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         setForm({
           nome: produto.nome || '',
           descricao: produto.descricao || '',
-          preco: produto.preco ? produto.preco.toString().replace('.', ',') : '',
+          preco: produto.preco ? produto.preco.toFixed(2).replace('.', ',') : '',
           estoque: produto.estoque || '',
           unidade: produto.unidade || 'un',
           categoriaId: produto.categoriaId || '',
           codigoBarras: produto.codigoBarras || ''
         })
-        setPreviewUrl(produto.imagem || '')
+        setPreviewUrl(produto.imagem ? apiUrl(produto.imagem) : '')
       } else {
         setForm({
           nome: '',
@@ -42,6 +43,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         setPreviewUrl('')
       }
       setImagemFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }, [isOpen, produto])
 
@@ -60,6 +62,19 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
       reader.onload = () => resolve(reader.result)
       reader.onerror = error => reject(error)
     })
+  }
+
+  const formatPreco = (value) => {
+    // Permite apenas números e uma vírgula
+    let v = value.replace(/[^0-9,]/g, '')
+    // Remove vírgulas extras
+    const parts = v.split(',')
+    if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('')
+    // Limita decimais a 2 casas
+    if (parts.length === 2 && parts[1].length > 2) {
+      v = parts[0] + ',' + parts[1].slice(0, 2)
+    }
+    return v
   }
 
   const handleSubmit = async (e) => {
@@ -84,18 +99,20 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         if (res.ok) {
           const data = await res.json()
           imagemUrl = data.url
+        } else {
+          console.error('Erro no upload da imagem:', res.status)
         }
       }
 
       const produtoData = {
         nome: form.nome,
         descricao: form.descricao,
-        preco: parseFloat(form.preco.replace(/[^0-9,]/g, '').replace(',', '.')) || 0,
+        preco: parseFloat(form.preco.replace(',', '.')) || 0,
         estoque: parseInt(form.estoque) || 0,
         unidade: form.unidade || 'un',
-        categoriaId: form.categoriaId,
-        codigoBarras: form.codigoBarras,
-        imagem: imagemUrl
+        categoriaId: form.categoriaId ? Number(form.categoriaId) : null,
+        codigoBarras: form.codigoBarras || undefined,
+        imagem: imagemUrl || null
       }
 
       console.log('Dados do produto a enviar:', produtoData)
@@ -152,17 +169,9 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
               <label className="block text-sm font-medium text-gray-300 mb-1">Preço (R$)</label>
               <input
                 type="text"
+                inputMode="decimal"
                 value={form.preco}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/[^0-9,]/g, '')
-                  if (value.includes(',')) {
-                    const parts = value.split(',')
-                    if (parts[1] && parts[1].length > 2) {
-                      value = parts[0] + ',' + parts[1].slice(0, 2)
-                    }
-                  }
-                  setForm({ ...form, preco: value })
-                }}
+                onChange={(e) => setForm({ ...form, preco: formatPreco(e.target.value) })}
                 placeholder="0,00"
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 required
@@ -172,6 +181,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
               <label className="block text-sm font-medium text-gray-300 mb-1">Estoque</label>
               <input
                 type="number"
+                inputMode="numeric"
                 value={form.estoque}
                 onChange={(e) => setForm({ ...form, estoque: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -226,7 +236,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Imagem</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Imagem do Produto</label>
             <div className="space-y-2">
               {previewUrl && (
                 <div className="relative w-full h-32 bg-gray-800 rounded-lg overflow-hidden border border-gray-600">
@@ -240,6 +250,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
                     onClick={() => {
                       setPreviewUrl('')
                       setImagemFile(null)
+                      if (fileInputRef.current) fileInputRef.current.value = ''
                     }}
                     className="absolute top-2 right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white"
                   >
@@ -247,21 +258,24 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
                   </button>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <label className="flex-1 flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
-                  <ImageIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-400">
-                    {imagemFile ? imagemFile.name : 'Selecionar imagem'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImagemChange}
-                    className="hidden"
-                    disabled={loading}
-                  />
-                </label>
-              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImagemChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-600 border-dashed rounded-lg hover:bg-gray-700 transition-colors text-gray-400 disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="text-sm">
+                  {imagemFile ? imagemFile.name : 'Clique para selecionar imagem'}
+                </span>
+              </button>
             </div>
           </div>
 
