@@ -14,6 +14,7 @@ import Produtos from './Produtos'
 import Categorias from './Categorias'
 import Vendas from './Vendas'
 import Caixa from './Caixa'
+import FechamentoGeral from './FechamentoGeral'
 import Auditoria from './Auditoria'
 import Empresas from './Empresas'
 import Terminais from './Terminais'
@@ -27,6 +28,7 @@ const navItems = [
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
   { id: 'caixa', label: 'Caixa', icon: DollarSign, permission: 'caixa' },
+  { id: 'fechamento', label: 'Fechamento', icon: Lock, permission: 'caixa' },
   { id: 'auditoria', label: 'Auditoria', icon: History, permission: 'auditoria' },
   { id: 'config', label: 'Config', icon: Settings, permission: 'config' },
 ]
@@ -521,7 +523,8 @@ export default function Dashboard() {
           {page === 'produtos' && <Produtos />}
           {page === 'categorias' && <Categorias />}
           {page === 'vendas' && <Vendas />}
-          {page === 'caixa' && <Caixa />}
+          {page === 'caixa' && <Caixa onNavigateToFechamento={() => setPage('fechamento')} />}
+          {page === 'fechamento' && <FechamentoGeral onBack={() => setPage('caixa')} />}
           {page === 'auditoria' && <Auditoria />}
           {page === 'config' && <Configuracoes />}
         </div>
