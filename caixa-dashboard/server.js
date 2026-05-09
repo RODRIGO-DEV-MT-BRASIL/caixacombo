@@ -759,6 +759,77 @@ app.delete('/api/empresas/:id', authenticateToken, (req, res) => {
   res.json(deleted);
 });
 
+// ==================== ROTAS DE CLIENTES ====================
+app.get('/api/clientes', authenticateToken, (req, res) => {
+  res.json(db.clientes || []);
+});
+
+app.post('/api/clientes', authenticateToken, (req, res) => {
+  const { nome, cpfCnpj, telefone, email, endereco, cidade, cep, observacao } = req.body;
+  
+  if (!nome) {
+    return res.status(400).json({ error: 'Nome é obrigatório' });
+  }
+  
+  const cliente = {
+    id: Date.now(),
+    nome,
+    cpfCnpj: cpfCnpj || '',
+    telefone: telefone || '',
+    email: email || '',
+    endereco: endereco || '',
+    cidade: cidade || '',
+    cep: cep || '',
+    observacao: observacao || '',
+    ativo: true,
+    dataCriacao: Date.now()
+  };
+  
+  if (!db.clientes) db.clientes = [];
+  db.clientes.push(cliente);
+  saveData();
+  
+  // Notificar terminais via WebSocket e polling
+  broadcastClientesSync();
+  
+  res.json(cliente);
+});
+
+app.put('/api/clientes/:id', authenticateToken, (req, res) => {
+  const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
+  
+  db.clientes[index] = { ...db.clientes[index], ...req.body, id: db.clientes[index].id };
+  saveData();
+  
+  broadcastClientesSync();
+  
+  res.json(db.clientes[index]);
+});
+
+app.delete('/api/clientes/:id', authenticateToken, (req, res) => {
+  const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
+  
+  const deleted = db.clientes.splice(index, 1)[0];
+  saveData();
+  
+  broadcastClientesSync();
+  
+  res.json(deleted);
+});
+
+// Função auxiliar: sincronizar clientes para todos os terminais
+function broadcastClientesSync() {
+  const clientes = db.clientes || [];
+  // Via WebSocket para dashboards
+  io.emit('clientes_sync', clientes);
+  // Via polling para terminais Android
+  connectedDevices.forEach((deviceInfo, deviceId) => {
+    enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes });
+  });
+}
+
 // Rota para associar dispositivo a empresa
 app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => {
   const { deviceId } = req.params;

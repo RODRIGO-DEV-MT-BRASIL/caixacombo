@@ -177,6 +177,12 @@ class MainActivity : ComponentActivity() {
                     }
                     StoneDeeplinkService.sendCancel(this@MainActivity, atk, amount, false)
                 }
+            },
+            onClientesReceived = { clientesJson ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Recebidos ${clientesJson.length()} clientes do servidor para sincronização")
+                    syncClientesFromServer(clientesJson)
+                }
             }
         )
         
@@ -1110,6 +1116,43 @@ class MainActivity : ComponentActivity() {
             
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao atualizar produtos do servidor", e)
+        }
+    }
+
+    /**
+     * Sincroniza clientes recebidos do servidor para o banco local
+     */
+    private fun syncClientesFromServer(clientesJson: org.json.JSONArray) {
+        try {
+            val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
+            val clienteDao = db.clienteDao()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Limpar clientes locais e substituir pelos do servidor
+                clienteDao.deleteAll()
+
+                for (i in 0 until clientesJson.length()) {
+                    val c = clientesJson.getJSONObject(i)
+                    val cliente = com.seucaixa.caixacombo.data.model.Cliente(
+                        id = c.optLong("id", System.currentTimeMillis()),
+                        nome = c.optString("nome", ""),
+                        cpfCnpj = c.optString("cpfCnpj", ""),
+                        telefone = c.optString("telefone", ""),
+                        email = c.optString("email", ""),
+                        endereco = c.optString("endereco", ""),
+                        cidade = c.optString("cidade", ""),
+                        cep = c.optString("cep", ""),
+                        observacao = c.optString("observacao", ""),
+                        ativo = c.optBoolean("ativo", true),
+                        dataCriacao = c.optLong("dataCriacao", System.currentTimeMillis())
+                    )
+                    clienteDao.insert(cliente)
+                }
+
+                android.util.Log.d("MainActivity", "✅ ${clientesJson.length()} clientes sincronizados do servidor")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao sincronizar clientes do servidor", e)
         }
     }
 
