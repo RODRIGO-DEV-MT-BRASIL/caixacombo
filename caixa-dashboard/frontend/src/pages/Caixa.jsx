@@ -130,10 +130,15 @@ export default function Caixa() {
       ensureDevice(porDispositivo, deviceId)
     })
 
-    // 3. Incluir dispositivos conectados que estão online (ignorar testes e offline)
+    // 3. Incluir dispositivos conectados online APENAS se tiver caixa aberto
+    // (evita mostrar dispositivos zerados sem sessão ativa)
     dispositivosConectados.forEach(d => {
       if (d.deviceId && !TEST_DEVICE_IDS.includes(d.deviceId) && d.status !== 'offline') {
-        ensureDevice(porDispositivo, d.deviceId)
+        // Só incluir se já tem operações ou vendas (não criar card vazio)
+        if (porDispositivo[d.deviceId]) {
+          // já existe, ok
+        }
+        // Não criar card para dispositivo sem dados
       }
     })
 
@@ -188,7 +193,9 @@ export default function Caixa() {
       
       const vendasSessao = vendas.filter(v => {
         const vTime = new Date(v.createdAt || v.dataHora).getTime()
-        return vTime >= ts && vTime <= tf && (v.deviceId === d.deviceId || (d.deviceId === 'geral' && !v.deviceId))
+        const vDev = v.deviceId || 'geral'
+        const matchDevice = vDev === d.deviceId || (d.deviceId === 'geral' && !v.deviceId) || (vDev === 'geral' && d.deviceId !== 'geral')
+        return vTime >= ts && vTime <= tf && matchDevice
       })
       tv += vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
       din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
@@ -209,7 +216,12 @@ export default function Caixa() {
 
   const filteredDispositivos = dispositivos.filter(d => {
     const s = search.toLowerCase()
-    return d.deviceId.toLowerCase().includes(s)
+    const matchSearch = d.deviceId.toLowerCase().includes(s)
+    // Só mostrar dispositivos com sessão aberta OU com dados na última sessão
+    const sessao = caixaAtual[d.deviceId]
+    const temSessao = sessao?.aberturaTimestamp
+    const temDados = d.operacoes.length > 0 || getVendasSessao(d.deviceId).length > 0
+    return matchSearch && (temSessao || temDados)
   })
 
   // Vendas da sessão de um dispositivo (aberta ou fechada)
@@ -220,7 +232,10 @@ export default function Caixa() {
     const tf = sessao.aberto ? Date.now() : (sessao.fechamentoTimestamp || Date.now())
     return vendas.filter(v => {
       const vTime = new Date(v.createdAt || v.dataHora).getTime()
-      return vTime >= ts && vTime <= tf && (v.deviceId === deviceId || (deviceId === 'geral' && !v.deviceId))
+      const vDev = v.deviceId || 'geral'
+      // Match flexível: mesmo deviceId OU ambos são 'geral'/null
+      const matchDevice = vDev === deviceId || (deviceId === 'geral' && !v.deviceId) || (vDev === 'geral' && deviceId !== 'geral')
+      return vTime >= ts && vTime <= tf && matchDevice
     })
   }
 

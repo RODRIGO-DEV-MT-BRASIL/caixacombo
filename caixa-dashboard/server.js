@@ -945,27 +945,27 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
   // Se for fechamento, salvar sessão de caixa no histórico
   if (tipo === 'fechamento') {
     if (!db.caixaSessoes) db.caixaSessoes = [];
-    
+
     // Encontrar a última abertura do mesmo dispositivo
-    const aberturas = db.operacoes.filter(o => 
+    const aberturas = db.operacoes.filter(o =>
       o.tipo === 'abertura' && (o.deviceId === deviceId || (!o.deviceId && !deviceId))
     );
     const ultimaAbertura = aberturas[aberturas.length - 1];
-    
+
     if (ultimaAbertura) {
       // Operações da sessão (entre abertura e este fechamento)
-      const opsSessao = db.operacoes.filter(o => 
+      const opsSessao = db.operacoes.filter(o =>
         o.timestamp >= ultimaAbertura.timestamp && o.timestamp <= operacao.timestamp &&
         (o.deviceId === deviceId || (!o.deviceId && !deviceId) || o.tipo === 'fechamento')
       );
-      
+
       // Vendas da sessão
       const vendasSessao = (db.vendas || []).filter(v => {
         const vTime = new Date(v.createdAt || v.dataHora).getTime();
         return vTime >= ultimaAbertura.timestamp && vTime <= operacao.timestamp &&
         (v.deviceId === deviceId || !deviceId);
       });
-      
+
       const sessao = {
         id: Date.now(),
         deviceId: deviceId || 'geral',
@@ -984,8 +984,19 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
         vendasDebito: vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0),
         qtdVendas: vendasSessao.length
       };
-      
+
       db.caixaSessoes.push(sessao);
+
+      // Remover vendas e operações da sessão fechada do banco ativo
+      // (já foram salvas no histórico caixaSessoes)
+      const vendaIdsSessao = new Set(vendasSessao.map(v => v.id));
+      db.vendas = (db.vendas || []).filter(v => !vendaIdsSessao.has(v.id));
+      db.operacoes = db.operacoes.filter(o =>
+        !(o.timestamp >= ultimaAbertura.timestamp && o.timestamp <= operacao.timestamp &&
+          (o.deviceId === deviceId || (!o.deviceId && !deviceId)))
+      );
+
+      console.log(`🧹 [FECHAMENTO] Sessão fechada para ${deviceId || 'geral'}: removidas ${vendaIdsSessao.size} vendas e ${opsSessao.length} operações do banco ativo`);
     }
   }
   
@@ -997,9 +1008,13 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
   // Broadcast para dispositivos
   io.emit('operacoes_sync', {
     operacoes: db.operacoes,
-    timestamp: new Date()
   });
-  
+
+  // Se fechamento, sincronizar vendas também (foram removidas do banco ativo)
+  if (tipo === 'fechamento') {
+    io.emit('vendas_sync', db.vendas || []);
+  }
+
   // Auditoria
   addAuditoria('operacao_caixa', deviceId, `${tipo} registrada: R$ ${valorProcessado.toFixed(2)}`, nomeOperador);
   
@@ -1441,8 +1456,23 @@ app.post('/api/device/operacao', (req, res) => {
         totalVendas: vendasSessao.reduce((s, v) => s + (v.total || 0), 0),
         totalSangrias: opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0),
         totalSuprimentos: opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0),
+        vendasDinheiro: vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0),
+        vendasPix: vendasSessao.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0),
+        vendasCredito: vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0),
+        vendasDebito: vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0),
+        qtdVendas: vendasSessao.length,
         vendas: vendasSessao
       });
+
+      // Remover vendas e operações da sessão fechada do banco ativo
+      const vendaIdsSessao = new Set(vendasSessao.map(v => v.id));
+      db.vendas = (db.vendas || []).filter(v => !vendaIdsSessao.has(v.id));
+      db.operacoes = db.operacoes.filter(o =>
+        !(o.timestamp >= ultimaAbertura.timestamp && o.timestamp <= operacao.timestamp &&
+          (o.deviceId === deviceId || (!o.deviceId && !deviceId)))
+      );
+
+      console.log(`🧹 [FECHAMENTO-TERMINAL] Sessão fechada para ${deviceId}: removidas ${vendaIdsSessao.size} vendas e ${opsSessao.length} operações do banco ativo`);
     }
   }
 
@@ -1453,6 +1483,11 @@ app.post('/api/device/operacao', (req, res) => {
   io.emit('operacoes_sync', {
     operacoes: db.operacoes
   });
+
+  // Se fechamento, sincronizar vendas também (foram removidas do banco ativo)
+  if (tipo === 'fechamento') {
+    io.emit('vendas_sync', db.vendas || []);
+  }
 
   // Auditoria
   addAuditoria('operacao_caixa', deviceId, `${tipo}: R$ ${operacao.valor.toFixed(2)}`, nomeOperador);
