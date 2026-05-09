@@ -461,19 +461,16 @@ app.post('/api/categorias', authenticateToken, (req, res) => {
     id: Date.now(),
     nome: req.body.nome,
     descricao: req.body.descricao,
+    cor: req.body.cor || null,
+    icone: req.body.icone || null,
+    ordem: req.body.ordem || 0,
+    ativa: req.body.ativa !== false,
     createdAt: new Date()
   };
   db.categorias.push(categoria);
   saveData(); // Salvar imediatamente
   io.emit('categoria_added', categoria);
-  
-  // Notificar dispositivos sobre nova categoria
-  io.emit('categorias_sync', {
-    categorias: db.categorias,
-    timestamp: new Date(),
-    action: 'added',
-    data: categoria
-  });
+  broadcastCategoriasSync('added', categoria);
   
   res.json(categoria);
 });
@@ -485,14 +482,7 @@ app.put('/api/categorias/:id', authenticateToken, (req, res) => {
   db.categorias[index] = { ...db.categorias[index], ...req.body };
   saveData(); // Salvar imediatamente
   io.emit('categoria_updated', db.categorias[index]);
-  
-  // Notificar dispositivos sobre categoria atualizada
-  io.emit('categorias_sync', {
-    categorias: db.categorias,
-    timestamp: new Date(),
-    action: 'updated',
-    data: db.categorias[index]
-  });
+  broadcastCategoriasSync('updated', db.categorias[index]);
   
   res.json(db.categorias[index]);
 });
@@ -504,14 +494,7 @@ app.delete('/api/categorias/:id', authenticateToken, (req, res) => {
   const deleted = db.categorias.splice(index, 1)[0];
   saveData(); // Salvar imediatamente
   io.emit('categoria_deleted', deleted);
-  
-  // Notificar dispositivos sobre categoria excluída
-  io.emit('categorias_sync', {
-    categorias: db.categorias,
-    timestamp: new Date(),
-    action: 'deleted',
-    data: deleted
-  });
+  broadcastCategoriasSync('deleted', deleted);
   
   res.json(deleted);
 });
@@ -845,6 +828,19 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Via polling para terminais Android
   connectedDevices.forEach((deviceInfo, deviceId) => {
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos });
+  });
+}
+
+// Função auxiliar: sincronizar categorias para todos os terminais
+function broadcastCategoriasSync(action = 'sync', data = null) {
+  const categorias = db.categorias || [];
+  const payload = { categorias, timestamp: new Date(), action };
+  if (data) payload.data = data;
+  // Via WebSocket para dashboards
+  io.emit('categorias_sync', payload);
+  // Via polling para terminais Android
+  connectedDevices.forEach((deviceInfo, deviceId) => {
+    enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias });
   });
 }
 
@@ -1441,6 +1437,9 @@ app.post('/api/device/poll', (req, res) => {
   if (!existing || !existing.lastPoll) {
     console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} novo/reconectando - enviando sync inicial`);
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: db.produtos || [] });
+    if (db.categorias && db.categorias.length > 0) {
+      enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: db.categorias });
+    }
     if (db.clientes && db.clientes.length > 0) {
       enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: db.clientes });
     }

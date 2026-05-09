@@ -55,6 +55,7 @@ class PollingService : Service() {
         private var onReprintRequested: ((String?) -> Unit)? = null      // atk da venda
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
         private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
+        private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -100,7 +101,8 @@ class PollingService : Service() {
             onUnlockResponse: ((Boolean, String?) -> Unit)? = null,
             onReprintRequested: ((String?) -> Unit)? = null,
             onCancelRequested: ((String, Long?) -> Unit)? = null,
-            onClientesReceived: ((JSONArray) -> Unit)? = null
+            onClientesReceived: ((JSONArray) -> Unit)? = null,
+            onCategoriasReceived: ((JSONArray) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -111,6 +113,7 @@ class PollingService : Service() {
             this.onReprintRequested = onReprintRequested
             this.onCancelRequested = onCancelRequested
             this.onClientesReceived = onClientesReceived
+            this.onCategoriasReceived = onCategoriasReceived
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -581,6 +584,13 @@ class PollingService : Service() {
                 if (clientes != null) {
                     Log.d(TAG, "Recebidos ${clientes.length()} clientes do servidor")
                     onClientesReceived?.invoke(clientes)
+                }
+            }
+            "categorias_sync" -> {
+                val categorias = params?.optJSONArray("categorias")
+                if (categorias != null) {
+                    Log.d(TAG, "Recebidas ${categorias.length()} categorias do servidor")
+                    onCategoriasReceived?.invoke(categorias)
                 }
             }
             else -> {
