@@ -152,11 +152,12 @@ abstract class AppDatabase : RoomDatabase() {
                     "caixa_combo_database"
                 )
                 .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .fallbackToDestructiveMigration()
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
                         // Inserir usuário admin padrão
-                        db.execSQL("INSERT INTO usuarios (nome, codigo, cargo, ativo, dataCriacao, permVender, permCaixa, permProdutos, permVendas, permRelatorios, permConfiguracoes, permSangria, permSuprimento, permFechamento, permAcessos) VALUES ('Admin', '1234', 'ADMIN', 1, ${System.currentTimeMillis()}, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
+                        db.execSQL("INSERT INTO usuarios (nome, codigo, cpf, telefone, email, cargo, ativo, dataCriacao, permVender, permCaixa, permProdutos, permVendas, permRelatorios, permConfiguracoes, permSangria, permSuprimento, permFechamento, permAcessos) VALUES ('Admin', '1234', '', '', '', 'ADMIN', 1, ${System.currentTimeMillis()}, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)")
                     }
                 })
                 .build()
