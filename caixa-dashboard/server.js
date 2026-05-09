@@ -645,14 +645,7 @@ app.post('/api/produtos', authenticateToken, (req, res) => {
   db.produtos.push(produto);
   saveData(); // Salvar imediatamente
   io.emit('produto_added', produto);
-  
-  // Notificar dispositivos sobre novo produto
-  io.emit('produtos_sync', {
-    produtos: db.produtos,
-    timestamp: new Date(),
-    action: 'added',
-    data: produto
-  });
+  broadcastProdutosSync('added', produto);
   
   res.json(produto);
 });
@@ -664,14 +657,7 @@ app.put('/api/produtos/:id', authenticateToken, (req, res) => {
   db.produtos[index] = { ...db.produtos[index], ...req.body };
   saveData(); // Salvar imediatamente
   io.emit('produto_updated', db.produtos[index]);
-  
-  // Notificar dispositivos sobre produto atualizado
-  io.emit('produtos_sync', {
-    produtos: db.produtos,
-    timestamp: new Date(),
-    action: 'updated',
-    data: db.produtos[index]
-  });
+  broadcastProdutosSync('updated', db.produtos[index]);
   
   res.json(db.produtos[index]);
 });
@@ -692,14 +678,7 @@ app.delete('/api/produtos/:id', authenticateToken, (req, res) => {
   
   saveData(); // Salvar imediatamente
   io.emit('produto_deleted', deleted);
-  
-  // Notificar dispositivos sobre produto excluído
-  io.emit('produtos_sync', {
-    produtos: db.produtos,
-    timestamp: new Date(),
-    action: 'deleted',
-    data: deleted
-  });
+  broadcastProdutosSync('deleted', deleted);
   
   res.json(deleted);
 });
@@ -853,6 +832,19 @@ function broadcastClientesSync() {
   // Via polling para terminais Android
   connectedDevices.forEach((deviceInfo, deviceId) => {
     enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes });
+  });
+}
+
+// Função auxiliar: sincronizar produtos para todos os terminais
+function broadcastProdutosSync(action = 'sync', data = null) {
+  const produtos = db.produtos || [];
+  const payload = { produtos, timestamp: new Date(), action };
+  if (data) payload.data = data;
+  // Via WebSocket para dashboards
+  io.emit('produtos_sync', payload);
+  // Via polling para terminais Android
+  connectedDevices.forEach((deviceInfo, deviceId) => {
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos });
   });
 }
 
