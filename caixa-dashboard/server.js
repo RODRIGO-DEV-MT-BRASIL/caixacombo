@@ -534,6 +534,32 @@ app.post('/api/upload', authenticateToken, upload.single('imagem'), (req, res) =
   });
 });
 
+// Upload de imagem via base64 (usado pelo ProdutoModal)
+app.post('/api/upload-base64', authenticateToken, (req, res) => {
+  try {
+    const { base64 } = req.body;
+    if (!base64) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
+    
+    // Extrair mime type e dados do base64
+    const matches = base64.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ error: 'Formato de imagem inválido' });
+    
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1].replace('+', '');
+    const buffer = Buffer.from(matches[2], 'base64');
+    
+    const filename = 'produto-' + Date.now() + '-' + Math.round(Math.random() * 1E9) + '.' + ext;
+    const filepath = path.join(uploadsDir, filename);
+    
+    fs.writeFileSync(filepath, buffer);
+    console.log('✅ Imagem salva via base64:', filename);
+    
+    res.json({ filename, url: `/uploads/${filename}` });
+  } catch (err) {
+    console.error('Erro ao salvar imagem base64:', err);
+    res.status(500).json({ error: 'Erro ao salvar imagem' });
+  }
+});
+
 // ==================== ROTAS DE PRODUTOS ====================
 app.get('/api/produtos', authenticateToken, (req, res) => {
   res.json(db.produtos);

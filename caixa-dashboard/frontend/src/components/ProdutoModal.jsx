@@ -72,7 +72,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
       if (imagemFile) {
         const base64 = await fileToBase64(imagemFile)
 
-        const res = await fetch(apiUrl('/api/upload'), {
+        const res = await fetch(apiUrl('/api/upload-base64'), {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

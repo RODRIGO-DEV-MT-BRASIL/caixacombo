@@ -38,6 +38,8 @@ import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ItemCarrinho
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
+import com.seucaixa.caixacombo.service.PollingService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -553,7 +555,7 @@ fun ProdutoItemMobile(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagem placeholder
+            // Imagem do produto
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -561,12 +563,22 @@ fun ProdutoItemMobile(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    if (produto.imagem != null) Icons.Default.Image else Icons.Default.Inventory,
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (produto.imagem != null) {
+                    val imageUrl = if (produto.imagem!!.startsWith("http")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = produto.nome,
+                        modifier = Modifier.size(64.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Inventory,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             
             Column(

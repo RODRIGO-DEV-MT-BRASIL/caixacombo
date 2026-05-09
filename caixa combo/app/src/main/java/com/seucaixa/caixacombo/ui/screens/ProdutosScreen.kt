@@ -37,6 +37,10 @@ import com.seucaixa.caixacombo.ui.viewmodel.ProdutosViewModel
 import com.seucaixa.caixacombo.ui.components.CustomKeyboard
 import com.seucaixa.caixacombo.ui.components.OutlinedTextFieldWithCustomKeyboard
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
+import coil.compose.AsyncImage
+import com.seucaixa.caixacombo.service.PollingService
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -251,6 +255,32 @@ fun ProdutoGerenciamentoItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Imagem do produto
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (produto.imagem != null) {
+                    val imageUrl = if (produto.imagem!!.startsWith("http")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = produto.nome,
+                        modifier = Modifier.size(48.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Inventory,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     produto.nome,
