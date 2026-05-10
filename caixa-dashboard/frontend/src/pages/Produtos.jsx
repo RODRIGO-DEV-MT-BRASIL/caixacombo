@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext'
 import { useToastContext } from '../contexts/ToastContext'
 import { apiUrl } from '../utils/api'
 import ProdutoModal from '../components/ProdutoModal'
-import { Package, Plus, Pencil, Trash2, Search, Image as ImageIcon, ShoppingCart, Download, Upload, FileText, Loader2 } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, Search, Image as ImageIcon, ShoppingCart, Download, Upload, FileText, Loader2, RefreshCw } from 'lucide-react'
 import Papa from 'papaparse'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -22,6 +22,7 @@ export default function Produtos() {
   const [editingProduto, setEditingProduto] = useState(null)
   const [vendasLocais, setVendasLocais] = useState([])
   const [importing, setImporting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const fileInputRef = useRef(null)
 
   const fetchProdutos = async () => {
@@ -293,6 +294,28 @@ export default function Produtos() {
     toast.success('PDF gerado com sucesso!')
   }
 
+  // ===== SINCRONIZAR TERMINAIS =====
+  const handleSyncTerminais = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch(apiUrl('/api/force-sync'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'all' })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`)
+      } else {
+        toast.error('Erro ao sincronizar terminais')
+      }
+    } catch {
+      toast.error('Erro ao conectar com o servidor')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -319,6 +342,9 @@ export default function Produtos() {
           </button>
           <button onClick={handleGeneratePDF} className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm transition-colors">
             <FileText size={16} /> Gerar PDF
+          </button>
+          <button onClick={handleSyncTerminais} disabled={syncing} className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50">
+            {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Sincronizar Terminais
           </button>
         </div>
       </div>
