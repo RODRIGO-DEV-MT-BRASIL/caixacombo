@@ -61,8 +61,8 @@ const upload = multer({
   }
 });
 
-// ==================== PERSISTÊNCIA DE DADOS (SQLite) ====================
-const { db, saveData, saveAuditoria, sqlite } = require('./database');
+// ==================== PERSISTÊNCIA DE DADOS (MongoDB) ====================
+const { db, saveData, saveAuditoria, connectMongo } = require('./database-mongo');
 
 // Seed do admin padrão a partir de variáveis de ambiente (se não existir nenhum usuário)
 if (!db.usuarios || db.usuarios.length === 0) {
@@ -87,24 +87,28 @@ const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
 const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
 
-// Carregar dispositivos do banco para o mapa ao iniciar
-// Dispositivos que fizeram polling antes terão socketId=null mas lastPoll recente
-if (db.dispositivos && db.dispositivos.length > 0) {
-  db.dispositivos.forEach(d => {
-    connectedDevices.set(d.deviceId, {
-      socketId: null,
-      deviceName: d.deviceName || 'Dispositivo',
-      deviceType: d.deviceType || 'Android',
-      serialNumber: d.serialNumber || null,
-      status: d.status || 'online',
-      lockPassword: d.lockPassword || null,
-      lastPoll: d.lastPoll || null,
-      empresaId: d.empresaId || null,
-      usageTimeLimit: d.usageTimeLimit || null,
-      usageStartTime: d.usageStartTime || null
+// Inicialização assíncrona: conectar MongoDB e carregar dados
+async function initializeApp() {
+  await connectMongo();
+
+  // Carregar dispositivos do banco para o mapa ao iniciar
+  if (db.dispositivos && db.dispositivos.length > 0) {
+    db.dispositivos.forEach(d => {
+      connectedDevices.set(d.deviceId, {
+        socketId: null,
+        deviceName: d.deviceName || 'Dispositivo',
+        deviceType: d.deviceType || 'Android',
+        serialNumber: d.serialNumber || null,
+        status: d.status || 'online',
+        lockPassword: d.lockPassword || null,
+        lastPoll: d.lastPoll || null,
+        empresaId: d.empresaId || null,
+        usageTimeLimit: d.usageTimeLimit || null,
+        usageStartTime: d.usageStartTime || null
+      });
     });
-  });
-  console.log(`📱 ${connectedDevices.size} dispositivos carregados do banco`);
+    console.log(`📱 ${connectedDevices.size} dispositivos carregados do banco`);
+  }
 }
 
 // Função para adicionar logs de auditoria
@@ -2309,6 +2313,13 @@ io.on('connection', (socket) => {
 });
 
 const PORT = 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server na porta ${PORT}`);
+initializeApp().then(() => {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server na porta ${PORT}`);
+  });
+}).catch(err => {
+  console.error('❌ Falha na inicialização:', err);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server na porta ${PORT} (sem MongoDB)`);
+  });
 });
