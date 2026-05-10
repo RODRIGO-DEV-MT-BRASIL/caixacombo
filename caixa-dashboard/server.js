@@ -1775,6 +1775,56 @@ app.post('/api/device/produtos-sync', (req, res) => {
   res.json({ success: true });
 });
 
+// Terminal salva/edita produto sem autenticação JWT (usa deviceId)
+app.post('/api/device/produto-save', (req, res) => {
+  const { deviceId, produto } = req.body;
+  if (!produto || !produto.nome) {
+    return res.status(400).json({ error: 'Dados do produto obrigatórios' });
+  }
+
+  if (produto.id && produto.id !== 0) {
+    // Editar produto existente
+    const index = db.produtos.findIndex(p => p.id == produto.id);
+    if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
+
+    const updateData = { ...produto };
+    if (updateData.categoriaId !== undefined) {
+      updateData.categoriaId = updateData.categoriaId ? Number(updateData.categoriaId) : null;
+    }
+    // Sanitizar imagem: aceitar base64 ou null
+    if (updateData.imagem && !updateData.imagem.startsWith('data:image/') && !updateData.imagem.startsWith('http')) {
+      updateData.imagem = null;
+    }
+
+    db.produtos[index] = { ...db.produtos[index], ...updateData };
+    saveData();
+    io.emit('produto_updated', db.produtos[index]);
+    broadcastProdutosSync('updated', db.produtos[index]);
+    console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} editou produto: ${produto.nome}`);
+    res.json(db.produtos[index]);
+  } else {
+    // Criar novo produto
+    const novo = {
+      id: Date.now(),
+      nome: produto.nome,
+      descricao: produto.descricao || '',
+      preco: produto.preco || 0,
+      categoriaId: produto.categoriaId ? Number(produto.categoriaId) : null,
+      codigoBarras: produto.codigoBarras || Date.now().toString(),
+      estoque: produto.estoque || 0,
+      unidade: produto.unidade || 'un',
+      imagem: (produto.imagem && produto.imagem.startsWith('data:image/')) ? produto.imagem : null,
+      createdAt: new Date()
+    };
+    db.produtos.push(novo);
+    saveData();
+    io.emit('produto_added', novo);
+    broadcastProdutosSync('added', novo);
+    console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} criou produto: ${novo.nome}`);
+    res.json(novo);
+  }
+});
+
 // Função auxiliar: enfileirar comando para dispositivo (usado pelo dashboard)
 function enqueueDeviceCommand(deviceId, command, params = {}) {
   if (!pendingCommands.has(deviceId)) {

@@ -148,6 +148,53 @@ class ProdutosViewModel(
                 produtoRepository.update(produto)
             }
             _produtoEditando.value = null
+            // Enviar produto para o servidor
+            enviarProdutoParaServidor(produto)
+        }
+    }
+
+    private fun enviarProdutoParaServidor(produto: Produto) {
+        kotlinx.coroutines.Dispatchers.IO.let { dispatcher ->
+            viewModelScope.launch(dispatcher) {
+                try {
+                    val serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
+                    val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId() ?: ""
+                    val url = java.net.URL("$serverUrl/api/device/produto-save")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.requestMethod = "POST"
+                    conn.setRequestProperty("Content-Type", "application/json")
+                    conn.doOutput = true
+                    conn.connectTimeout = 10000
+                    conn.readTimeout = 30000
+
+                    val produtoJson = org.json.JSONObject().apply {
+                        put("id", produto.id)
+                        put("nome", produto.nome)
+                        put("descricao", produto.descricao ?: "")
+                        put("preco", produto.precoVenda)
+                        put("estoque", produto.estoque)
+                        put("unidade", produto.unidade)
+                        put("codigoBarras", produto.codigoBarras ?: "")
+                        put("categoriaId", produto.categoriaId ?: org.json.JSONObject.NULL)
+                        put("imagem", produto.imagem ?: org.json.JSONObject.NULL)
+                    }
+
+                    val json = org.json.JSONObject().apply {
+                        put("deviceId", deviceId)
+                        put("produto", produtoJson)
+                    }
+
+                    val writer = java.io.OutputStreamWriter(conn.outputStream)
+                    writer.write(json.toString())
+                    writer.close()
+
+                    val responseCode = conn.responseCode
+                    android.util.Log.d("ProdutosVM", "Produto enviado ao servidor: $responseCode")
+                    conn.disconnect()
+                } catch (e: Exception) {
+                    android.util.Log.e("ProdutosVM", "Erro ao enviar produto ao servidor: ${e.message}")
+                }
+            }
         }
     }
     

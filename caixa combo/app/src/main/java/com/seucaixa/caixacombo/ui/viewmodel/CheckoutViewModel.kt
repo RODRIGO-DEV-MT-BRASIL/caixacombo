@@ -370,6 +370,7 @@ class CheckoutViewModel(
                         put("codigoBarras", produto.codigoBarras)
                         put("categoriaId", produto.categoriaId)
                         put("ativo", produto.ativo)
+                        put("imagem", produto.imagem)
                     })
                 }
                 
