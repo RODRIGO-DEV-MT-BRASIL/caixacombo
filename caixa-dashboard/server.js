@@ -1412,6 +1412,12 @@ app.post('/api/device/poll', (req, res) => {
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];
   pendingCommands.delete(deviceId); // Limpar após enviar
+  
+  // Log detalhado dos comandos enviados
+  if (commands.length > 0) {
+    const cmdSummary = commands.map(c => `${c.command}(${c.params?.categorias?.length || c.params?.produtos?.length || c.params?.clientes?.length || ''})`).join(', ');
+    console.log(`📤 [POLL-RESPONSE] ${deviceId}: ${commands.length} comandos: ${cmdSummary}`);
+  }
 
   res.json({ 
     success: true, 
@@ -1665,6 +1671,15 @@ app.post('/api/device/control-result', (req, res) => {
 app.post('/api/force-sync', authenticateToken, (req, res) => {
   const { type } = req.body; // 'produtos', 'categorias', 'all'
   let synced = [];
+  
+  console.log(`🔄 [FORCE-SYNC] Estado atual: ${db.produtos.length} produtos, ${db.categorias.length} categorias`);
+  if (db.categorias.length > 0) {
+    console.log(`🔄 [FORCE-SYNC] Categorias: ${db.categorias.map(c => `id=${c.id} nome=${c.nome}`).join(', ')}`);
+  }
+  if (db.produtos.length > 0) {
+    console.log(`🔄 [FORCE-SYNC] Produtos: ${db.produtos.map(p => `id=${p.id} nome=${p.nome} catId=${p.categoriaId}`).join(', ')}`);
+  }
+  
   if (type === 'produtos' || type === 'all') {
     broadcastProdutosSync('force_sync');
     // Também enfileirar para dispositivos do banco que podem não estar no connectedDevices

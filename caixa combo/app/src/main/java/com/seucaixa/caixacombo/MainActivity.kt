@@ -1213,12 +1213,16 @@ class MainActivity : ComponentActivity() {
                 produtosList.add(produto)
             }
             
-            // Limpar produtos antigos do banco local e inserir os do servidor
+            // Usar upsert (REPLACE) para evitar flash vazio na UI
             val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
             val produtoDao = db.produtoDao()
             lifecycleScope.launch(Dispatchers.IO) {
-                produtoDao.deleteAll()
                 produtoDao.insertAll(produtosList)
+                // Remover produtos que não vieram do servidor
+                val serverIds = produtosList.map { it.id }
+                val allLocal = produtoDao.getAllProdutosList()
+                val toDelete = allLocal.filter { it.id !in serverIds }
+                toDelete.forEach { produtoDao.delete(it) }
             }
             
             // Atualizar ViewModels
@@ -1278,7 +1282,7 @@ class MainActivity : ComponentActivity() {
             val categoriaDao = db.categoriaDao()
 
             lifecycleScope.launch(Dispatchers.IO) {
-                categoriaDao.deleteAll()
+                // Usar insertAll com REPLACE para evitar deleteAll que causa flash vazio na UI
                 val categoriasList = mutableListOf<com.seucaixa.caixacombo.data.model.Categoria>()
                 for (i in 0 until categoriasJson.length()) {
                     val c = categoriasJson.getJSONObject(i)
@@ -1292,8 +1296,16 @@ class MainActivity : ComponentActivity() {
                         ativa = c.optBoolean("ativa", true)
                     )
                     categoriasList.add(categoria)
-                    categoriaDao.insert(categoria)
                 }
+                
+                // Inserir com REPLACE (upsert) e depois remover categorias que não vieram do servidor
+                categoriaDao.insertAll(categoriasList)
+                
+                // Remover categorias que não estão na lista do servidor
+                val serverIds = categoriasList.map { it.id }
+                val allLocal = categoriaDao.getAllCategoriasList()
+                val toDelete = allLocal.filter { it.id !in serverIds }
+                toDelete.forEach { categoriaDao.delete(it) }
 
                 android.util.Log.e("SYNC_DEBUG", "✅ ${categoriasJson.length()} categorias salvas: ${categoriasList.map { "${it.nome}(id=${it.id})" }}")
             }
