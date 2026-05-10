@@ -1385,7 +1385,13 @@ app.post('/api/device/poll', (req, res) => {
   const needsInitialSync = !existing || !existing.lastPoll || (deviceLastPoll && deviceLastPoll < serverStartTime);
   const appRequestedSync = req.body.needsProductSync === true;
   
-  if (needsInitialSync || appRequestedSync) {
+  // Sempre enviar sync se o servidor reiniciou recentemente (últimos 10 minutos) 
+  // e o dispositivo ainda não sincronizou com esta instância
+  const serverAgeMs = Date.now() - serverStartTime.getTime();
+  const serverJustStarted = serverAgeMs < 600000; // 10 minutos
+  const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
+  
+  if (needsInitialSync || appRequestedSync || forceSyncOnRestart) {
     const reason = !existing ? 'novo' : !existing.lastPoll ? 'sem lastPoll' : appRequestedSync ? 'app solicitou' : 'pós-restart servidor';
     console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} (${reason}) - enviando sync inicial`);
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: db.produtos || [] });
@@ -1655,18 +1661,35 @@ app.post('/api/force-sync', authenticateToken, (req, res) => {
   let synced = [];
   if (type === 'produtos' || type === 'all') {
     broadcastProdutosSync('force_sync');
+    // Também enfileirar para dispositivos do banco que podem não estar no connectedDevices
+    (db.dispositivos || []).forEach(d => {
+      if (!connectedDevices.has(d.deviceId)) {
+        enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: db.produtos || [] });
+      }
+    });
     synced.push('produtos');
   }
   if (type === 'categorias' || type === 'all') {
     broadcastCategoriasSync('force_sync');
+    (db.dispositivos || []).forEach(d => {
+      if (!connectedDevices.has(d.deviceId)) {
+        enqueueDeviceCommand(d.deviceId, 'categorias_sync', { categorias: db.categorias || [] });
+      }
+    });
     synced.push('categorias');
   }
   if (type === 'clientes' || type === 'all') {
     broadcastClientesSync();
+    (db.dispositivos || []).forEach(d => {
+      if (!connectedDevices.has(d.deviceId)) {
+        enqueueDeviceCommand(d.deviceId, 'clientes_sync', { clientes: db.clientes || [] });
+      }
+    });
     synced.push('clientes');
   }
-  console.log(`🔄 [FORCE-SYNC] Sincronização forçada: ${synced.join(', ')} para ${connectedDevices.size} dispositivo(s)`);
-  res.json({ success: true, synced, devices: connectedDevices.size });
+  const totalDevices = Math.max(connectedDevices.size, (db.dispositivos || []).length);
+  console.log(`🔄 [FORCE-SYNC] Sincronização forçada: ${synced.join(', ')} para ${totalDevices} dispositivo(s)`);
+  res.json({ success: true, synced, devices: totalDevices });
 });
 
 // Sincronizar produtos via REST (dispositivo envia seus produtos)
