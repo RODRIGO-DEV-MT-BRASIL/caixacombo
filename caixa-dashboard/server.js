@@ -773,9 +773,12 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Via WebSocket para dashboards
   io.emit('produtos_sync', payload);
   // Via polling para terminais Android
+  const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos });
+    deviceIds.push(deviceId);
   });
+  console.log(`📤 [BROADCAST-PRODUTOS] ${produtos.length} produtos para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
 }
 
 // Função auxiliar: sincronizar categorias para todos os terminais
@@ -786,9 +789,12 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
   // Via WebSocket para dashboards
   io.emit('categorias_sync', payload);
   // Via polling para terminais Android
+  const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
     enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias });
+    deviceIds.push(deviceId);
   });
+  console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
 }
 
 // Rota para associar dispositivo a empresa
@@ -1392,8 +1398,8 @@ app.post('/api/device/poll', (req, res) => {
   const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
   
   if (needsInitialSync || appRequestedSync || forceSyncOnRestart) {
-    const reason = !existing ? 'novo' : !existing.lastPoll ? 'sem lastPoll' : appRequestedSync ? 'app solicitou' : 'pós-restart servidor';
-    console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} (${reason}) - enviando sync inicial`);
+    const reason = !existing ? 'novo' : !existing.lastPoll ? 'sem lastPoll' : appRequestedSync ? 'app solicitou' : forceSyncOnRestart ? 'force-restart' : 'pós-restart servidor';
+    console.log(`📦 [POLL-SYNC] Dispositivo ${deviceId} (${reason}) - enviando sync: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.clientes.length} clientes`);
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: db.produtos || [] });
     if (db.categorias && db.categorias.length > 0) {
       enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: db.categorias });
