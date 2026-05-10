@@ -1,32 +1,33 @@
 package com.seucaixa.caixacombo.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * Teclado customizado do sistema para evitar teclado Android nativo
- * Usado em dispositivos P2B (modo quiosque)
- */
-
 enum class KeyboardType {
-    NUMERIC,    // Apenas números e decimal
-    ALPHANUMERIC  // Letras e números
+    NUMERIC,
+    ALPHANUMERIC
 }
 
 @Composable
@@ -44,9 +45,12 @@ fun CustomKeyboard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(1.dp)
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            )
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
         when (keyboardType) {
             KeyboardType.NUMERIC -> NumericKeyboard(
@@ -80,69 +84,59 @@ private fun NumericKeyboard(
     showConfirmButton: Boolean,
     showDisplay: Boolean
 ) {
-    val buttons = listOf(
-        listOf("1", "2", "3"),
-        listOf("4", "5", "6"),
-        listOf("7", "8", "9"),
-        listOf(if (allowDecimal) "." else "", "0", "⌫")
-    )
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        // Display do valor atual
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         if (showDisplay) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(8.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
                 Text(
                     text = value.ifEmpty { "0" },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     textAlign = TextAlign.End,
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontFamily = FontFamily.Monospace,
+                    color = if (value.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else primaryColor
                 )
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
         }
 
-        // Grid de botões
-        buttons.forEach { row ->
+        val rows = listOf(
+            listOf("1", "2", "3"),
+            listOf("4", "5", "6"),
+            listOf("7", "8", "9"),
+            listOf(if (allowDecimal) "." else "00", "0", "⌫")
+        )
+
+        rows.forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 row.forEach { key ->
                     when (key) {
-                        "⌫" -> KeyboardButton(
-                            text = "",
+                        "⌫" -> ModernKey(
                             icon = Icons.Default.Backspace,
-                            onClick = {
-                                if (value.isNotEmpty()) {
-                                    onValueChange(value.dropLast(1))
-                                }
-                            },
+                            onClick = { if (value.isNotEmpty()) onValueChange(value.dropLast(1)) },
                             modifier = Modifier.weight(1f),
-                            isAction = true
+                            isAction = true,
+                            isDelete = true
                         )
-                        "" -> Spacer(modifier = Modifier.weight(1f))
-                        else -> KeyboardButton(
+                        else -> ModernKey(
                             text = key,
                             onClick = {
                                 if (value.length < maxLength) {
-                                    // Validação para decimal
                                     if (key == ".") {
-                                        if (allowDecimal && !value.contains(".")) {
-                                            onValueChange(value + key)
-                                        }
+                                        if (allowDecimal && !value.contains(".")) onValueChange(value + key)
+                                    } else if (key == "00") {
+                                        if (value.length + 2 <= maxLength) onValueChange(value + key)
                                     } else {
                                         onValueChange(value + key)
                                     }
@@ -155,19 +149,17 @@ private fun NumericKeyboard(
             }
         }
 
-        // Botão confirmar
         if (showConfirmButton) {
             Spacer(modifier = Modifier.height(2.dp))
             Button(
                 onClick = onDone,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(8.dp)
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Icon(Icons.Default.Check, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Confirmar", fontSize = 16.sp)
+                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Confirmar", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -183,131 +175,166 @@ private fun AlphanumericKeyboard(
     showDisplay: Boolean
 ) {
     var isUpperCase by remember { mutableStateOf(true) }
+    var showNumbers by remember { mutableStateOf(false) }
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    val rows = listOf(
-        listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"),
-        listOf("A", "S", "D", "F", "G", "H", "J", "K", "L"),
-        listOf("Z", "X", "C", "V", "B", "N", "M", "⌫"),
-        listOf("123", "SPACE", "ENTER")
-    )
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        // Display do valor atual
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (showDisplay) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(8.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = value.ifEmpty { "Digite..." },
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = if (value.isEmpty()) 
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) 
-                        else 
-                            MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
+                        color = if (value.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1
                     )
-                    IconButton(
-                        onClick = { onValueChange("") },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(Icons.Default.Backspace, null, modifier = Modifier.size(20.dp))
+                    IconButton(onClick = { onValueChange("") }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Backspace, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(2.dp))
         }
 
-        // Grid de letras
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                row.forEach { key ->
-                    when (key) {
-                        "⌫" -> SmallKeyboardButton(
-                            icon = Icons.Default.Backspace,
-                            onClick = {
-                                if (value.isNotEmpty()) {
-                                    onValueChange(value.dropLast(1))
-                                }
-                            },
-                            modifier = Modifier.weight(1.5f),
-                            isAction = true
-                        )
-                        "123" -> SmallKeyboardButton(
-                            text = "123",
-                            onClick = { /* Alternar para numérico - não implementado nesta versão */ },
-                            modifier = Modifier.weight(1.5f),
-                            isAction = true
-                        )
-                        "SPACE" -> SmallKeyboardButton(
-                            text = "ESPAÇO",
-                            onClick = {
-                                if (value.length < maxLength) {
-                                    onValueChange(value + " ")
-                                }
-                            },
-                            modifier = Modifier.weight(4f)
-                        )
-                        "ENTER" -> SmallKeyboardButton(
-                            icon = Icons.Default.Check,
-                            onClick = onDone,
-                            modifier = Modifier.weight(1.5f),
-                            isAction = true,
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                        else -> SmallKeyboardButton(
-                            text = if (isUpperCase) key else key.lowercase(),
-                            onClick = {
-                                if (value.length < maxLength) {
-                                    val char = if (isUpperCase) key else key.lowercase()
-                                    onValueChange(value + char)
-                                    isUpperCase = false
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+        if (showNumbers) {
+            val numRows = listOf(
+                listOf("1", "2", "3", "4", "5", "6"),
+                listOf("7", "8", "9", "0", ".", ","),
+                listOf("ABC", "⎵", "⌫")
+            )
+            numRows.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    row.forEach { key ->
+                        when (key) {
+                            "⌫" -> ModernSmallKey(
+                                icon = Icons.Default.Backspace,
+                                onClick = { if (value.isNotEmpty()) onValueChange(value.dropLast(1)) },
+                                modifier = Modifier.weight(1.5f),
+                                isAction = true,
+                                isDelete = true
+                            )
+                            "ABC" -> ModernSmallKey(
+                                text = "ABC",
+                                onClick = { showNumbers = false },
+                                modifier = Modifier.weight(1.2f),
+                                isAction = true
+                            )
+                            "⎵" -> ModernSmallKey(
+                                text = "⎵",
+                                onClick = { if (value.length < maxLength) onValueChange(value + " ") },
+                                modifier = Modifier.weight(3f)
+                            )
+                            else -> ModernSmallKey(
+                                text = key,
+                                onClick = { if (value.length < maxLength) onValueChange(value + key) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            val letterRows = listOf(
+                listOf("Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"),
+                listOf("A", "S", "D", "F", "G", "H", "J", "K", "L"),
+                listOf("⇧", "Z", "X", "C", "V", "B", "N", "M", "⌫"),
+                listOf("123", "⎵", "✓")
+            )
+            letterRows.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    row.forEach { key ->
+                        when (key) {
+                            "⌫" -> ModernSmallKey(
+                                icon = Icons.Default.Backspace,
+                                onClick = { if (value.isNotEmpty()) onValueChange(value.dropLast(1)) },
+                                modifier = Modifier.weight(1.3f),
+                                isAction = true,
+                                isDelete = true
+                            )
+                            "⇧" -> ModernSmallKey(
+                                icon = Icons.Default.ArrowUpward,
+                                onClick = { isUpperCase = !isUpperCase },
+                                modifier = Modifier.weight(1.3f),
+                                isAction = true,
+                                isActive = isUpperCase
+                            )
+                            "123" -> ModernSmallKey(
+                                text = "123",
+                                onClick = { showNumbers = true },
+                                modifier = Modifier.weight(1.5f),
+                                isAction = true
+                            )
+                            "⎵" -> ModernSmallKey(
+                                text = "⎵",
+                                onClick = { if (value.length < maxLength) onValueChange(value + " ") },
+                                modifier = Modifier.weight(4f)
+                            )
+                            "✓" -> ModernSmallKey(
+                                icon = Icons.Default.Check,
+                                onClick = onDone,
+                                modifier = Modifier.weight(1.5f),
+                                isAction = true,
+                                isActive = true,
+                                activeColor = primaryColor
+                            )
+                            else -> ModernSmallKey(
+                                text = if (isUpperCase) key else key.lowercase(),
+                                onClick = {
+                                    if (value.length < maxLength) {
+                                        val char = if (isUpperCase) key else key.lowercase()
+                                        onValueChange(value + char)
+                                        if (isUpperCase) isUpperCase = false
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Botão case
         if (showConfirmButton) {
+            Spacer(modifier = Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 OutlinedButton(
                     onClick = { isUpperCase = !isUpperCase },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier.weight(1f).height(38.dp),
+                    shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text(if (isUpperCase) "ABC" else "abc", fontSize = 14.sp)
+                    Text(if (isUpperCase) "ABC" else "abc", fontSize = 13.sp)
                 }
                 Button(
                     onClick = onDone,
-                    modifier = Modifier.weight(2f),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier.weight(2f).height(38.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
-                    Text("Confirmar", fontSize = 16.sp)
+                    Text("Confirmar", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -315,98 +342,111 @@ private fun AlphanumericKeyboard(
 }
 
 @Composable
-private fun KeyboardButton(
+private fun ModernKey(
     text: String = "",
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isAction: Boolean = false
+    isAction: Boolean = false,
+    isDelete: Boolean = false
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    var pressed by remember { mutableStateOf(false) }
+    val bgColor by animateColorAsState(
+        targetValue = when {
+            pressed -> primaryColor.copy(alpha = 0.2f)
+            isDelete -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            isAction -> primaryColor.copy(alpha = 0.08f)
+            else -> MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(100)
+    )
+    val contentColor = when {
+        isDelete -> MaterialTheme.colorScheme.error
+        isAction -> primaryColor
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
     Box(
         modifier = modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(
-                if (isAction) 
-                    MaterialTheme.colorScheme.primaryContainer 
-                else 
-                    MaterialTheme.colorScheme.surface
-            )
-            .clickable(onClick = onClick),
+            .height(46.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bgColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (icon != null) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = if (isAction) 
-                    MaterialTheme.colorScheme.onPrimaryContainer 
-                else 
-                    MaterialTheme.colorScheme.onSurface
-            )
+            Icon(icon, null, modifier = Modifier.size(20.dp), tint = contentColor)
         } else {
             Text(
                 text = text,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isAction) 
-                    MaterialTheme.colorScheme.onPrimaryContainer 
-                else 
-                    MaterialTheme.colorScheme.onSurface
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor
             )
         }
     }
 }
 
 @Composable
-private fun SmallKeyboardButton(
+private fun ModernSmallKey(
     text: String = "",
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isAction: Boolean = false,
-    containerColor: Color = MaterialTheme.colorScheme.surface
+    isDelete: Boolean = false,
+    isActive: Boolean = false,
+    activeColor: Color = MaterialTheme.colorScheme.primary
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    var pressed by remember { mutableStateOf(false) }
+    val bgColor by animateColorAsState(
+        targetValue = when {
+            pressed -> primaryColor.copy(alpha = 0.15f)
+            isDelete -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+            isActive -> activeColor.copy(alpha = 0.15f)
+            isAction -> primaryColor.copy(alpha = 0.06f)
+            else -> MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(100)
+    )
+    val contentColor = when {
+        isDelete -> MaterialTheme.colorScheme.error
+        isActive -> activeColor
+        isAction -> primaryColor
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
     Box(
         modifier = modifier
-            .height(42.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(
-                if (isAction) containerColor else MaterialTheme.colorScheme.surface
-            )
-            .clickable(onClick = onClick),
+            .height(38.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (icon != null) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = if (isAction && containerColor == MaterialTheme.colorScheme.primary) 
-                    MaterialTheme.colorScheme.onPrimary 
-                else if (isAction) 
-                    MaterialTheme.colorScheme.onSurface 
-                else 
-                    MaterialTheme.colorScheme.onSurface
-            )
+            Icon(icon, null, modifier = Modifier.size(16.dp), tint = contentColor)
         } else {
             Text(
                 text = text,
-                fontSize = 14.sp,
-                fontWeight = if (isAction) FontWeight.Medium else FontWeight.Normal,
-                color = if (isAction && containerColor == MaterialTheme.colorScheme.primary) 
-                    MaterialTheme.colorScheme.onPrimary 
-                else 
-                    MaterialTheme.colorScheme.onSurface
+                fontSize = 13.sp,
+                fontWeight = if (isAction) FontWeight.SemiBold else FontWeight.Normal,
+                color = contentColor
             )
         }
     }
 }
 
-/**
- * Campo de texto com teclado customizado embutido
- */
 @Composable
 fun OutlinedTextFieldWithCustomKeyboard(
     value: String,
@@ -421,7 +461,6 @@ fun OutlinedTextFieldWithCustomKeyboard(
     var showKeyboard by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        // Campo de texto (read-only para não abrir teclado Android)
         OutlinedTextField(
             value = value,
             onValueChange = { },
@@ -439,7 +478,6 @@ fun OutlinedTextFieldWithCustomKeyboard(
             }
         )
 
-        // Teclado customizado
         if (showKeyboard) {
             CustomKeyboard(
                 value = value,

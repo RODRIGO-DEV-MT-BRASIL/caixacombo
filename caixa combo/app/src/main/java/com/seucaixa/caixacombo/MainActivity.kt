@@ -1236,12 +1236,6 @@ class MainActivity : ComponentActivity() {
             checkoutViewModel.atualizarProdutosServidor(produtosList)
             
             android.util.Log.e("SYNC_DEBUG", "✅ ${produtosList.size} produtos salvos - primeiro: ${produtosList.firstOrNull()?.nome} catId=${produtosList.firstOrNull()?.categoriaId}")
-            produtosList.forEach { p ->
-                val imgPreview = if (p.imagem != null) {
-                    if (p.imagem!!.startsWith("data:")) "base64(${p.imagem!!.length}chars)" else p.imagem!!.take(50)
-                } else "null"
-                android.util.Log.e("SYNC_DEBUG", "  📷 ${p.nome}: imagem=$imgPreview")
-            }
             
         } catch (e: Exception) {
             android.util.Log.e("SYNC_DEBUG", "❌ Erro ao atualizar produtos: ${e.message}", e)

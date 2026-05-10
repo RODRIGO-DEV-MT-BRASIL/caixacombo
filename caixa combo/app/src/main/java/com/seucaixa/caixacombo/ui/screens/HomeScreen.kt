@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.seucaixa.caixacombo.data.database.AppDatabase
@@ -67,7 +68,7 @@ fun HomeScreen(
         } catch (_: Exception) {}
     }
 
-    var titulo by remember { mutableStateOf(sharedPreferences.getString("titulo_texto", "Rodrigo Dev MT") ?: "Rodrigo Dev MT") }
+    var titulo by remember { mutableStateOf(sharedPreferences.getString("titulo_texto", "Mais controle, mais agilidade, mais vendas.") ?: "Mais controle, mais agilidade, mais vendas.") }
     var rodape by remember { mutableStateOf(sharedPreferences.getString("rodape_texto", "") ?: "") }
     var editandoTitulo by remember { mutableStateOf(false) }
     val deviceType = LocalContext.current.resources.configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
@@ -80,7 +81,7 @@ fun HomeScreen(
     // Relê SharedPreferences quando a tela fica visível (título pode ter mudado na config)
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
-        titulo = prefs.getString("titulo_texto", "Rodrigo Dev MT") ?: "Rodrigo Dev MT"
+        titulo = prefs.getString("titulo_texto", "Mais controle, mais agilidade, mais vendas.") ?: "Mais controle, mais agilidade, mais vendas."
         rodape = prefs.getString("rodape_texto", "") ?: ""
         tituloTamanho = prefs.getFloat("titulo_tamanho", if (isSmallScreen) 28f else 48f)
         espacamentoAcima = prefs.getFloat("espacamento_acima", 5f)
@@ -155,10 +156,12 @@ fun HomeScreen(
             } else {
                 Text(
                     titulo,
-                    fontSize = tituloTamanho.sp,
+                    fontSize = if (isD2s) (tituloTamanho * 0.75f).sp else tituloTamanho.sp,
                     fontWeight = FontWeight.Bold,
                     color = primaryColor,
                     textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.clickable { editandoTitulo = true }
                 )
             }
@@ -268,7 +271,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
             Text(
-                "Desenvolvedor Rodrigo Dev MT",
+                "CaixaCombo PDV",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = primaryColor.copy(alpha = 0.5f)
