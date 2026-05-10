@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: caixa-dashboard-mt
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SQLITE_PATH
+        value: /opt/render/project/data/caixacombo.db
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: caixa-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1

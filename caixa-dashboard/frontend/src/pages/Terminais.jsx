@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Monitor, Wifi, WifiOff, Lock, Unlock, Smartphone, Search } from 'lucide-react'
+import { Monitor, Wifi, WifiOff, Lock, Unlock, Smartphone, Search, RefreshCw, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
+import { apiUrl } from '../utils/api'
+import { useToastContext } from '../contexts/ToastContext'
 
 export default function Terminais() {
   const { user } = useAuth()
   const { devices } = useSocket()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEmpresa, setSelectedEmpresa] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  const { token } = useAuth()
+  const toast = useToastContext()
 
   const isAdmin = user?.role === 'admin'
   const userEmpresaId = user?.role === 'empresa' ? user.empresaId : null
@@ -38,6 +43,27 @@ export default function Terminais() {
   // Obter lista única de empresas dos dispositivos
   const empresasDisponiveis = [...new Set(devices.map(d => d.empresaId).filter(Boolean))]
 
+  const handleSyncTerminais = async () => {
+    setSyncing(true)
+    try {
+      const res = await fetch(apiUrl('/api/force-sync'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'all' })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`)
+      } else {
+        toast.error('Erro ao sincronizar terminais')
+      }
+    } catch {
+      toast.error('Erro ao conectar com o servidor')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -48,7 +74,10 @@ export default function Terminais() {
       </div>
 
       {/* Filtros */}
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex gap-4 items-center">
+        <button onClick={handleSyncTerminais} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0">
+          {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Sincronizar
+        </button>
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input

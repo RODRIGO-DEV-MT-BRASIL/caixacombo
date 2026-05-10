@@ -61,85 +61,8 @@ const upload = multer({
   }
 });
 
-// ==================== PERSISTÊNCIA DE DADOS ====================
-const DATA_FILE = path.join(__dirname, 'data.json');
-const AUDITORIA_FILE = path.join(__dirname, 'auditoria.json');
-
-// Carregar dados do arquivo
-function loadData() {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      if (data.trim()) {
-        return JSON.parse(data);
-      }
-    }
-  } catch (error) {
-    console.error('Erro ao carregar dados:', error.message);
-  }
-  
-  // Dados padrão se arquivo não existir ou estiver vazio
-  return {
-    produtos: [],
-    categorias: [],
-    vendas: [],
-    operacoes: [],
-    usuarios: [],
-    dispositivos: []
-  };
-}
-
-// Carregar auditoria do arquivo
-function loadAuditoria() {
-  try {
-    if (fs.existsSync(AUDITORIA_FILE)) {
-      const data = fs.readFileSync(AUDITORIA_FILE, 'utf8');
-      if (data.trim()) {
-        return JSON.parse(data);
-      }
-    }
-  } catch (error) {
-    console.error('Erro ao carregar auditoria:', error.message);
-  }
-  return [];
-}
-
-// Salvar dados em arquivo
-function saveData() {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
-  } catch (error) {
-    console.error('Erro ao salvar dados:', error.message);
-  }
-}
-
-// Salvar auditoria em arquivo
-function saveAuditoria() {
-  try {
-    fs.writeFileSync(AUDITORIA_FILE, JSON.stringify(db.auditoria, null, 2), 'utf8');
-  } catch (error) {
-    console.error('Erro ao salvar auditoria:', error.message);
-  }
-}
-
-// ==================== DADOS COM PERSISTÊNCIA ====================
-let db = loadData();
-db.auditoria = loadAuditoria();
-
-// Corrigir categoriaId string para Number nos produtos existentes
-if (db.produtos && Array.isArray(db.produtos)) {
-  let needsSave = false;
-  db.produtos.forEach(p => {
-    if (p.categoriaId !== undefined && p.categoriaId !== null && typeof p.categoriaId === 'string') {
-      p.categoriaId = Number(p.categoriaId);
-      needsSave = true;
-    }
-  });
-  if (needsSave) {
-    console.log('🔧 Corrigindo categoriaId string -> Number nos produtos');
-    saveData();
-  }
-}
+// ==================== PERSISTÊNCIA DE DADOS (SQLite) ====================
+const { db, saveData, saveAuditoria, sqlite } = require('./database');
 
 // Seed do admin padrão a partir de variáveis de ambiente (se não existir nenhum usuário)
 if (!db.usuarios || db.usuarios.length === 0) {
@@ -1720,6 +1643,26 @@ app.post('/api/device/control-result', (req, res) => {
   const { deviceId, action, success, error } = req.body;
   io.emit('control_result', { deviceId, action, success, error });
   res.json({ success: true });
+});
+
+// Forçar sincronização de produtos/categorias para todos os terminais (dashboard)
+app.post('/api/force-sync', authenticateToken, (req, res) => {
+  const { type } = req.body; // 'produtos', 'categorias', 'all'
+  let synced = [];
+  if (type === 'produtos' || type === 'all') {
+    broadcastProdutosSync('force_sync');
+    synced.push('produtos');
+  }
+  if (type === 'categorias' || type === 'all') {
+    broadcastCategoriasSync('force_sync');
+    synced.push('categorias');
+  }
+  if (type === 'clientes' || type === 'all') {
+    broadcastClientesSync();
+    synced.push('clientes');
+  }
+  console.log(`🔄 [FORCE-SYNC] Sincronização forçada: ${synced.join(', ')} para ${connectedDevices.size} dispositivo(s)`);
+  res.json({ success: true, synced, devices: connectedDevices.size });
 });
 
 // Sincronizar produtos via REST (dispositivo envia seus produtos)

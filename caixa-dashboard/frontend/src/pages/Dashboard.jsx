@@ -204,15 +204,26 @@ export default function Dashboard() {
     }
   }, [token, success])
 
-  const handleForceSync = () => {
+  const handleForceSync = async () => {
     if (socket && connected) {
       socket.emit('dashboard_connect', { token })
-      success('🔄 Sincronização forçada - atualizando dispositivos...', 3000)
     } else {
-      success('❌ WebSocket desconectado - tentando reconectar...', 3000)
-      if (socket) {
-        socket.connect()
+      if (socket) socket.connect()
+    }
+    try {
+      const res = await fetch('/api/force-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'all' })
+      })
+      const data = await res.json()
+      if (data.success) {
+        success(`🔄 Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`, 3000)
+      } else {
+        success('🔄 Reconectando WebSocket...', 3000)
       }
+    } catch {
+      success('🔄 Reconectando WebSocket...', 3000)
     }
   }
 
