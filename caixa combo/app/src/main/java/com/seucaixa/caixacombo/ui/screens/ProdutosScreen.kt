@@ -1,28 +1,34 @@
 package com.seucaixa.caixacombo.ui.screens
 
-import android.content.Intent
-import android.content.res.Configuration
-import android.net.Uri
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,8 +45,6 @@ import com.seucaixa.caixacombo.ui.components.OutlinedTextFieldWithCustomKeyboard
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import coil.compose.AsyncImage
 import com.seucaixa.caixacombo.service.PollingService
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,17 +59,15 @@ fun ProdutosScreen(
     val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
     val context = LocalContext.current
 
-    // Recarregar vendas quando a tela fica visível
     LaunchedEffect(Unit) {
         viewModel.recarregarVendas()
     }
 
     var showAddDialog by remember { mutableStateOf(false) }
-    var showCategoriaDialog by remember { mutableStateOf(false) }
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedMainTab by remember { mutableStateOf(0) } // 0=Produtos, 1=Categorias
     var selectedCategoriaId by remember { mutableStateOf<Long?>(null) }
+    var showExportMenu by remember { mutableStateOf(false) }
 
-    // Launcher para criar arquivo CSV (Excel pode abrir)
     val createFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
@@ -75,7 +77,6 @@ fun ProdutosScreen(
         }
     }
 
-    // Launcher para selecionar arquivo CSV
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -84,134 +85,216 @@ fun ProdutosScreen(
             Toast.makeText(context, "Produtos importados de Excel", Toast.LENGTH_SHORT).show()
         }
     }
-    
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestão de Produtos") },
+                title = {
+                    Text("Gestão de Produtos", fontWeight = FontWeight.Bold)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, "Voltar")
                     }
-                }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showExportMenu = true }) {
+                            Icon(Icons.Default.MoreVert, "Opções")
+                        }
+                        DropdownMenu(
+                            expanded = showExportMenu,
+                            onDismissRequest = { showExportMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Exportar CSV") },
+                                onClick = {
+                                    showExportMenu = false
+                                    createFileLauncher.launch("produtos_${System.currentTimeMillis()}.csv")
+                                },
+                                leadingIcon = { Icon(Icons.Outlined.Download, null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Importar CSV") },
+                                onClick = {
+                                    showExportMenu = false
+                                    openFileLauncher.launch(arrayOf("text/csv"))
+                                },
+                                leadingIcon = { Icon(Icons.Outlined.Upload, null) }
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
             )
+        },
+        floatingActionButton = {
+            if (selectedMainTab == 0) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        viewModel.novoProduto()
+                        showAddDialog = true
+                    },
+                    icon = { Icon(Icons.Default.Add, "Novo Produto") },
+                    text = { Text("Novo Produto") },
+                    containerColor = primaryColor,
+                    contentColor = Color.White
+                )
+            }
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
         ) {
-            // Botões de ação - Linha 1
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Abas principais: Produtos | Categorias
+            TabRow(
+                selectedTabIndex = selectedMainTab,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = primaryColor,
+                divider = {}
             ) {
-                Button(
-                    onClick = { showCategoriaDialog = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Folder, "Categorias")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Categorias")
-                }
-                Button(
-                    onClick = {
-                        createFileLauncher.launch("produtos_${System.currentTimeMillis()}.csv")
+                Tab(
+                    selected = selectedMainTab == 0,
+                    onClick = { selectedMainTab = 0 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Inventory2, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Produtos", fontWeight = if (selectedMainTab == 0) FontWeight.Bold else FontWeight.Normal)
+                        }
                     },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Download, "Exportar")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Exportar")
-                }
+                    selectedContentColor = primaryColor,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Tab(
+                    selected = selectedMainTab == 1,
+                    onClick = { selectedMainTab = 1 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.Folder, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Categorias", fontWeight = if (selectedMainTab == 1) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    },
+                    selectedContentColor = primaryColor,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Botões de ação - Linha 2
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = {
-                        openFileLauncher.launch(arrayOf("text/csv"))
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Upload, "Importar")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Importar")
-                }
-                Button(
-                    onClick = {
-                        viewModel.novoProduto()
-                        showAddDialog = true
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Add, "Adicionar")
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Produto")
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Busca
-            OutlinedTextField(
-                value = busca,
-                onValueChange = viewModel::buscarProdutos,
-                label = { Text("Buscar produto...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // Abas de categorias
-            val todasCategorias = listOf(null) + categorias
-            TabRow(selectedTabIndex = selectedTabIndex) {
-                todasCategorias.forEachIndexed { index, categoria ->
-                    Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = {
-                            selectedTabIndex = index
-                            selectedCategoriaId = categoria?.id
+            HorizontalDivider()
+
+            if (selectedMainTab == 0) {
+                // ====== ABA PRODUTOS ======
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)
+                ) {
+                    Spacer(Modifier.height(12.dp))
+
+                    // Busca com estilo moderno
+                    OutlinedTextField(
+                        value = busca,
+                        onValueChange = viewModel::buscarProdutos,
+                        placeholder = { Text("Buscar produto...") },
+                        leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
+                        trailingIcon = {
+                            if (busca.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.buscarProdutos("") }) {
+                                    Icon(Icons.Default.Clear, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
                         },
-                        text = { Text(categoria?.nome ?: "Todos", fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                        )
                     )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    // Chips de filtro por categoria com scroll horizontal
+                    val todasCategorias = listOf(null to "Todos") + categorias.map { it.id to it.nome }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        todasCategorias.forEach { (catId, catNome) ->
+                            val selected = selectedCategoriaId == catId
+                            FilterChip(
+                                selected = selected,
+                                onClick = { selectedCategoriaId = catId },
+                                label = { Text(catNome, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = primaryColor,
+                                    selectedLabelColor = Color.White
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = selected,
+                                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    selectedBorderColor = primaryColor,
+                                    borderWidth = 1.dp,
+                                    selectedBorderWidth = 1.dp
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Contador
+                    val produtosFiltrados = if (selectedCategoriaId == null) produtos else produtos.filter { it.categoriaId == selectedCategoriaId }
+                    val filtrados = if (busca.isBlank()) produtosFiltrados else produtosFiltrados.filter {
+                        it.nome.contains(busca, ignoreCase = true) || (it.codigoBarras?.contains(busca) == true)
+                    }
+
+                    Text(
+                        "${filtrados.size} produto${if (filtrados.size != 1) "s" else ""}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+
+                    // Lista de produtos
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(filtrados, key = { it.id }) { produto ->
+                            ProdutoCardModerno(
+                                produto = produto,
+                                categoria = categorias.find { it.id == produto.categoriaId },
+                                vendidos = vendidosPorProduto[produto.id] ?: 0,
+                                onEdit = {
+                                    viewModel.editarProduto(produto)
+                                    showAddDialog = true
+                                },
+                                onDelete = { viewModel.excluirProduto(produto) }
+                            )
+                        }
+                    }
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Lista de produtos filtrados por categoria
-            val produtosFiltrados = if (selectedCategoriaId == null) {
-                produtos
             } else {
-                produtos.filter { it.categoriaId == selectedCategoriaId }
-            }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(produtosFiltrados) { produto: com.seucaixa.caixacombo.data.model.Produto ->
-                    ProdutoGerenciamentoItem(
-                        produto = produto,
-                        categoria = categorias.find { it.id == produto.categoriaId }?.nome ?: "Sem categoria",
-                        vendidos = vendidosPorProduto[produto.id] ?: 0,
-                        onEdit = {
-                            viewModel.editarProduto(produto)
-                            showAddDialog = true
-                        },
-                        onDelete = { viewModel.excluirProduto(produto) }
-                    )
-                }
+                // ====== ABA CATEGORIAS ======
+                CategoriasTabContent(
+                    categorias = categorias,
+                    onAdicionar = { viewModel.salvarCategoria(it) },
+                    onExcluir = { viewModel.excluirCategoria(it) }
+                )
             }
         }
     }
@@ -229,43 +312,43 @@ fun ProdutosScreen(
             }
         )
     }
-    
-    // Dialog de categorias
-    if (showCategoriaDialog) {
-        CategoriasDialog(
-            categorias = categorias,
-            onAdicionar = { viewModel.salvarCategoria(it) },
-            onExcluir = { viewModel.excluirCategoria(it) },
-            onFechar = { showCategoriaDialog = false }
-        )
-    }
 }
 
 @Composable
-fun ProdutoGerenciamentoItem(
+fun ProdutoCardModerno(
     produto: Produto,
-    categoria: String,
+    categoria: Categoria?,
     vendidos: Int,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val catColor = try {
+        categoria?.cor?.let { Color(android.graphics.Color.parseColor(it)) } ?: primaryColor
+    } catch (_: Exception) { primaryColor }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagem do produto
+            // Imagem do produto com gradiente de fundo
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(catColor.copy(alpha = 0.15f), catColor.copy(alpha = 0.05f))
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (produto.imagem != null) {
@@ -273,7 +356,7 @@ fun ProdutoGerenciamentoItem(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = produto.nome,
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)),
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop
                     )
                 } else {
@@ -281,16 +364,21 @@ fun ProdutoGerenciamentoItem(
                         Icons.Default.Inventory,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = catColor
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(10.dp))
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Info do produto
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     produto.nome,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 produto.descricao?.let {
                     Text(
@@ -300,35 +388,58 @@ fun ProdutoGerenciamentoItem(
                         maxLines = 1
                     )
                 }
-                Text(
-                    "$categoria • Estoque: ${produto.estoqueFormatado()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "Vendidos hoje: $vendidos",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Badge de categoria
+                    if (categoria != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = catColor.copy(alpha = 0.15f),
+                            modifier = Modifier.height(18.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(catColor))
+                                Text(categoria.nome, fontSize = 10.sp, color = catColor, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                    Text(
+                        "Estoque: ${produto.estoqueFormatado()}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (vendidos > 0) {
+                    Text(
+                        "$vendidos vendido${if (vendidos != 1) "s" else ""} hoje",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = primaryColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            // Preço e ações
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
                     produto.precoFormatado(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = primaryColor
                 )
-
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, "Editar")
-                }
-
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error)
+                Row {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Outlined.Edit, "Editar", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Outlined.Delete, "Excluir", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }
@@ -355,18 +466,31 @@ fun ProdutoDialog(
     var imagem by remember { mutableStateOf(produto.imagem) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
+    val isEditing = produto.id != 0L
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (produto.id == 0L) "Novo Produto" else "Editar Produto", fontWeight = FontWeight.Bold) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(
+                            if (isEditing) Icons.Default.Edit else Icons.Default.AddCircle,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                        Text(
+                            if (isEditing) "Editar Produto" else "Novo Produto",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
                         Icon(Icons.Default.Close, "Fechar")
                     }
                 },
                 actions = {
-                    Button(
+                    FilledTonalButton(
                         onClick = {
                             val precoValor = parsePreco(preco)
                             val estoqueValor = estoque.toDoubleSafe()
@@ -385,11 +509,15 @@ fun ProdutoDialog(
                             )
                         },
                         enabled = nome.isNotBlank() && preco.isNotBlank(),
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
+                        )
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Salvar")
+                        Icon(Icons.Default.Check, contentDescription = "Salvar", modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Salvar")
+                        Text("Salvar", fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -405,110 +533,177 @@ fun ProdutoDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            OutlinedTextFieldWithCustomKeyboard(
-                value = nome,
-                onValueChange = { nome = it },
-                label = "Nome *",
-                keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextFieldWithCustomKeyboard(
-                value = descricao,
-                onValueChange = { descricao = it },
-                label = "Descrição",
-                keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            PrecoTextField(
-                value = preco,
-                onValueChange = { preco = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Seção: Informações Básicas
+            SectionHeader(icon = Icons.Outlined.Info, title = "Informações Básicas", color = primaryColor)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextFieldWithCustomKeyboard(
-                    value = estoque,
-                    onValueChange = { estoque = it },
-                    label = "Estoque",
-                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                    modifier = Modifier.weight(1f),
-                    allowDecimal = false
-                )
-
-                OutlinedTextFieldWithCustomKeyboard(
-                    value = unidade,
-                    onValueChange = { unidade = it.uppercase() },
-                    label = "Unidade",
+                    value = nome,
+                    onValueChange = { nome = it },
+                    label = "Nome do produto *",
                     keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                    modifier = Modifier.width(100.dp),
-                    maxLength = 3
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 OutlinedTextFieldWithCustomKeyboard(
-                    value = codigoBarras,
-                    onValueChange = { codigoBarras = it },
-                    label = "Código de Barras",
-                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                    modifier = Modifier.weight(1f),
-                    maxLength = 13,
-                    allowDecimal = false
+                    value = descricao,
+                    onValueChange = { descricao = it },
+                    label = "Descrição",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                    modifier = Modifier.fillMaxWidth()
                 )
-
-                IconButton(
-                    onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Gerar automático", tint = primaryColor)
-                }
             }
 
-            // Categoria - chips selecionáveis
-            Text("Categoria", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Seção: Preço e Estoque
+            SectionHeader(icon = Icons.Outlined.AttachMoney, title = "Preço e Estoque", color = primaryColor)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                FilterChip(selected = categoriaId == null, onClick = { categoriaId = null }, label = { Text("Sem categoria") })
-                categorias.forEach { cat ->
-                    FilterChip(
-                        selected = categoriaId == cat.id,
-                        onClick = { categoriaId = cat.id },
-                        label = { Text(cat.nome) },
-                        leadingIcon = if (cat.cor != null) {
-                            {
-                                Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(16.dp),
-                                    tint = try { Color(android.graphics.Color.parseColor(cat.cor)) } catch (_: Exception) { primaryColor })
-                            }
-                        } else null
+                PrecoTextField(
+                    value = preco,
+                    onValueChange = { preco = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextFieldWithCustomKeyboard(
+                        value = estoque,
+                        onValueChange = { estoque = it },
+                        label = "Estoque",
+                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                        modifier = Modifier.weight(1f),
+                        allowDecimal = false
+                    )
+                    OutlinedTextFieldWithCustomKeyboard(
+                        value = unidade,
+                        onValueChange = { unidade = it.uppercase() },
+                        label = "Unidade",
+                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                        modifier = Modifier.width(100.dp),
+                        maxLength = 3
                     )
                 }
             }
 
-            OutlinedButton(
-                onClick = { /* Seleção de imagem requer implementação completa */ },
-                modifier = Modifier.fillMaxWidth()
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Seção: Código de Barras
+            SectionHeader(icon = Icons.Outlined.QrCode2, title = "Código de Barras", color = primaryColor)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Default.Image, contentDescription = "Adicionar imagem")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (imagem != null) "Imagem selecionada" else "Adicionar imagem")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextFieldWithCustomKeyboard(
+                        value = codigoBarras,
+                        onValueChange = { codigoBarras = it },
+                        label = "Código",
+                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                        modifier = Modifier.weight(1f),
+                        maxLength = 13,
+                        allowDecimal = false
+                    )
+                    FilledTonalButton(
+                        onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = primaryColor.copy(alpha = 0.1f))
+                    ) {
+                        Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp), tint = primaryColor)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Auto", color = primaryColor, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Seção: Categoria
+            SectionHeader(icon = Icons.Outlined.Folder, title = "Categoria", color = primaryColor)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    FilterChip(
+                        selected = categoriaId == null,
+                        onClick = { categoriaId = null },
+                        label = { Text("Sem categoria", fontSize = 12.sp) },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = primaryColor,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                    categorias.forEach { cat ->
+                        val catColor = try {
+                            cat.cor?.let { Color(android.graphics.Color.parseColor(it)) } ?: primaryColor
+                        } catch (_: Exception) { primaryColor }
+                        FilterChip(
+                            selected = categoriaId == cat.id,
+                            onClick = { categoriaId = cat.id },
+                            label = { Text(cat.nome, fontSize = 12.sp) },
+                            shape = RoundedCornerShape(20.dp),
+                            leadingIcon = {
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(catColor))
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = catColor,
+                                selectedLabelColor = Color.White,
+                                selectedLeadingIconColor = Color.White
+                            )
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Seção: Imagem
+            SectionHeader(icon = Icons.Outlined.Image, title = "Imagem", color = primaryColor)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { /* Seleção de imagem requer implementação completa */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
+                ) {
+                    Icon(Icons.Default.Image, contentDescription = "Adicionar imagem")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (imagem != null) "Imagem selecionada" else "Adicionar imagem")
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(icon: ImageVector, title: String, color: Color) {
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+        Text(title, style = MaterialTheme.typography.titleSmall, color = color, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -578,11 +773,10 @@ fun PrecoTextField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoriasDialog(
+fun CategoriasTabContent(
     categorias: List<Categoria>,
     onAdicionar: (Categoria) -> Unit,
-    onExcluir: (Categoria) -> Unit,
-    onFechar: () -> Unit
+    onExcluir: (Categoria) -> Unit
 ) {
     var novaCategoriaNome by remember { mutableStateOf("") }
     var novaCategoriaCor by remember { mutableStateOf("#2196F3") }
@@ -599,94 +793,259 @@ fun CategoriasDialog(
         "#795548" to "Marrom", "#607D8B" to "Cinza"
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Categorias", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onFechar) {
-                        Icon(Icons.Default.Close, "Fechar")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = primaryColor,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Card: Nova Categoria
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = primaryColor.copy(alpha = 0.06f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.AddCircle, null, tint = primaryColor, modifier = Modifier.size(20.dp))
+                    Text("Nova Categoria", style = MaterialTheme.typography.titleSmall, color = primaryColor, fontWeight = FontWeight.Bold)
+                }
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = novaCategoriaNome,
+                    onValueChange = { novaCategoriaNome = it },
+                    label = "Nome da categoria *",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Text("Cor", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    coresPredefinidas.forEach { (hex, label) ->
+                        val selected = novaCategoriaCor == hex
+                        FilterChip(
+                            selected = selected,
+                            onClick = { novaCategoriaCor = hex },
+                            label = { Text(label, fontSize = 11.sp) },
+                            shape = RoundedCornerShape(20.dp),
+                            leadingIcon = {
+                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(hex))))
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Color(android.graphics.Color.parseColor(hex)),
+                                selectedLabelColor = Color.White,
+                                selectedLeadingIconColor = Color.White
+                            )
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextFieldWithCustomKeyboard(
+                        value = novaCategoriaOrdem,
+                        onValueChange = { novaCategoriaOrdem = it },
+                        label = "Ordem",
+                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                        modifier = Modifier.width(100.dp),
+                        allowDecimal = false
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = {
+                            if (novaCategoriaNome.isNotBlank()) {
+                                onAdicionar(Categoria(nome = novaCategoriaNome, cor = novaCategoriaCor, ordem = novaCategoriaOrdem.toIntOrNull() ?: 0))
+                                novaCategoriaNome = ""
+                                novaCategoriaCor = "#2196F3"
+                                novaCategoriaOrdem = "0"
+                            }
+                        },
+                        enabled = novaCategoriaNome.isNotBlank(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                    ) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Adicionar", fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+
+        // Header: Categorias Existentes
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+        ) {
+            Icon(Icons.Outlined.Folder, null, tint = primaryColor, modifier = Modifier.size(18.dp))
+            Text(
+                "${categorias.size} categoria${if (categorias.size != 1) "s" else ""}",
+                style = MaterialTheme.typography.titleSmall,
+                color = primaryColor,
+                fontWeight = FontWeight.Bold
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 8.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Nova categoria
-            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Nova Categoria", style = MaterialTheme.typography.titleSmall, color = primaryColor)
-                    OutlinedTextFieldWithCustomKeyboard(value = novaCategoriaNome, onValueChange = { novaCategoriaNome = it }, label = "Nome *", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC, modifier = Modifier.fillMaxWidth())
-                    Text("Cor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        coresPredefinidas.forEach { (hex, label) ->
-                            FilterChip(selected = novaCategoriaCor == hex, onClick = { novaCategoriaCor = hex }, label = { Text(label, fontSize = 11.sp) }, leadingIcon = {
-                                Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(Color(android.graphics.Color.parseColor(hex))))
-                            })
-                        }
-                    }
-                    OutlinedTextFieldWithCustomKeyboard(value = novaCategoriaOrdem, onValueChange = { novaCategoriaOrdem = it }, label = "Ordem", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC, modifier = Modifier.width(100.dp), allowDecimal = false)
-                    Button(onClick = {
-                        if (novaCategoriaNome.isNotBlank()) {
-                            onAdicionar(Categoria(nome = novaCategoriaNome, cor = novaCategoriaCor, ordem = novaCategoriaOrdem.toIntOrNull() ?: 0))
-                            novaCategoriaNome = ""; novaCategoriaCor = "#2196F3"; novaCategoriaOrdem = "0"
-                        }
-                    }, modifier = Modifier.fillMaxWidth(), enabled = novaCategoriaNome.isNotBlank()) {
-                        Icon(Icons.Default.Add, contentDescription = null); Spacer(modifier = Modifier.width(4.dp)); Text("Adicionar")
-                    }
-                }
-            }
 
-            // Lista existentes
-            Text("Categorias Existentes", style = MaterialTheme.typography.titleSmall, color = primaryColor)
-            if (categorias.isEmpty()) {
-                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Text("Nenhuma categoria cadastrada", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Lista de categorias
+        if (categorias.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Outlined.FolderOff, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                    Spacer(Modifier.height(8.dp))
+                    Text("Nenhuma categoria cadastrada", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            categorias.sortedBy { it.ordem }.forEach { categoria ->
-                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (editandoCategoria?.id == categoria.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
-                    if (editandoCategoria?.id == categoria.id) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextFieldWithCustomKeyboard(value = editandoNome, onValueChange = { editandoNome = it }, label = "Nome", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC, modifier = Modifier.fillMaxWidth())
-                            Text("Cor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                coresPredefinidas.forEach { (hex, label) ->
-                                    FilterChip(selected = editandoCor == hex, onClick = { editandoCor = hex }, label = { Text(label, fontSize = 11.sp) }, leadingIcon = {
-                                        Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(Color(android.graphics.Color.parseColor(hex))))
-                                    })
-                                }
-                            }
-                            OutlinedTextFieldWithCustomKeyboard(value = editandoOrdem, onValueChange = { editandoOrdem = it }, label = "Ordem", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC, modifier = Modifier.width(100.dp), allowDecimal = false)
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onAdicionar(categoria.copy(nome = editandoNome, cor = editandoCor, ordem = editandoOrdem.toIntOrNull() ?: 0)); editandoCategoria = null }, modifier = Modifier.weight(1f)) {
-                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(4.dp)); Text("Salvar")
-                                }
-                                OutlinedButton(onClick = { editandoCategoria = null }, modifier = Modifier.weight(1f)) { Text("Cancelar") }
+        }
+
+        categorias.sortedBy { it.ordem }.forEach { categoria ->
+            val catColor = try {
+                categoria.cor?.let { Color(android.graphics.Color.parseColor(it)) } ?: primaryColor
+            } catch (_: Exception) { primaryColor }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (editandoCategoria?.id == categoria.id)
+                        catColor.copy(alpha = 0.08f)
+                    else
+                        MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = if (editandoCategoria?.id == categoria.id) 2.dp else 0.dp)
+            ) {
+                if (editandoCategoria?.id == categoria.id) {
+                    // Modo edição
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextFieldWithCustomKeyboard(
+                            value = editandoNome,
+                            onValueChange = { editandoNome = it },
+                            label = "Nome",
+                            keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text("Cor", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            coresPredefinidas.forEach { (hex, label) ->
+                                FilterChip(
+                                    selected = editandoCor == hex,
+                                    onClick = { editandoCor = hex },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    shape = RoundedCornerShape(20.dp),
+                                    leadingIcon = {
+                                        Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color(android.graphics.Color.parseColor(hex))))
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(android.graphics.Color.parseColor(hex)),
+                                        selectedLabelColor = Color.White,
+                                        selectedLeadingIconColor = Color.White
+                                    )
+                                )
                             }
                         }
-                    } else {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Box(modifier = Modifier.size(24.dp).clip(RoundedCornerShape(4.dp)).background(try { Color(android.graphics.Color.parseColor(categoria.cor)) } catch (_: Exception) { primaryColor }))
-                                Column { Text(categoria.nome, fontWeight = FontWeight.Medium); if (categoria.ordem > 0) Text("Ordem: ${categoria.ordem}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        OutlinedTextFieldWithCustomKeyboard(
+                            value = editandoOrdem,
+                            onValueChange = { editandoOrdem = it },
+                            label = "Ordem",
+                            keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                            modifier = Modifier.width(100.dp),
+                            allowDecimal = false
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    onAdicionar(categoria.copy(nome = editandoNome, cor = editandoCor, ordem = editandoOrdem.toIntOrNull() ?: 0))
+                                    editandoCategoria = null
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = catColor)
+                            ) {
+                                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Salvar")
                             }
-                            Row {
-                                IconButton(onClick = { editandoCategoria = categoria; editandoNome = categoria.nome; editandoCor = categoria.cor ?: "#2196F3"; editandoOrdem = categoria.ordem.toString() }) { Icon(Icons.Default.Edit, "Editar", tint = primaryColor) }
-                                IconButton(onClick = { onExcluir(categoria) }) { Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error) }
+                            OutlinedButton(
+                                onClick = { editandoCategoria = null },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text("Cancelar")
+                            }
+                        }
+                    }
+                } else {
+                    // Modo visualização
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = listOf(catColor.copy(alpha = 0.2f), catColor.copy(alpha = 0.08f))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Folder, null, tint = catColor, modifier = Modifier.size(20.dp))
+                            }
+                            Column {
+                                Text(categoria.nome, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                                if (categoria.ordem > 0) {
+                                    Text(
+                                        "Ordem: ${categoria.ordem}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        Row {
+                            IconButton(onClick = {
+                                editandoCategoria = categoria
+                                editandoNome = categoria.nome
+                                editandoCor = categoria.cor ?: "#2196F3"
+                                editandoOrdem = categoria.ordem.toString()
+                            }) {
+                                Icon(Icons.Outlined.Edit, "Editar", tint = primaryColor)
+                            }
+                            IconButton(onClick = { onExcluir(categoria) }) {
+                                Icon(Icons.Outlined.Delete, "Excluir", tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
                 }
             }
         }
+
+        Spacer(Modifier.height(80.dp))
     }
 }

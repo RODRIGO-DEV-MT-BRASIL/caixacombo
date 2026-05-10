@@ -1213,7 +1213,7 @@ class MainActivity : ComponentActivity() {
                     categoriaId = categoriaId,
                     codigoBarras = produtoJson.optString("codigoBarras", ""),
                     estoque = produtoJson.optDouble("estoque", 0.0),
-                    imagem = produtoJson.optString("imagem", ""),
+                    imagem = produtoJson.optString("imagem", "").ifBlank { null },
                     unidade = produtoJson.optString("unidade", "UN")
                 )
                 produtosList.add(produto)
