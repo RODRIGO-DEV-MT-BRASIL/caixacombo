@@ -64,23 +64,7 @@ const upload = multer({
 // ==================== PERSISTÊNCIA DE DADOS (MongoDB) ====================
 const { db, saveData, saveAuditoria, connectMongo } = require('./database-mongo');
 
-// Seed do admin padrão a partir de variáveis de ambiente (se não existir nenhum usuário)
-if (!db.usuarios || db.usuarios.length === 0) {
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (adminPassword) {
-    db.usuarios.push({
-      id: Date.now(),
-      username: adminUsername,
-      password: bcrypt.hashSync(adminPassword, 10),
-      role: 'admin'
-    });
-    saveData();
-    console.log(`👤 Admin criado: ${adminUsername}`);
-  } else {
-    console.warn('⚠️ ADMIN_PASSWORD não definido. Nenhum usuário admin será criado.');
-  }
-}
+// Seed do admin será feito após connectMongo() para verificar dados do MongoDB primeiro
 
 const serverStartTime = new Date(); // Para detectar restart e forçar sync inicial
 const connectedDevices = new Map();
@@ -90,6 +74,32 @@ const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (p
 // Inicialização assíncrona: conectar MongoDB e carregar dados
 async function initializeApp() {
   await connectMongo();
+
+  // Seed do admin padrão após carregar dados do MongoDB
+  if (!db.usuarios || db.usuarios.length === 0) {
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminPassword) {
+      db.usuarios.push({
+        id: Date.now(),
+        username: adminUsername,
+        password: bcrypt.hashSync(adminPassword, 10),
+        role: 'admin'
+      });
+      saveData();
+      console.log(`👤 Admin criado: ${adminUsername}`);
+    } else {
+      // Se não tem ADMIN_PASSWORD, criar com senha padrão para não ficar sem acesso
+      db.usuarios.push({
+        id: Date.now(),
+        username: 'admin',
+        password: bcrypt.hashSync('admin123', 10),
+        role: 'admin'
+      });
+      saveData();
+      console.log('👤 Admin criado com senha padrão (defina ADMIN_PASSWORD para maior segurança)');
+    }
+  }
 
   // Carregar dispositivos do banco para o mapa ao iniciar
   if (db.dispositivos && db.dispositivos.length > 0) {
