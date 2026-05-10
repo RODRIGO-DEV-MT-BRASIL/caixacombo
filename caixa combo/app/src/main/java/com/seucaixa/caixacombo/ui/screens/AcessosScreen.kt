@@ -28,8 +28,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.seucaixa.caixacombo.data.database.AppDatabase
 import com.seucaixa.caixacombo.data.model.CargoUsuario
+import com.seucaixa.caixacombo.data.model.StatusVenda
 import com.seucaixa.caixacombo.data.model.Usuario
+import com.seucaixa.caixacombo.data.model.Venda
+import com.seucaixa.caixacombo.service.StoneDeeplinkService
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +43,7 @@ fun AcessosScreen(
 ) {
     val context = LocalContext.current
     val dao = remember { AppDatabase.getDatabase(context).usuarioDao() }
+    val vendaDao = remember { AppDatabase.getDatabase(context).vendaDao() }
     val scope = rememberCoroutineScope()
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", android.content.Context.MODE_PRIVATE) }
 
@@ -51,19 +57,22 @@ fun AcessosScreen(
     val usuarios by dao.getAllUsuarios().collectAsState(initial = emptyList())
     var showAddDialog by remember { mutableStateOf(false) }
     var editingUsuario by remember { mutableStateOf<Usuario?>(null) }
+    var selectedTab by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Acessos", fontWeight = FontWeight.Bold) },
+                title = { Text("Auditoria", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = "Adicionar")
+                    if (selectedTab == 0) {
+                        IconButton(onClick = { showAddDialog = true }) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = "Adicionar")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -75,194 +84,16 @@ fun AcessosScreen(
             )
         }
     ) { padding ->
-        if (usuarios.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.People,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Nenhum usuário cadastrado",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Toque em + para adicionar",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    )
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = selectedTab, containerColor = MaterialTheme.colorScheme.surface, contentColor = primaryColor) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("Acessos") }, icon = { Icon(Icons.Default.People, null, modifier = Modifier.size(18.dp)) })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Reimprimir") }, icon = { Icon(Icons.Default.Print, null, modifier = Modifier.size(18.dp)) })
+                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text("Cancelar") }, icon = { Icon(Icons.Default.Cancel, null, modifier = Modifier.size(18.dp)) })
             }
-        } else {
-            val funcionarios = usuarios.filter { it.cargo == CargoUsuario.FUNCIONARIO }
-            val gerentesAdmin = usuarios.filter { it.cargo == CargoUsuario.GERENTE || it.cargo == CargoUsuario.ADMIN }
-
-            val configuration = LocalConfiguration.current
-            val isSmallScreen = configuration.screenWidthDp < 600
-
-            if (isSmallScreen) {
-                // Layout em coluna única para P2-B / telas pequenas
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(padding)
-                        .padding(8.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    // Seção Admin/Gerente
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                    ) {
-                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(16.dp), tint = Color(0xFFE53935))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Admin/Gerente (${gerentesAdmin.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFE53935))
-                    }
-                    gerentesAdmin.forEach { usuario ->
-                        UsuarioCardCompact(usuario, onEdit = { editingUsuario = usuario }, onToggleAtivo = { scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) } }, onDelete = { scope.launch { dao.delete(usuario) } })
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Seção Funcionários
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                    ) {
-                        Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = Color(0xFF43A047))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Funcionários (${funcionarios.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF43A047))
-                    }
-                    if (funcionarios.isEmpty()) {
-                        Text("Nenhum funcionário", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                    }
-                    funcionarios.forEach { usuario ->
-                        UsuarioCardCompact(usuario, onEdit = { editingUsuario = usuario }, onToggleAtivo = { scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) } }, onDelete = { scope.launch { dao.delete(usuario) } })
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-                }
-            } else {
-                // Layout em duas colunas para telas grandes (POS)
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(backgroundColor)
-                        .padding(padding)
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Coluna Funcionários
-                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Person,
-                                null,
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFF43A047)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "Funcionários (${funcionarios.size})",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = Color(0xFF43A047)
-                            )
-                        }
-                        if (funcionarios.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Nenhum funcionário", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                            }
-                        } else {
-                            funcionarios.forEach { usuario ->
-                                UsuarioCard(
-                                    usuario = usuario,
-                                    onEdit = { editingUsuario = usuario },
-                                    onToggleAtivo = {
-                                        scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
-                                    },
-                                    onDelete = {
-                                        scope.launch { dao.delete(usuario) }
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                        }
-                    }
-
-                    // Divisor vertical
-                    VerticalDivider(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(vertical = 8.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
-
-                    // Coluna Admin/Gerente
-                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 6.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.AdminPanelSettings,
-                                null,
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFE53935)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                "Admin / Gerente (${gerentesAdmin.size})",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = Color(0xFFE53935)
-                            )
-                        }
-                        if (gerentesAdmin.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Nenhum admin/gerente", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                            }
-                        } else {
-                            gerentesAdmin.forEach { usuario ->
-                                UsuarioCard(
-                                    usuario = usuario,
-                                    onEdit = { editingUsuario = usuario },
-                                    onToggleAtivo = {
-                                        scope.launch { dao.update(usuario.copy(ativo = !usuario.ativo)) }
-                                    },
-                                    onDelete = {
-                                        scope.launch { dao.delete(usuario) }
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                        }
-                    }
-                }
+            when (selectedTab) {
+                0 -> AcessosContent(usuarios, primaryColor, backgroundColor, onEdit = { editingUsuario = it }, onToggleAtivo = { scope.launch { dao.update(it.copy(ativo = !it.ativo)) } }, onDelete = { scope.launch { dao.delete(it) } })
+                1 -> ReimpressaoTab(vendaDao, primaryColor, context as android.app.Activity)
+                2 -> CancelamentoTab(vendaDao, primaryColor, context as android.app.Activity, scope)
             }
         }
     }
@@ -873,5 +704,196 @@ private fun PermissaoChip(
             )
         )
         Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = textColor)
+    }
+}
+
+@Composable
+private fun AcessosContent(
+    usuarios: List<Usuario>,
+    primaryColor: Color,
+    backgroundColor: Color,
+    onEdit: (Usuario) -> Unit,
+    onToggleAtivo: (Usuario) -> Unit,
+    onDelete: (Usuario) -> Unit
+) {
+    if (usuarios.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.People, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Nenhum usuário cadastrado", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Toque em + para adicionar", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+            }
+        }
+    } else {
+        val funcionarios = usuarios.filter { it.cargo == CargoUsuario.FUNCIONARIO }
+        val gerentesAdmin = usuarios.filter { it.cargo == CargoUsuario.GERENTE || it.cargo == CargoUsuario.ADMIN }
+        val configuration = LocalConfiguration.current
+        val isSmallScreen = configuration.screenWidthDp < 600
+
+        if (isSmallScreen) {
+            Column(modifier = Modifier.fillMaxSize().background(backgroundColor).padding(8.dp).verticalScroll(rememberScrollState())) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                    Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(16.dp), tint = Color(0xFFE53935))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Admin/Gerente (${gerentesAdmin.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFFE53935))
+                }
+                gerentesAdmin.forEach { usuario ->
+                    UsuarioCardCompact(usuario, onEdit = { onEdit(usuario) }, onToggleAtivo = { onToggleAtivo(usuario) }, onDelete = { onDelete(usuario) })
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                    Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = Color(0xFF43A047))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Funcionários (${funcionarios.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF43A047))
+                }
+                if (funcionarios.isEmpty()) { Text("Nenhum funcionário", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)) }
+                funcionarios.forEach { usuario ->
+                    UsuarioCardCompact(usuario, onEdit = { onEdit(usuario) }, onToggleAtivo = { onToggleAtivo(usuario) }, onDelete = { onDelete(usuario) })
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxSize().background(backgroundColor).padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                        Icon(Icons.Default.Person, null, modifier = Modifier.size(18.dp), tint = Color(0xFF43A047))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Funcionários (${funcionarios.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF43A047))
+                    }
+                    if (funcionarios.isEmpty()) { Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) { Text("Nenhum funcionário", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)) } }
+                    else { funcionarios.forEach { usuario -> UsuarioCard(usuario, onEdit = { onEdit(usuario) }, onToggleAtivo = { onToggleAtivo(usuario) }, onDelete = { onDelete(usuario) }); Spacer(modifier = Modifier.height(4.dp)) } }
+                }
+                VerticalDivider(modifier = Modifier.fillMaxHeight().padding(vertical = 8.dp), thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                        Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(18.dp), tint = Color(0xFFE53935))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Admin / Gerente (${gerentesAdmin.size})", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFE53935))
+                    }
+                    if (gerentesAdmin.isEmpty()) { Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) { Text("Nenhum admin/gerente", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)) } }
+                    else { gerentesAdmin.forEach { usuario -> UsuarioCard(usuario, onEdit = { onEdit(usuario) }, onToggleAtivo = { onToggleAtivo(usuario) }, onDelete = { onDelete(usuario) }); Spacer(modifier = Modifier.height(4.dp)) } }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReimpressaoTab(
+    vendaDao: com.seucaixa.caixacombo.data.database.VendaDao,
+    primaryColor: Color,
+    activity: android.app.Activity
+) {
+    val vendas by vendaDao.getAllVendas().collectAsState(initial = emptyList())
+    val vendasReimprimiveis = vendas.filter { !it.stoneAtk.isNullOrEmpty() && it.status != StatusVenda.CANCELADA }
+    var confirmarReimpressao by remember { mutableStateOf<Venda?>(null) }
+
+    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+        if (vendasReimprimiveis.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Print, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Nenhuma venda disponível para reimpressão", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                    Text("Vendas com pagamento Stone possuem ATK para reimpressão", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                }
+            }
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                items(vendasReimprimiveis) { venda ->
+                    VendaAuditoriaCard(venda, primaryColor, Icons.Default.Print, "Reimprimir", Color(0xFF2196F3)) { confirmarReimpressao = venda }
+                }
+            }
+        }
+    }
+
+    if (confirmarReimpressao != null) {
+        AlertDialog(
+            onDismissRequest = { confirmarReimpressao = null },
+            title = { Text("Reimprimir Venda") },
+            text = { Column { Text("Confirma a reimpressão da venda #${confirmarReimpressao!!.id.toString().takeLast(6)}?"); Spacer(modifier = Modifier.height(4.dp)); Text("Total: R$ ${"%.2f".format(confirmarReimpressao!!.total)}", fontWeight = FontWeight.Bold); Text("ATK: ${confirmarReimpressao!!.stoneAtk}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+            confirmButton = { Button(onClick = { StoneDeeplinkService.sendReprint(activity, confirmarReimpressao!!.stoneAtk); confirmarReimpressao = null }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) { Icon(Icons.Default.Print, null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(4.dp)); Text("Reimprimir") } },
+            dismissButton = { OutlinedButton(onClick = { confirmarReimpressao = null }) { Text("Cancelar") } }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CancelamentoTab(
+    vendaDao: com.seucaixa.caixacombo.data.database.VendaDao,
+    primaryColor: Color,
+    activity: android.app.Activity,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    val vendas by vendaDao.getAllVendas().collectAsState(initial = emptyList())
+    val vendasCancelaveis = vendas.filter { !it.stoneAtk.isNullOrEmpty() && it.status != StatusVenda.CANCELADA }
+    var confirmarCancelamento by remember { mutableStateOf<Venda?>(null) }
+
+    Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+        if (vendasCancelaveis.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Cancel, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Nenhuma venda disponível para cancelamento", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                    Text("Vendas com pagamento Stone e ATK podem ser canceladas", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                }
+            }
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                items(vendasCancelaveis) { venda ->
+                    VendaAuditoriaCard(venda, primaryColor, Icons.Default.Cancel, "Cancelar", MaterialTheme.colorScheme.error) { confirmarCancelamento = venda }
+                }
+            }
+        }
+    }
+
+    if (confirmarCancelamento != null) {
+        AlertDialog(
+            onDismissRequest = { confirmarCancelamento = null },
+            title = { Text("Cancelar Venda", color = MaterialTheme.colorScheme.error) },
+            text = { Column { Text("⚠️ Esta ação não pode ser desfeita!", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error); Spacer(modifier = Modifier.height(8.dp)); Text("Venda #${confirmarCancelamento!!.id.toString().takeLast(6)}"); Text("Total: R$ ${"%.2f".format(confirmarCancelamento!!.total)}", fontWeight = FontWeight.Bold); Text("ATK: ${confirmarCancelamento!!.stoneAtk}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+            confirmButton = { Button(onClick = { val amount = Math.round(confirmarCancelamento!!.total * 100); StoneDeeplinkService.sendCancel(activity, confirmarCancelamento!!.stoneAtk!!, amount.toLong(), false); scope.launch { vendaDao.updateStatus(confirmarCancelamento!!.id, StatusVenda.CANCELADA) }; confirmarCancelamento = null }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Icon(Icons.Default.Cancel, null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(4.dp)); Text("Confirmar Cancelamento") } },
+            dismissButton = { OutlinedButton(onClick = { confirmarCancelamento = null }) { Text("Voltar") } }
+        )
+    }
+}
+
+@Composable
+private fun VendaAuditoriaCard(
+    venda: Venda,
+    primaryColor: Color,
+    actionIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    actionLabel: String,
+    actionColor: Color,
+    onAction: () -> Unit
+) {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val dataFormatada = dateFormat.format(Date(venda.dataHora))
+
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("#${venda.id.toString().takeLast(6)}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("R$ ${"%.2f".format(venda.total)}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = primaryColor)
+                }
+                Text(dataFormatada, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!venda.stoneAtk.isNullOrEmpty()) { Text("ATK: ${venda.stoneAtk}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) }
+            }
+            Button(onClick = onAction, colors = ButtonDefaults.buttonColors(containerColor = actionColor), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                Icon(actionIcon, null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(actionLabel, fontSize = 12.sp)
+            }
+        }
     }
 }

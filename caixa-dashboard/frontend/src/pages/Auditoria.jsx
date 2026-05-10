@@ -138,14 +138,14 @@ export default function Auditoria() {
               <select
                 value={filters.tipo}
                 onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-                className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
+                className="w-full px-3 py-1.5 bg-gray-800 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
               >
-                <option value="">Todos</option>
-                <option value="conexao">Conexão</option>
-                <option value="desconexao">Desconexão</option>
-                <option value="bloqueio">Bloqueio</option>
-                <option value="desbloqueio">Desbloqueio</option>
-                <option value="mudanca_status">Mudança de Status</option>
+                <option value="" style={{ backgroundColor: '#1f2937' }}>Todos</option>
+                <option value="conexao" style={{ backgroundColor: '#1f2937' }}>Conexão</option>
+                <option value="desconexao" style={{ backgroundColor: '#1f2937' }}>Desconexão</option>
+                <option value="bloqueio" style={{ backgroundColor: '#1f2937' }}>Bloqueio</option>
+                <option value="desbloqueio" style={{ backgroundColor: '#1f2937' }}>Desbloqueio</option>
+                <option value="mudanca_status" style={{ backgroundColor: '#1f2937' }}>Mudança de Status</option>
               </select>
             </div>
 
@@ -154,11 +154,11 @@ export default function Auditoria() {
               <select
                 value={filters.deviceId}
                 onChange={(e) => setFilters({ ...filters, deviceId: e.target.value })}
-                className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
+                className="w-full px-3 py-1.5 bg-gray-800 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
               >
-                <option value="">Todos</option>
+                <option value="" style={{ backgroundColor: '#1f2937' }}>Todos</option>
                 {getDeviceOptions().map(device => (
-                  <option key={device.value} value={device.value}>
+                  <option key={device.value} value={device.value} style={{ backgroundColor: '#1f2937' }}>
                     {device.label}
                   </option>
                 ))}
@@ -170,12 +170,12 @@ export default function Auditoria() {
               <select
                 value={filters.limit}
                 onChange={(e) => setFilters({ ...filters, limit: parseInt(e.target.value) })}
-                className="w-full px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
+                className="w-full px-3 py-1.5 bg-gray-800 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
               >
-                <option value="25">25 últimos</option>
-                <option value="50">50 últimos</option>
-                <option value="100">100 últimos</option>
-                <option value="200">200 últimos</option>
+                <option value="25" style={{ backgroundColor: '#1f2937' }}>25 últimos</option>
+                <option value="50" style={{ backgroundColor: '#1f2937' }}>50 últimos</option>
+                <option value="100" style={{ backgroundColor: '#1f2937' }}>100 últimos</option>
+                <option value="200" style={{ backgroundColor: '#1f2937' }}>200 últimos</option>
               </select>
             </div>
           </div>

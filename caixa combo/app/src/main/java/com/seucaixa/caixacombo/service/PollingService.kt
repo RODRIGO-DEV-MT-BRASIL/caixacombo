@@ -56,6 +56,7 @@ class PollingService : Service() {
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
         private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
+        private var onEmpresasReceived: ((JSONArray) -> Unit)? = null     // empresas do servidor
         private var onSyncComplete: ((Int, Int, Int) -> Unit)? = null     // produtos, categorias, clientes
 
         private var isRunning = false
@@ -106,6 +107,7 @@ class PollingService : Service() {
             onCancelRequested: ((String, Long?) -> Unit)? = null,
             onClientesReceived: ((JSONArray) -> Unit)? = null,
             onCategoriasReceived: ((JSONArray) -> Unit)? = null,
+            onEmpresasReceived: ((JSONArray) -> Unit)? = null,
             onSyncComplete: ((Int, Int, Int) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
@@ -118,6 +120,7 @@ class PollingService : Service() {
             this.onCancelRequested = onCancelRequested
             this.onClientesReceived = onClientesReceived
             this.onCategoriasReceived = onCategoriasReceived
+            this.onEmpresasReceived = onEmpresasReceived
             this.onSyncComplete = onSyncComplete
         }
 
@@ -647,6 +650,13 @@ class PollingService : Service() {
                 Log.e("SYNC_DEBUG", "categorias_sync recebido: ${categorias?.length() ?: 0} categorias")
                 if (categorias != null) {
                     onCategoriasReceived?.invoke(categorias)
+                }
+            }
+            "empresas_sync" -> {
+                val empresas = params?.optJSONArray("empresas")
+                Log.d(TAG, "empresas_sync recebido: ${empresas?.length() ?: 0} empresas")
+                if (empresas != null) {
+                    onEmpresasReceived?.invoke(empresas)
                 }
             }
             else -> {
