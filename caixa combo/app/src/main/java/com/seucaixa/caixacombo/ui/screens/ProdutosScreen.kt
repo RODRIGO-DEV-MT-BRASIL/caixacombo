@@ -494,21 +494,22 @@ fun ProdutoDialog(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(
                             if (isEditing) Icons.Default.Edit else Icons.Default.AddCircle,
                             contentDescription = null,
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
                         Text(
                             if (isEditing) "Editar Produto" else "Novo Produto",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold, fontSize = 16.sp
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
-                        Icon(Icons.Default.Close, "Fechar")
+                        Icon(Icons.Default.Close, "Fechar", modifier = Modifier.size(22.dp))
                     }
                 },
                 actions = {
@@ -531,15 +532,15 @@ fun ProdutoDialog(
                             )
                         },
                         enabled = nome.isNotBlank() && preco.isNotBlank(),
-                        modifier = Modifier.padding(end = 8.dp),
+                        modifier = Modifier.padding(end = 8.dp).height(36.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = Color.White.copy(alpha = 0.2f),
                             contentColor = Color.White
                         )
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Salvar", modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Check, contentDescription = "Salvar", modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Salvar", fontWeight = FontWeight.Bold)
+                        Text("Salvar", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -555,217 +556,181 @@ fun ProdutoDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Seção: Informações Básicas
-            SectionHeader(icon = Icons.Outlined.Info, title = "Informações Básicas", color = primaryColor)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            // Linha 1: Nome + Preço
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 OutlinedTextFieldWithCustomKeyboard(
                     value = nome,
                     onValueChange = { nome = it },
-                    label = "Nome do produto *",
+                    label = "Nome *",
                     keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.weight(1f)
                 )
-                OutlinedTextFieldWithCustomKeyboard(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    label = "Descrição",
-                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // Seção: Preço e Estoque
-            SectionHeader(icon = Icons.Outlined.AttachMoney, title = "Preço e Estoque", color = primaryColor)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
                 PrecoTextField(
                     value = preco,
                     onValueChange = { preco = it },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.width(120.dp)
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            }
+
+            // Linha 2: Estoque + Unidade + Código de Barras + Auto
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = estoque,
+                    onValueChange = { estoque = it },
+                    label = "Estq",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                    modifier = Modifier.weight(0.25f),
+                    allowDecimal = false
+                )
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = unidade,
+                    onValueChange = { unidade = it.uppercase() },
+                    label = "Und",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                    modifier = Modifier.weight(0.15f),
+                    maxLength = 3
+                )
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = codigoBarras,
+                    onValueChange = { codigoBarras = it },
+                    label = "Cód. Barras",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                    modifier = Modifier.weight(0.45f),
+                    maxLength = 13,
+                    allowDecimal = false
+                )
+                FilledTonalButton(
+                    onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
+                    modifier = Modifier.height(52.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = primaryColor.copy(alpha = 0.1f)),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = estoque,
-                        onValueChange = { estoque = it },
-                        label = "Estoque",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                        modifier = Modifier.weight(1f),
-                        allowDecimal = false
-                    )
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = unidade,
-                        onValueChange = { unidade = it.uppercase() },
-                        label = "Unidade",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                        modifier = Modifier.width(100.dp),
-                        maxLength = 3
-                    )
+                    Icon(Icons.Default.Refresh, null, modifier = Modifier.size(16.dp), tint = primaryColor)
+                    Spacer(Modifier.width(3.dp))
+                    Text("Auto", color = primaryColor, fontWeight = FontWeight.Medium, fontSize = 12.sp, maxLines = 1)
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            // Linha 3: Descrição
+            OutlinedTextFieldWithCustomKeyboard(
+                value = descricao,
+                onValueChange = { descricao = it },
+                label = "Descrição (opcional)",
+                keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Seção: Código de Barras
-            SectionHeader(icon = Icons.Outlined.QrCode2, title = "Código de Barras", color = primaryColor)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            // Linha 4: Categoria chips
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = codigoBarras,
-                        onValueChange = { codigoBarras = it },
-                        label = "Código",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                        modifier = Modifier.weight(1f),
-                        maxLength = 13,
-                        allowDecimal = false
+                Text("Cat:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                FilterChip(
+                    selected = categoriaId == null,
+                    onClick = { categoriaId = null },
+                    label = { Text("Nenhuma", fontSize = 11.sp) },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.height(28.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = primaryColor,
+                        selectedLabelColor = Color.White
                     )
-                    FilledTonalButton(
-                        onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
-                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = primaryColor.copy(alpha = 0.1f))
-                    ) {
-                        Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp), tint = primaryColor)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Auto", color = primaryColor, fontWeight = FontWeight.Medium)
-                    }
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // Seção: Categoria
-            SectionHeader(icon = Icons.Outlined.Folder, title = "Categoria", color = primaryColor)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                )
+                categorias.forEach { cat ->
+                    val catColor = try {
+                        cat.cor?.let { Color(android.graphics.Color.parseColor(it)) } ?: primaryColor
+                    } catch (_: Exception) { primaryColor }
                     FilterChip(
-                        selected = categoriaId == null,
-                        onClick = { categoriaId = null },
-                        label = { Text("Sem categoria", fontSize = 12.sp) },
-                        shape = RoundedCornerShape(20.dp),
+                        selected = categoriaId == cat.id,
+                        onClick = { categoriaId = cat.id },
+                        label = { Text(cat.nome, fontSize = 11.sp) },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(28.dp),
+                        leadingIcon = {
+                            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(catColor))
+                        },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = primaryColor,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = catColor,
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White
                         )
                     )
-                    categorias.forEach { cat ->
-                        val catColor = try {
-                            cat.cor?.let { Color(android.graphics.Color.parseColor(it)) } ?: primaryColor
-                        } catch (_: Exception) { primaryColor }
-                        FilterChip(
-                            selected = categoriaId == cat.id,
-                            onClick = { categoriaId = cat.id },
-                            label = { Text(cat.nome, fontSize = 12.sp) },
-                            shape = RoundedCornerShape(20.dp),
-                            leadingIcon = {
-                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(catColor))
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = catColor,
-                                selectedLabelColor = Color.White,
-                                selectedLeadingIconColor = Color.White
-                            )
-                        )
-                    }
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // Seção: Imagem
-            SectionHeader(icon = Icons.Outlined.Image, title = "Imagem do Produto", color = primaryColor)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // Linha 5: Imagem (compacta)
+            Row(
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (imagem != null) {
-                    // Preview da imagem com botão remover
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                // Preview ou placeholder
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (imagem != null) {
                         com.seucaixa.caixacombo.ui.components.ProdutoImagem(
                             imagem = imagem,
                             contentDescription = "Preview",
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp)),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             serverUrl = PollingService.getServerUrl()
                         )
-                        // Botão remover imagem (X no canto)
                         IconButton(
                             onClick = { imagem = null },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .size(28.dp)
-                                .background(
-                                    Color.Black.copy(alpha = 0.5f),
-                                    CircleShape
-                                )
+                                .size(20.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                         ) {
-                            Icon(Icons.Default.Close, "Remover imagem", tint = Color.White, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Close, "Remover", tint = Color.White, modifier = Modifier.size(12.dp))
                         }
+                    } else {
+                        Icon(Icons.Outlined.AddPhotoAlternate, null, modifier = Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                     }
-                    // Botão trocar imagem
+                }
+                // Botões de imagem
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     OutlinedButton(
                         onClick = { imagePickerLauncher.launch("image/*") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
-                    ) {
-                        Icon(Icons.Outlined.SwapHoriz, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Trocar imagem", fontWeight = FontWeight.Medium)
-                    }
-                } else {
-                    // Nenhuma imagem - botão adicionar com visual moderno
-                    OutlinedButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.height(32.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor),
-                        border = BorderStroke(1.5.dp, primaryColor.copy(alpha = 0.3f))
+                        contentPadding = PaddingValues(horizontal = 10.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                        Icon(Icons.Outlined.Image, null, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(if (imagem != null) "Trocar" else "Adicionar", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
+                    if (imagem != null) {
+                        TextButton(
+                            onClick = { imagem = null },
+                            modifier = Modifier.height(28.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp)
                         ) {
-                            Icon(Icons.Outlined.AddPhotoAlternate, null, modifier = Modifier.size(32.dp), tint = primaryColor.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(4.dp))
-                            Text("Adicionar imagem", color = primaryColor.copy(alpha = 0.7f), fontWeight = FontWeight.Medium)
+                            Icon(Icons.Outlined.Delete, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Remover", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             }
-
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
