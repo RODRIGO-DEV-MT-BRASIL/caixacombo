@@ -354,181 +354,162 @@ fun ProdutoDialog(
     var tipoPreco by remember { mutableStateOf(produto.tipoPreco) }
     var imagem by remember { mutableStateOf(produto.imagem) }
 
-    // Estados para controle do teclado
-    var campoAtivo by remember { mutableStateOf<String?>(null) }
+    val primaryColor = MaterialTheme.colorScheme.primary
 
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        title = { Text(if (produto.id == 0L) "Novo Produto" else "Editar Produto") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Nome com teclado alfanumérico
-                OutlinedTextFieldWithCustomKeyboard(
-                    value = nome,
-                    onValueChange = { nome = it },
-                    label = "Nome *",
-                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Descrição com teclado alfanumérico
-                OutlinedTextFieldWithCustomKeyboard(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    label = "Descrição",
-                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Preço com máscara monetária
-                PrecoTextField(
-                    value = preco,
-                    onValueChange = { preco = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Estoque - numérico
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = estoque,
-                        onValueChange = { estoque = it },
-                        label = "Estoque",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                        modifier = Modifier.weight(1f),
-                        allowDecimal = false
-                    )
-
-                    // Unidade - alfanumérico
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = unidade,
-                        onValueChange = { unidade = it.uppercase() },
-                        label = "Unidade",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
-                        modifier = Modifier.width(100.dp),
-                        maxLength = 3
-                    )
-                }
-
-                // Código de barras com botão de gerar automático
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextFieldWithCustomKeyboard(
-                        value = codigoBarras,
-                        onValueChange = { codigoBarras = it },
-                        label = "Código de Barras",
-                        keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
-                        modifier = Modifier.weight(1f),
-                        maxLength = 13,
-                        allowDecimal = false
-                    )
-
-                    // Botão para gerar código automático
-                    IconButton(
-                        onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Gerar automático",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (produto.id == 0L) "Novo Produto" else "Editar Produto", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onCancelar) {
+                        Icon(Icons.Default.Close, "Fechar")
                     }
-                }
-
-                // Dropdown de categoria
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = categorias.find { it.id == categoriaId }?.nome ?: "Selecionar categoria",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Categoria") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Nenhuma") },
-                            onClick = {
-                                categoriaId = null
-                                expanded = false
-                            }
-                        )
-                        categorias.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat.nome) },
-                                onClick = {
-                                    categoriaId = cat.id
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Botão para adicionar imagem (placeholder - funcionalidade futura)
-                OutlinedButton(
-                    onClick = { /* Seleção de imagem requer implementação completa */ },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = "Adicionar imagem"
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (imagem != null) "Imagem selecionada" else "Adicionar imagem")
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val precoValor = parsePreco(preco)
-                    val estoqueValor = estoque.toDoubleSafe()
-
-                    onSalvar(
-                        produto.copy(
-                            nome = nome,
-                            descricao = descricao.ifEmpty { null },
-                            precoVenda = precoValor,
-                            estoque = estoqueValor,
-                            codigoBarras = codigoBarras.ifEmpty { null },
-                            categoriaId = categoriaId,
-                            unidade = unidade.uppercase(),
-                            tipoPreco = tipoPreco,
-                            imagem = imagem
-                        )
-                    )
                 },
-                enabled = nome.isNotBlank() && preco.isNotBlank()
+                actions = {
+                    Button(
+                        onClick = {
+                            val precoValor = parsePreco(preco)
+                            val estoqueValor = estoque.toDoubleSafe()
+                            onSalvar(
+                                produto.copy(
+                                    nome = nome,
+                                    descricao = descricao.ifEmpty { null },
+                                    precoVenda = precoValor,
+                                    estoque = estoqueValor,
+                                    codigoBarras = codigoBarras.ifEmpty { null },
+                                    categoriaId = categoriaId,
+                                    unidade = unidade.uppercase(),
+                                    tipoPreco = tipoPreco,
+                                    imagem = imagem
+                                )
+                            )
+                        },
+                        enabled = nome.isNotBlank() && preco.isNotBlank(),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Salvar")
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Salvar")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextFieldWithCustomKeyboard(
+                value = nome,
+                onValueChange = { nome = it },
+                label = "Nome *",
+                keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextFieldWithCustomKeyboard(
+                value = descricao,
+                onValueChange = { descricao = it },
+                label = "Descrição",
+                keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            PrecoTextField(
+                value = preco,
+                onValueChange = { preco = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Salvar")
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = estoque,
+                    onValueChange = { estoque = it },
+                    label = "Estoque",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                    modifier = Modifier.weight(1f),
+                    allowDecimal = false
+                )
+
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = unidade,
+                    onValueChange = { unidade = it.uppercase() },
+                    label = "Unidade",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC,
+                    modifier = Modifier.width(100.dp),
+                    maxLength = 3
+                )
             }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onCancelar) {
-                Text("Cancelar")
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextFieldWithCustomKeyboard(
+                    value = codigoBarras,
+                    onValueChange = { codigoBarras = it },
+                    label = "Código de Barras",
+                    keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC,
+                    modifier = Modifier.weight(1f),
+                    maxLength = 13,
+                    allowDecimal = false
+                )
+
+                IconButton(
+                    onClick = { codigoBarras = viewModel.gerarCodigoBarrasAutomatico() },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Gerar automático", tint = primaryColor)
+                }
+            }
+
+            // Categoria - chips selecionáveis
+            Text("Categoria", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(selected = categoriaId == null, onClick = { categoriaId = null }, label = { Text("Sem categoria") })
+                categorias.forEach { cat ->
+                    FilterChip(
+                        selected = categoriaId == cat.id,
+                        onClick = { categoriaId = cat.id },
+                        label = { Text(cat.nome) },
+                        leadingIcon = if (cat.cor != null) {
+                            {
+                                Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(16.dp),
+                                    tint = try { Color(android.graphics.Color.parseColor(cat.cor)) } catch (_: Exception) { primaryColor })
+                            }
+                        } else null
+                    )
+                }
+            }
+
+            OutlinedButton(
+                onClick = { /* Seleção de imagem requer implementação completa */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Image, contentDescription = "Adicionar imagem")
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(if (imagem != null) "Imagem selecionada" else "Adicionar imagem")
             }
         }
-    )
+    }
 }
 
 // Função para formatar preço com máscara
@@ -595,6 +576,7 @@ fun PrecoTextField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriasDialog(
     categorias: List<Categoria>,
@@ -602,70 +584,109 @@ fun CategoriasDialog(
     onExcluir: (Categoria) -> Unit,
     onFechar: () -> Unit
 ) {
-    var novaCategoria by remember { mutableStateOf("") }
-    
-    AlertDialog(
-        onDismissRequest = onFechar,
-        title = { Text("Categorias") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Adicionar nova
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = novaCategoria,
-                        onValueChange = { novaCategoria = it },
-                        label = { Text("Nova Categoria") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-                    )
-                    
-                    Button(
-                        onClick = {
-                            if (novaCategoria.isNotBlank()) {
-                                onAdicionar(Categoria(nome = novaCategoria))
-                                novaCategoria = ""
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Add, "Adicionar")
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
+    var novaCategoriaNome by remember { mutableStateOf("") }
+    var novaCategoriaCor by remember { mutableStateOf("#2196F3") }
+    var novaCategoriaOrdem by remember { mutableStateOf("0") }
+    var editandoCategoria by remember { mutableStateOf<Categoria?>(null) }
+    var editandoNome by remember { mutableStateOf("") }
+    var editandoCor by remember { mutableStateOf("#2196F3") }
+    var editandoOrdem by remember { mutableStateOf("0") }
 
-                // Lista
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    categorias.forEach { categoria ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(categoria.nome)
-                            IconButton(onClick = { onExcluir(categoria) }) {
-                                Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error)
-                            }
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val coresPredefinidas = listOf(
+        "#F44336" to "Vermelho", "#FF9800" to "Laranja", "#FFEB3B" to "Amarelo",
+        "#4CAF50" to "Verde", "#2196F3" to "Azul", "#9C27B0" to "Roxo",
+        "#795548" to "Marrom", "#607D8B" to "Cinza"
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Categorias", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onFechar) {
+                        Icon(Icons.Default.Close, "Fechar")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp, vertical = 8.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Nova categoria
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Nova Categoria", style = MaterialTheme.typography.titleSmall, color = primaryColor)
+                    OutlinedTextFieldWithCustomKeyboard(value = novaCategoriaNome, onValueChange = { novaCategoriaNome = it }, label = "Nome *", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC, modifier = Modifier.fillMaxWidth())
+                    Text("Cor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        coresPredefinidas.forEach { (hex, label) ->
+                            FilterChip(selected = novaCategoriaCor == hex, onClick = { novaCategoriaCor = hex }, label = { Text(label, fontSize = 11.sp) }, leadingIcon = {
+                                Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(Color(android.graphics.Color.parseColor(hex))))
+                            })
                         }
+                    }
+                    OutlinedTextFieldWithCustomKeyboard(value = novaCategoriaOrdem, onValueChange = { novaCategoriaOrdem = it }, label = "Ordem", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC, modifier = Modifier.width(100.dp), allowDecimal = false)
+                    Button(onClick = {
+                        if (novaCategoriaNome.isNotBlank()) {
+                            onAdicionar(Categoria(nome = novaCategoriaNome, cor = novaCategoriaCor, ordem = novaCategoriaOrdem.toIntOrNull() ?: 0))
+                            novaCategoriaNome = ""; novaCategoriaCor = "#2196F3"; novaCategoriaOrdem = "0"
+                        }
+                    }, modifier = Modifier.fillMaxWidth(), enabled = novaCategoriaNome.isNotBlank()) {
+                        Icon(Icons.Default.Add, contentDescription = null); Spacer(modifier = Modifier.width(4.dp)); Text("Adicionar")
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onFechar) {
-                Text("Fechar")
+
+            // Lista existentes
+            Text("Categorias Existentes", style = MaterialTheme.typography.titleSmall, color = primaryColor)
+            if (categorias.isEmpty()) {
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Text("Nenhuma categoria cadastrada", modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            categorias.sortedBy { it.ordem }.forEach { categoria ->
+                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (editandoCategoria?.id == categoria.id) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)) {
+                    if (editandoCategoria?.id == categoria.id) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextFieldWithCustomKeyboard(value = editandoNome, onValueChange = { editandoNome = it }, label = "Nome", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.ALPHANUMERIC, modifier = Modifier.fillMaxWidth())
+                            Text("Cor", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                coresPredefinidas.forEach { (hex, label) ->
+                                    FilterChip(selected = editandoCor == hex, onClick = { editandoCor = hex }, label = { Text(label, fontSize = 11.sp) }, leadingIcon = {
+                                        Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(Color(android.graphics.Color.parseColor(hex))))
+                                    })
+                                }
+                            }
+                            OutlinedTextFieldWithCustomKeyboard(value = editandoOrdem, onValueChange = { editandoOrdem = it }, label = "Ordem", keyboardType = com.seucaixa.caixacombo.ui.components.KeyboardType.NUMERIC, modifier = Modifier.width(100.dp), allowDecimal = false)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { onAdicionar(categoria.copy(nome = editandoNome, cor = editandoCor, ordem = editandoOrdem.toIntOrNull() ?: 0)); editandoCategoria = null }, modifier = Modifier.weight(1f)) {
+                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(modifier = Modifier.width(4.dp)); Text("Salvar")
+                                }
+                                OutlinedButton(onClick = { editandoCategoria = null }, modifier = Modifier.weight(1f)) { Text("Cancelar") }
+                            }
+                        }
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Box(modifier = Modifier.size(24.dp).clip(RoundedCornerShape(4.dp)).background(try { Color(android.graphics.Color.parseColor(categoria.cor)) } catch (_: Exception) { primaryColor }))
+                                Column { Text(categoria.nome, fontWeight = FontWeight.Medium); if (categoria.ordem > 0) Text("Ordem: ${categoria.ordem}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            }
+                            Row {
+                                IconButton(onClick = { editandoCategoria = categoria; editandoNome = categoria.nome; editandoCor = categoria.cor ?: "#2196F3"; editandoOrdem = categoria.ordem.toString() }) { Icon(Icons.Default.Edit, "Editar", tint = primaryColor) }
+                                IconButton(onClick = { onExcluir(categoria) }) { Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error) }
+                            }
+                        }
+                    }
+                }
             }
         }
-    )
+    }
 }

@@ -654,6 +654,9 @@ app.post('/api/empresas', authenticateToken, (req, res) => {
   db.empresas.push(empresa);
   saveData();
   
+  // Sincronizar empresa com os terminais
+  broadcastEmpresasSync();
+  
   res.json(empresa);
 });
 
@@ -682,6 +685,7 @@ app.put('/api/empresas/:id', authenticateToken, (req, res) => {
   };
   
   saveData();
+  broadcastEmpresasSync();
   res.json(db.empresas[index]);
 });
 
@@ -691,6 +695,7 @@ app.delete('/api/empresas/:id', authenticateToken, (req, res) => {
   
   const deleted = db.empresas.splice(index, 1)[0];
   saveData();
+  broadcastEmpresasSync();
   res.json(deleted);
 });
 
@@ -795,6 +800,27 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
     deviceIds.push(deviceId);
   });
   console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
+}
+
+// Função auxiliar: sincronizar empresas para todos os terminais
+function broadcastEmpresasSync() {
+  const empresas = (db.empresas || []).map(e => ({
+    id: e.id,
+    nome: e.nome,
+    cnpj: e.cnpj,
+    email: e.email,
+    telefone: e.telefone,
+    permissoes: e.permissoes
+  }));
+  // Via WebSocket para dashboards
+  io.emit('empresas_sync', { empresas });
+  // Via polling para terminais Android
+  const deviceIds = [];
+  connectedDevices.forEach((deviceInfo, deviceId) => {
+    enqueueDeviceCommand(deviceId, 'empresas_sync', { empresas });
+    deviceIds.push(deviceId);
+  });
+  console.log(`📤 [BROADCAST-EMPRESAS] ${empresas.length} empresas para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
 }
 
 // Rota para associar dispositivo a empresa

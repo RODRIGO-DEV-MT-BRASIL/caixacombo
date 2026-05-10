@@ -214,6 +214,12 @@ class MainActivity : ComponentActivity() {
                     syncCategoriasFromServer(categoriasJson)
                 }
             },
+            onEmpresasReceived = { empresasJson ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Recebidas ${empresasJson.length()} empresas do servidor para sincronização")
+                    syncEmpresasFromServer(empresasJson)
+                }
+            },
             onSyncComplete = { produtos, categorias, clientes ->
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "Sincronização completa: $produtos produtos, $categorias categorias, $clientes clientes")
@@ -1270,6 +1276,37 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao sincronizar clientes do servidor", e)
+        }
+    }
+
+    /**
+     * Sincroniza empresas recebidas do servidor para o banco local
+     */
+    private fun syncEmpresasFromServer(empresasJson: org.json.JSONArray) {
+        try {
+            val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
+            val empresaDao = db.empresaDao()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Usar upsert (REPLACE) para evitar flash vazio
+                for (i in 0 until empresasJson.length()) {
+                    val e = empresasJson.getJSONObject(i)
+                    val empresa = com.seucaixa.caixacombo.data.model.Empresa(
+                        id = 1, // Sempre ID 1 (empresa única no terminal)
+                        razaoSocial = e.optString("nome", ""),
+                        nomeFantasia = e.optString("nome", ""),
+                        cnpj = e.optString("cnpj", ""),
+                        telefone = e.optString("telefone", ""),
+                        email = e.optString("email", "")
+                    )
+                    empresaDao.insert(empresa)
+                }
+
+                // Remover empresas que não vieram do servidor (exceto ID 1 que é fixo)
+                android.util.Log.d("MainActivity", "✅ ${empresasJson.length()} empresas sincronizadas do servidor")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao sincronizar empresas do servidor", e)
         }
     }
 
