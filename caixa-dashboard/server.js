@@ -76,29 +76,26 @@ async function initializeApp() {
   await connectMongo();
 
   // Seed do admin padrão após carregar dados do MongoDB
-  if (!db.usuarios || db.usuarios.length === 0) {
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (adminPassword) {
-      db.usuarios.push({
-        id: Date.now(),
-        username: adminUsername,
-        password: bcrypt.hashSync(adminPassword, 10),
-        role: 'admin'
-      });
-      saveData();
-      console.log(`👤 Admin criado: ${adminUsername}`);
-    } else {
-      // Se não tem ADMIN_PASSWORD, criar com senha padrão para não ficar sem acesso
-      db.usuarios.push({
-        id: Date.now(),
-        username: 'admin',
-        password: bcrypt.hashSync('admin123', 10),
-        role: 'admin'
-      });
-      saveData();
-      console.log('👤 Admin criado com senha padrão (defina ADMIN_PASSWORD para maior segurança)');
-    }
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const existingAdmin = (db.usuarios || []).find(u => u.username === adminUsername);
+  if (!existingAdmin) {
+    if (!db.usuarios) db.usuarios = [];
+    db.usuarios.push({
+      id: Date.now(),
+      username: adminUsername,
+      password: bcrypt.hashSync(adminPassword, 10),
+      role: 'admin'
+    });
+    saveData();
+    console.log(`👤 Admin criado: ${adminUsername}`);
+  } else if (!bcrypt.compareSync(adminPassword, existingAdmin.password)) {
+    // Admin existe mas a senha não confere com a env var - atualizar
+    existingAdmin.password = bcrypt.hashSync(adminPassword, 10);
+    saveData();
+    console.log(`👤 Admin "${adminUsername}" atualizado com nova senha`);
+  } else {
+    console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
   }
 
   // Carregar dispositivos do banco para o mapa ao iniciar
