@@ -611,7 +611,7 @@ fun ProdutoItemMobile(
                 contentAlignment = Alignment.Center
             ) {
                 if (produto.imagem != null) {
-                    val imageUrl = if (produto.imagem!!.startsWith("http")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
+                    val imageUrl = if (produto.imagem!!.startsWith("http") || produto.imagem!!.startsWith("data:")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = produto.nome,

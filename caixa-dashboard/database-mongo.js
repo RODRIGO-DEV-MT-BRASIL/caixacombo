@@ -97,6 +97,9 @@ const EmpresaSchema = new mongoose.Schema({
   endereco: { type: String, default: '' },
   telefone: { type: String, default: '' },
   email: { type: String, default: '' },
+  login: { type: String, default: '' },
+  senha: { type: String, default: '' },
+  permissoes: { type: mongoose.Schema.Types.Mixed, default: {} },
   observacao: { type: String, default: '' },
   createdAt: { type: String, default: null },
   updatedAt: { type: String, default: null }

@@ -277,7 +277,7 @@ fun CheckoutScreenPOS(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (produtoSelecionado!!.imagem != null) {
-                                            val imageUrl = if (produtoSelecionado!!.imagem!!.startsWith("http")) produtoSelecionado!!.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produtoSelecionado!!.imagem}"
+                                            val imageUrl = if (produtoSelecionado!!.imagem!!.startsWith("http") || produtoSelecionado!!.imagem!!.startsWith("data:")) produtoSelecionado!!.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produtoSelecionado!!.imagem}"
                                             coil.compose.AsyncImage(
                                                 model = imageUrl,
                                                 contentDescription = produtoSelecionado!!.nome,
@@ -1154,7 +1154,7 @@ private fun ProdutoGridDialog(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (produto.imagem != null) {
-                                            val imageUrl = if (produto.imagem!!.startsWith("http")) produto.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produto.imagem}"
+                                            val imageUrl = if (produto.imagem!!.startsWith("http") || produto.imagem!!.startsWith("data:")) produto.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produto.imagem}"
                                             coil.compose.AsyncImage(
                                                 model = imageUrl,
                                                 contentDescription = produto.nome,

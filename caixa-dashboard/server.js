@@ -249,16 +249,19 @@ function authenticateToken(req, res, next) {
 // ==================== ROTAS API ====================
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
-  console.log(`[LOGIN] ${username}`);
+  console.log(`[LOGIN] Tentativa: username="${username}", usuarios no db=${db.usuarios.length}, empresas no db=${(db.empresas || []).length}`);
   
   // Verificar se é usuário do sistema
   let user = db.usuarios.find(u => u.username === username);
+  console.log(`[LOGIN] Usuário encontrado: ${user ? `id=${user.id}, role=${user.role}` : 'NENHUM'}`);
   
   // Se não for usuário do sistema, verificar se é empresa
   if (!user) {
     const empresa = (db.empresas || []).find(e => e.login === username);
+    console.log(`[LOGIN] Empresa encontrada: ${empresa ? `id=${empresa.id}, login=${empresa.login}, temSenha=${!!empresa.senha}` : 'NENHUMA'}`);
     if (empresa) {
-      if (!bcrypt.compareSync(password, empresa.senha)) {
+      if (!empresa.senha || !bcrypt.compareSync(password, empresa.senha)) {
+        console.log(`[LOGIN] Senha da empresa não confere ou senha ausente`);
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
       
@@ -282,7 +285,10 @@ app.post('/api/auth/login', (req, res) => {
   
   if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
   
-  if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (!bcrypt.compareSync(password, user.password)) {
+    console.log(`[LOGIN] Senha do usuário não confere para "${username}"`);
+    return res.status(401).json({ error: 'Credenciais inválidas' });
+  }
   
   const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
   res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
@@ -575,7 +581,7 @@ app.post('/api/produtos', authenticateToken, (req, res) => {
     codigoBarras: req.body.codigoBarras || Date.now().toString(),
     estoque: req.body.estoque || 0,
     unidade: req.body.unidade || 'un',
-    imagem: (req.body.imagem && req.body.imagem.startsWith('/uploads/')) ? req.body.imagem : null,
+    imagem: (req.body.imagem && (req.body.imagem.startsWith('/uploads/') || req.body.imagem.startsWith('data:image/'))) ? req.body.imagem : null,
     createdAt: new Date()
   };
   db.produtos.push(produto);
