@@ -98,6 +98,21 @@ async function initializeApp() {
     console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
   }
 
+  // Limpar imagens de produtos que apontam para /uploads/ (filesystem efêmero do Render)
+  let imagensLimpas = 0;
+  if (db.produtos && db.produtos.length > 0) {
+    db.produtos.forEach(p => {
+      if (p.imagem && p.imagem.startsWith('/uploads/')) {
+        p.imagem = null;
+        imagensLimpas++;
+      }
+    });
+    if (imagensLimpas > 0) {
+      saveData();
+      console.log(`🧹 ${imagensLimpas} imagens /uploads/ limpas (arquivos não existem mais no Render)`);
+    }
+  }
+
   // Carregar dispositivos do banco para o mapa ao iniciar
   if (db.dispositivos && db.dispositivos.length > 0) {
     db.dispositivos.forEach(d => {
