@@ -411,7 +411,7 @@ export default function Produtos() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
                           {p.imagem ? (
-                            <img src={apiUrl(p.imagem)} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-white/5" />
+                            <img src={p.imagem.startsWith('data:') ? p.imagem : apiUrl(p.imagem)} alt={p.nome} className="w-10 h-10 rounded-lg object-cover bg-white/5" />
                           ) : (
                             <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
                               <ImageIcon size={16} className="text-gray-600" />

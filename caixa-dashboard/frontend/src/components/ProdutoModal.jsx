@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Package, ImageIcon, Loader2, Upload } from 'lucide-react'
-import { apiUrl } from '../utils/api'
 
 export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, token }) {
   const [form, setForm] = useState({
@@ -29,7 +28,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
           categoriaId: produto.categoriaId || '',
           codigoBarras: produto.codigoBarras || ''
         })
-        setPreviewUrl(produto.imagem ? apiUrl(produto.imagem) : '')
+        setPreviewUrl(produto.imagem || '')
       } else {
         setForm({
           nome: '',
@@ -82,28 +81,10 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
     setLoading(true)
 
     try {
-      let imagemUrl = produto?.imagem || ''
+      let imagemData = produto?.imagem || ''
 
       if (imagemFile) {
-        const base64 = await fileToBase64(imagemFile)
-
-        const res = await fetch(apiUrl('/api/upload-base64'), {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ base64 })
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          imagemUrl = data.url
-        } else {
-          const errText = await res.text().catch(() => '')
-          console.error('Erro no upload da imagem:', res.status, errText)
-          alert('Erro ao enviar imagem. O produto será salvo sem imagem.')
-        }
+        imagemData = await fileToBase64(imagemFile)
       }
 
       const produtoData = {
@@ -114,10 +95,9 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         unidade: form.unidade || 'un',
         categoriaId: form.categoriaId ? Number(form.categoriaId) : null,
         codigoBarras: form.codigoBarras || undefined,
-        imagem: imagemUrl || null
+        imagem: imagemData || null
       }
 
-      console.log('Dados do produto a enviar:', produtoData)
       await onSave(produtoData)
       onClose()
     } catch (error) {
