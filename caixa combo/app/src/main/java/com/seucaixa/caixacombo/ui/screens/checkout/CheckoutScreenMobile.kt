@@ -610,22 +610,13 @@ fun ProdutoItemMobile(
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                if (produto.imagem != null) {
-                    val imageUrl = if (produto.imagem!!.startsWith("http") || produto.imagem!!.startsWith("data:")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = produto.nome,
-                        modifier = Modifier.fillMaxSize().padding(4.dp),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.Inventory,
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                com.seucaixa.caixacombo.ui.components.ProdutoImagem(
+                    imagem = produto.imagem,
+                    contentDescription = produto.nome,
+                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    serverUrl = PollingService.getServerUrl()
+                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))

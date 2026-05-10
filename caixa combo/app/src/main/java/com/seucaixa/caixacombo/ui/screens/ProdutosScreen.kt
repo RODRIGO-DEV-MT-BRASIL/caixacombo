@@ -351,22 +351,21 @@ fun ProdutoCardModerno(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (produto.imagem != null) {
-                    val imageUrl = if (produto.imagem!!.startsWith("http") || produto.imagem!!.startsWith("data:")) produto.imagem!! else "${PollingService.getServerUrl()}${produto.imagem}"
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = produto.nome,
-                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.Inventory,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = catColor
-                    )
-                }
+                com.seucaixa.caixacombo.ui.components.ProdutoImagem(
+                    imagem = produto.imagem,
+                    contentDescription = produto.nome,
+                    modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    serverUrl = PollingService.getServerUrl(),
+                    placeholderIcon = {
+                        Icon(
+                            Icons.Default.Inventory,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = catColor
+                        )
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))

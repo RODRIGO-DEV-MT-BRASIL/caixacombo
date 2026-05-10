@@ -276,22 +276,21 @@ fun CheckoutScreenPOS(
                                             .background(MaterialTheme.colorScheme.surface),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (produtoSelecionado!!.imagem != null) {
-                                            val imageUrl = if (produtoSelecionado!!.imagem!!.startsWith("http") || produtoSelecionado!!.imagem!!.startsWith("data:")) produtoSelecionado!!.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produtoSelecionado!!.imagem}"
-                                            coil.compose.AsyncImage(
-                                                model = imageUrl,
-                                                contentDescription = produtoSelecionado!!.nome,
-                                                modifier = Modifier.fillMaxSize().padding(4.dp),
-                                                contentScale = ContentScale.Fit
-                                            )
-                                        } else {
-                                            Icon(
-                                                Icons.Default.Inventory,
-                                                null,
-                                                modifier = Modifier.size(60.dp),
-                                                tint = primaryColor.copy(alpha = 0.5f)
-                                            )
-                                        }
+                                        com.seucaixa.caixacombo.ui.components.ProdutoImagem(
+                                            imagem = produtoSelecionado!!.imagem,
+                                            contentDescription = produtoSelecionado!!.nome,
+                                            modifier = Modifier.fillMaxSize().padding(4.dp),
+                                            contentScale = ContentScale.Fit,
+                                            serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl(),
+                                            placeholderIcon = {
+                                                Icon(
+                                                    Icons.Default.Inventory,
+                                                    null,
+                                                    modifier = Modifier.size(60.dp),
+                                                    tint = primaryColor.copy(alpha = 0.5f)
+                                                )
+                                            }
+                                        )
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
@@ -1153,21 +1152,13 @@ private fun ProdutoGridDialog(
                                             .background(MaterialTheme.colorScheme.surface),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (produto.imagem != null) {
-                                            val imageUrl = if (produto.imagem!!.startsWith("http") || produto.imagem!!.startsWith("data:")) produto.imagem!! else "${com.seucaixa.caixacombo.service.PollingService.getServerUrl()}${produto.imagem}"
-                                            coil.compose.AsyncImage(
-                                                model = imageUrl,
-                                                contentDescription = produto.nome,
-                                                modifier = Modifier.fillMaxSize().padding(4.dp),
-                                                contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                                            )
-                                        } else {
-                                            Icon(
-                                                Icons.Default.Inventory, null,
-                                                modifier = Modifier.size(22.dp),
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                                        com.seucaixa.caixacombo.ui.components.ProdutoImagem(
+                                            imagem = produto.imagem,
+                                            contentDescription = produto.nome,
+                                            modifier = Modifier.fillMaxSize().padding(4.dp),
+                                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                            serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
+                                        )
                                     }
 
                                     Spacer(modifier = Modifier.height(4.dp))
