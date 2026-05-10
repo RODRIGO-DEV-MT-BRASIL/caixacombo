@@ -1,10 +1,12 @@
 package com.seucaixa.caixacombo.ui.screens
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -463,6 +465,27 @@ fun ProdutoDialog(
     var unidade by remember { mutableStateOf(produto.unidade) }
     var tipoPreco by remember { mutableStateOf(produto.tipoPreco) }
     var imagem by remember { mutableStateOf(produto.imagem) }
+    val context = LocalContext.current
+
+    // Launcher para selecionar imagem da galeria
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+                if (bytes != null) {
+                    val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    val mimeType = context.contentResolver.getType(it) ?: "image/jpeg"
+                    imagem = "data:$mimeType;base64,$base64"
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ProdutoDialog", "Erro ao converter imagem: ${e.message}")
+            }
+        }
+    }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val isEditing = produto.id != 0L
@@ -673,19 +696,72 @@ fun ProdutoDialog(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Seção: Imagem
-            SectionHeader(icon = Icons.Outlined.Image, title = "Imagem", color = primaryColor)
+            SectionHeader(icon = Icons.Outlined.Image, title = "Imagem do Produto", color = primaryColor)
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
-                    onClick = { /* Seleção de imagem requer implementação completa */ },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
-                ) {
-                    Icon(Icons.Default.Image, contentDescription = "Adicionar imagem")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (imagem != null) "Imagem selecionada" else "Adicionar imagem")
+                if (imagem != null) {
+                    // Preview da imagem com botão remover
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        com.seucaixa.caixacombo.ui.components.ProdutoImagem(
+                            imagem = imagem,
+                            contentDescription = "Preview",
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            serverUrl = PollingService.getServerUrl()
+                        )
+                        // Botão remover imagem (X no canto)
+                        IconButton(
+                            onClick = { imagem = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(28.dp)
+                                .background(
+                                    Color.Black.copy(alpha = 0.5f),
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(Icons.Default.Close, "Remover imagem", tint = Color.White, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    // Botão trocar imagem
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
+                    ) {
+                        Icon(Icons.Outlined.SwapHoriz, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Trocar imagem", fontWeight = FontWeight.Medium)
+                    }
+                } else {
+                    // Nenhuma imagem - botão adicionar com visual moderno
+                    OutlinedButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor),
+                        border = BorderStroke(1.5.dp, primaryColor.copy(alpha = 0.3f))
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Outlined.AddPhotoAlternate, null, modifier = Modifier.size(32.dp), tint = primaryColor.copy(alpha = 0.6f))
+                            Spacer(Modifier.height(4.dp))
+                            Text("Adicionar imagem", color = primaryColor.copy(alpha = 0.7f), fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
             }
 

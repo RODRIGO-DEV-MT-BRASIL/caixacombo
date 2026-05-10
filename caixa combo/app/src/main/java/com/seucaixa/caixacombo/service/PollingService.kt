@@ -84,6 +84,7 @@ class PollingService : Service() {
         }
 
         fun getServerUrl(): String = SERVER_URL
+        fun getDeviceId(): String? = pollingDeviceId
 
         fun setDeviceInfo(id: String, name: String, serial: String? = null) {
             pollingDeviceId = id
