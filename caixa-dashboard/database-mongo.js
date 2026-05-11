@@ -15,9 +15,9 @@ const ProdutoSchema = new mongoose.Schema({
   ativo: { type: Boolean, default: true },
   createdAt: { type: String }
 }, { versionKey: false });
-ProdutoSchema.index({ id: 1 }, { unique: true });
-ProdutoSchema.index({ codigoBarras: 1 });
-ProdutoSchema.index({ categoriaId: 1 });
+ProdutoSchema.index({ id: 1 }, { background: true });
+ProdutoSchema.index({ codigoBarras: 1 }, { background: true });
+ProdutoSchema.index({ categoriaId: 1 }, { background: true });
 
 const CategoriaSchema = new mongoose.Schema({
   id: { type: Number, required: true },
@@ -56,9 +56,9 @@ const VendaSchema = new mongoose.Schema({
   atk: { type: String, default: null },
   empresaId: { type: String, default: null }
 }, { versionKey: false });
-VendaSchema.index({ id: 1 }, { unique: true });
-VendaSchema.index({ deviceId: 1 });
-VendaSchema.index({ createdAt: -1 });
+VendaSchema.index({ id: 1 }, { background: true });
+VendaSchema.index({ deviceId: 1 }, { background: true });
+VendaSchema.index({ createdAt: -1 }, { background: true });
 
 const OperacaoSchema = new mongoose.Schema({
   id: { type: Number, default: null },
@@ -96,7 +96,7 @@ const DispositivoSchema = new mongoose.Schema({
   usageTimeLimit: { type: Number, default: null },
   usageStartTime: { type: String, default: null }
 }, { versionKey: false });
-DispositivoSchema.index({ deviceId: 1 }, { unique: true });
+DispositivoSchema.index({ deviceId: 1 }, { background: true });
 
 const EmpresaSchema = new mongoose.Schema({
   id: { type: String, required: true },
@@ -198,6 +198,14 @@ async function connectMongo() {
     await mongoose.connect(MONGO_URI);
     isConnected = true;
     console.log('📦 MongoDB conectado');
+    // Criar índices em background - não crashar se falhar
+    try {
+      await Promise.all(Object.values(mongoose.models).map(m => m.ensureIndexes().catch(e => {
+        console.warn(`⚠️ Índice falhou para ${m.modelName}: ${e.message}`);
+      })));
+    } catch (e) {
+      console.warn('⚠️ Alguns índices falharam, mas app continua:', e.message);
+    }
     await loadFromMongo();
   } catch (err) {
     console.error('❌ Erro ao conectar MongoDB:', err.message);
