@@ -1188,29 +1188,36 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
   // Notificar dashboards
   emitDeviceEvent('device_status_update', { deviceId, empresaId, status: 'online' });
 
-  // Enviar empresa_config para o terminal (whitelabel)
+  // Enviar empresa_config para o terminal (whitelabel) - via WebSocket E Polling
+  const empresaConfig = {
+    empresaId: empresa.id,
+    nome: empresa.nome,
+    primaryColor: empresa.primaryColor || '#3b82f6',
+    secondaryColor: empresa.secondaryColor || '#06b6d4',
+    accentColor: empresa.accentColor || '#10b981',
+    logoUrl: empresa.logoUrl || ''
+  };
+  const produtosEmpresa = db.produtos.filter(p => p.empresaId === empresaId);
+  const categoriasEmpresa = db.categorias.filter(c => c.empresaId === empresaId);
+  const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === empresaId);
+
+  // Via WebSocket (se conectado)
   const deviceSocket = device?.socketId ? io.sockets.sockets.get(device.socketId) : null;
   if (deviceSocket) {
     deviceSocket.emit('approval_status', { approved: true, status: 'online', empresaId });
-    deviceSocket.emit('empresa_config', {
-      empresaId: empresa.id,
-      nome: empresa.nome,
-      primaryColor: empresa.primaryColor || '#3b82f6',
-      secondaryColor: empresa.secondaryColor || '#06b6d4',
-      accentColor: empresa.accentColor || '#10b981',
-      logoUrl: empresa.logoUrl || ''
-    });
-    // Enviar produtos filtrados pela empresa
-    const produtosEmpresa = db.produtos.filter(p => p.empresaId === empresaId);
+    deviceSocket.emit('empresa_config', empresaConfig);
     deviceSocket.emit('produtos_sync', { produtos: produtosEmpresa, timestamp: new Date() });
-    // Enviar categorias filtradas
-    const categoriasEmpresa = db.categorias.filter(c => c.empresaId === empresaId);
     deviceSocket.emit('categorias_sync', { categorias: categoriasEmpresa, timestamp: new Date() });
-    // Enviar clientes filtrados
-    const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === empresaId);
     deviceSocket.emit('clientes_sync', clientesEmpresa);
-    console.log(`📦 Terminal ${deviceId} aprovado - enviados ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias`);
   }
+
+  // Via Polling (garantir entrega para terminais SUNMI)
+  enqueueDeviceCommand(deviceId, 'approval_status', { approved: true, status: 'online', empresaId });
+  enqueueDeviceCommand(deviceId, 'empresa_config', empresaConfig);
+  enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
+  if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
+  if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
+  console.log(`📦 Terminal ${deviceId} aprovado - ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias (WS+Poll)`);
 
   // Auditoria
   addAuditoria('mudanca_status', deviceId, `Dispositivo aprovado e associado à empresa ${empresa.nome}`, dashboardInfo?.usuario);
@@ -1240,12 +1247,15 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
     debouncedSaveData();
   }
 
-  // Notificar terminal que foi rejeitado
+  // Notificar terminal que foi rejeitado - via WebSocket E Polling
   const deviceSocket = device?.socketId ? io.sockets.sockets.get(device.socketId) : null;
   if (deviceSocket) {
     deviceSocket.emit('approval_status', { approved: false, status: 'pending', empresaId: null });
     deviceSocket.emit('produtos_sync', { produtos: [], timestamp: new Date() });
   }
+  // Via Polling (garantir entrega)
+  enqueueDeviceCommand(deviceId, 'approval_status', { approved: false, status: 'pending', empresaId: null });
+  enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: [] });
 
   emitDeviceEvent('device_status_update', { deviceId, empresaId: null, status: 'pending' });
 
