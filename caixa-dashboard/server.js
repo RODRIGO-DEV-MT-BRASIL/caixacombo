@@ -91,6 +91,28 @@ function generateId() {
   return now * 1000 + _idCounter; // Garante unicidade mesmo no mesmo ms
 }
 
+// Gerar slug único a partir do nome da empresa
+function generateSlug(nome, existingSlugs = []) {
+  // Remove acentos, converte para minúsculo, substitui espaços por hífen
+  let base = nome
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+    .trim()
+    .replace(/\s+/g, '-'); // Substitui espaços por hífen
+
+  let slug = base;
+  let counter = 1;
+
+  // Garante que o slug é único
+  while (existingSlugs.includes(slug)) {
+    slug = `${base}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+}
+
 const serverStartTime = new Date(); // Para detectar restart e forçar sync inicial
 const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
@@ -319,6 +341,7 @@ app.post('/api/auth/login', async (req, res) => {
           role: 'empresa',
           empresaNome: empresa.nome,
           empresaId: empresa.id,
+          slug: empresa.slug,
           permissoes: empresa.permissoes,
           paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
           branding: {
@@ -729,20 +752,25 @@ app.get('/api/empresas', authenticateToken, (req, res) => {
 app.post('/api/empresas', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas } = req.body;
-  
+
   if (!nome || !login || !senha) {
     return res.status(400).json({ error: 'Nome, login e senha são obrigatórios' });
   }
-  
+
   // Verificar se login já existe
   const existingLogin = (db.empresas || []).find(e => e.login === login);
   if (existingLogin) {
     return res.status(400).json({ error: 'Login já existe' });
   }
-  
+
+  // Gerar slug único baseado no nome
+  const existingSlugs = (db.empresas || []).map(e => e.slug);
+  const slug = generateSlug(nome, existingSlugs);
+
   const empresa = {
     id: generateId(),
     nome,
+    slug,
     cnpj: cnpj || null,
     email: email || null,
     telefone: telefone || null,
@@ -764,15 +792,20 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
     ativo: true,
     createdAt: new Date()
   };
-  
+
   if (!db.empresas) db.empresas = [];
   db.empresas.push(empresa);
   debouncedSaveData();
-  
+
   // Sincronizar empresa com os terminais
   broadcastEmpresasSync();
-  
-  res.json(empresa);
+
+  // Retornar empresa com URL completa
+  const baseUrl = process.env.FRONTEND_URL || req.headers.origin || 'https://caixacombo.com';
+  res.json({
+    ...empresa,
+    url: `${baseUrl}/${slug}`
+  });
 });
 
 app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
@@ -835,11 +868,51 @@ app.delete('/api/empresas/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
-  
+
   const deleted = db.empresas.splice(index, 1)[0];
   debouncedSaveData();
   broadcastEmpresasSync();
   res.json(deleted);
+});
+
+// Rota para verificar status/dados da empresa (nova ou com dados)
+app.get('/api/empresas/:id/status', authenticateToken, (req, res) => {
+  const isAdmin = req.user.role === 'admin'
+  const isOwnEmpresa = req.user.role === 'empresa' && req.user.empresaId == req.params.id
+
+  if (!isAdmin && !isOwnEmpresa) {
+    return res.status(403).json({ error: 'Acesso negado' })
+  }
+
+  const empresa = (db.empresas || []).find(e => e.id == req.params.id)
+  if (!empresa) return res.status(404).json({ error: 'Empresa não encontrada' })
+
+  const empresaId = req.params.id
+
+  // Contar dados desta empresa
+  const stats = {
+    produtos: db.produtos.filter(p => p.empresaId === empresaId).length,
+    categorias: db.categorias.filter(c => c.empresaId === empresaId).length,
+    vendas: db.vendas.filter(v => v.empresaId === empresaId).length,
+    clientes: (db.clientes || []).filter(c => c.empresaId === empresaId).length,
+    operacoes: (db.operacoes || []).filter(o => o.empresaId === empresaId).length
+  }
+
+  const isNova = stats.produtos === 0 && stats.categorias === 0 && stats.vendas === 0
+
+  res.json({
+    empresa: {
+      id: empresa.id,
+      nome: empresa.nome,
+      slug: empresa.slug,
+      createdAt: empresa.createdAt
+    },
+    stats,
+    isNova,
+    mensagem: isNova
+      ? 'Esta é uma empresa nova. Comece cadastrando categorias e produtos.'
+      : `Empresa com ${stats.produtos} produtos, ${stats.categorias} categorias e ${stats.vendas} vendas.`
+  })
 });
 
 // ==================== ROTAS DE CLIENTES ====================
@@ -1134,27 +1207,32 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
 
 // ==================== API DE OPERAÇÕES DE CAIXA ====================
 app.get('/api/operacoes', authenticateToken, (req, res) => {
-  // Retornar operações do banco local (do dashboard)
   const { limit, offset } = req.query;
-  if (!limit && !offset) return res.json(db.operacoes || []); // Retrocompatível: sem paginação retorna array
   let result = db.operacoes || [];
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    result = result.filter(o => !o.empresaId || o.empresaId === req.user.empresaId);
+  }
+  const total = result.length;
+  if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
   if (limit) result = result.slice(0, Number(limit));
-  res.json({ data: result, total: (db.operacoes || []).length });
+  res.json({ data: result, total });
 });
 
 app.post('/api/operacoes', authenticateToken, async (req, res) => {
   const { tipo, valor, deviceId, nomeOperador, observacao } = req.body;
-  
+
   const operacao = {
     id: generateId(),
-    tipo, // 'abertura', 'fechamento', 'suprimento', 'sangria'
+    tipo,
     valor: parseFloat(valor) || 0,
     deviceId,
     nomeOperador: nomeOperador || 'dashboard',
     observacao: observacao || '',
     dataHora: new Date().toISOString(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null)
   };
   
   const valorProcessado = operacao.valor;
