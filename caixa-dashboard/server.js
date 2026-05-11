@@ -708,10 +708,12 @@ app.delete('/api/produtos/:id', authenticateToken, async (req, res) => {
 
 // ==================== ROTAS DE EMPRESAS ====================
 app.get('/api/empresas', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   res.json(db.empresas || []);
 });
 
 app.post('/api/empresas', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas } = req.body;
   
   if (!nome || !login || !senha) {
@@ -760,6 +762,7 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
   
@@ -795,6 +798,7 @@ app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
 });
 
 app.delete('/api/empresas/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
   
