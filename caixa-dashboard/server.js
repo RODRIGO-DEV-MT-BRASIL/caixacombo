@@ -62,7 +62,7 @@ const upload = multer({
 });
 
 // ==================== PERSISTÊNCIA DE DADOS (MongoDB) ====================
-const { db, saveData, saveAuditoria, connectMongo } = require('./database-mongo');
+const { db, saveData, saveAuditoria, connectMongo, isConnected } = require('./database-mongo');
 
 // Debounce para saveData - evita múltiplos bulkWrites seguidos
 let saveDataTimer = null;
