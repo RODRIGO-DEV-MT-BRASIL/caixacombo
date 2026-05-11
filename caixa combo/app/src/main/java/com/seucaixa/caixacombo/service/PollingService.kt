@@ -60,6 +60,7 @@ class PollingService : Service() {
         private var onSyncComplete: ((Int, Int, Int) -> Unit)? = null     // produtos, categorias, clientes
         private var onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null  // approved, status, empresaId
         private var onEmpresaConfig: ((JSONObject) -> Unit)? = null       // empresa config (whitelabel)
+        private var onFuncionariosReceived: ((JSONArray) -> Unit)? = null  // funcionarios do servidor
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -113,7 +114,8 @@ class PollingService : Service() {
             onEmpresasReceived: ((JSONArray) -> Unit)? = null,
             onSyncComplete: ((Int, Int, Int) -> Unit)? = null,
             onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null,
-            onEmpresaConfig: ((JSONObject) -> Unit)? = null
+            onEmpresaConfig: ((JSONObject) -> Unit)? = null,
+            onFuncionariosReceived: ((JSONArray) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -129,6 +131,7 @@ class PollingService : Service() {
             this.onSyncComplete = onSyncComplete
             this.onApprovalStatus = onApprovalStatus
             this.onEmpresaConfig = onEmpresaConfig
+            this.onFuncionariosReceived = onFuncionariosReceived
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -683,6 +686,13 @@ class PollingService : Service() {
                 Log.d(TAG, "empresa_config_updated recebido: $params")
                 if (params != null) {
                     onEmpresaConfig?.invoke(params)
+                }
+            }
+            "funcionarios_sync" -> {
+                val funcionarios = params?.optJSONArray("funcionarios")
+                Log.d(TAG, "funcionarios_sync recebido: ${funcionarios?.length() ?: 0} funcionarios")
+                if (funcionarios != null) {
+                    onFuncionariosReceived?.invoke(funcionarios)
                 }
             }
             else -> {
