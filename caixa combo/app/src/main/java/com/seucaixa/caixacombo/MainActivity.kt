@@ -97,8 +97,11 @@ class MainActivity : ComponentActivity() {
         // Configuração de tela cheia imersiva
         setupImmersiveMode()
 
-        // Iniciar modo quiosque (lock task mode)
-        startLockTaskMode()
+        // Iniciar modo quiosque (lock task mode) - apenas se habilitado explicitamente
+        // Stone não permite Device Owner no terminal, kiosk mode fica desabilitado por padrão
+        val kioskEnabled = getSharedPreferences("lock_state", Context.MODE_PRIVATE)
+            .getBoolean("kiosk_enabled", false)
+        if (kioskEnabled) startLockTaskMode()
 
         // Agendar backup automático offline (WorkManager)
         BackupScheduler.schedule(applicationContext)
@@ -135,8 +138,12 @@ class MainActivity : ComponentActivity() {
         val cn = android.content.ComponentName(this, AdminReceiver::class.java)
         PollingService.setAdminInfo(dpm, cn)
 
-        // Verificar e solicitar ativação automática do Device Admin (pular no D2S)
-        if (!android.os.Build.MODEL.equals("D2s", ignoreCase = true)) {
+        // Verificar e solicitar ativação automática do Device Admin
+        // STONE: Não solicitar Device Admin em terminais Stone - não é permitido
+        // Só ativa se kiosk_enabled=true nas preferências
+        val kioskEnabledForAdmin = getSharedPreferences("lock_state", Context.MODE_PRIVATE)
+            .getBoolean("kiosk_enabled", false)
+        if (kioskEnabledForAdmin && !android.os.Build.MODEL.equals("D2s", ignoreCase = true)) {
             checkAndRequestDeviceAdmin(dpm, cn)
         }
 

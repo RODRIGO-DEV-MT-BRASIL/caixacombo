@@ -15,6 +15,9 @@ const ProdutoSchema = new mongoose.Schema({
   ativo: { type: Boolean, default: true },
   createdAt: { type: String }
 }, { versionKey: false });
+ProdutoSchema.index({ id: 1 }, { unique: true });
+ProdutoSchema.index({ codigoBarras: 1 });
+ProdutoSchema.index({ categoriaId: 1 });
 
 const CategoriaSchema = new mongoose.Schema({
   id: { type: Number, required: true },
@@ -53,8 +56,12 @@ const VendaSchema = new mongoose.Schema({
   atk: { type: String, default: null },
   empresaId: { type: String, default: null }
 }, { versionKey: false });
+VendaSchema.index({ id: 1 }, { unique: true });
+VendaSchema.index({ deviceId: 1 });
+VendaSchema.index({ createdAt: -1 });
 
 const OperacaoSchema = new mongoose.Schema({
+  id: { type: Number, default: null },
   tipo: { type: String, required: true },
   valor: { type: Number, default: 0 },
   deviceId: { type: String, default: null },
@@ -89,6 +96,7 @@ const DispositivoSchema = new mongoose.Schema({
   usageTimeLimit: { type: Number, default: null },
   usageStartTime: { type: String, default: null }
 }, { versionKey: false });
+DispositivoSchema.index({ deviceId: 1 }, { unique: true });
 
 const EmpresaSchema = new mongoose.Schema({
   id: { type: String, required: true },
@@ -138,6 +146,7 @@ const CaixaSessaoSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 const AuditoriaSchema = new mongoose.Schema({
+  id: { type: Number, default: null },
   tipo: { type: String, default: '' },
   deviceId: { type: String, default: '' },
   descricao: { type: String, default: '' },
@@ -201,8 +210,10 @@ async function loadFromMongo() {
   try {
     db.produtos = (await Produto.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.categorias = (await Categoria.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
-    db.vendas = (await Venda.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
-    db.operacoes = (await Operacao.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
+    // Vendas e operações: carregar apenas dos últimos 30 dias para economizar memória
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    db.vendas = (await Venda.find({ createdAt: { $gte: thirtyDaysAgo } }).sort({ createdAt: -1 }).lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
+    db.operacoes = (await Operacao.find({ timestamp: { $gte: Date.now() - 30 * 24 * 60 * 60 * 1000 } }).lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.usuarios = (await Usuario.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.dispositivos = (await Dispositivo.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.empresas = (await Empresa.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
@@ -212,7 +223,7 @@ async function loadFromMongo() {
     const configDoc = await ConfigDoc.findOne({ key: 'app' }).lean();
     db.config = configDoc ? (typeof configDoc.value === 'string' ? JSON.parse(configDoc.value) : configDoc.value) : {};
 
-    console.log(`📊 MongoDB carregado: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.vendas.length} vendas, ${db.operacoes.length} operações, ${db.usuarios.length} usuários, ${db.dispositivos.length} dispositivos`);
+    console.log(`📊 MongoDB carregado: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.vendas.length} vendas (30d), ${db.operacoes.length} operações (30d), ${db.usuarios.length} usuários, ${db.dispositivos.length} dispositivos`);
   } catch (err) {
     console.error('❌ Erro ao carregar dados do MongoDB:', err.message);
   }
@@ -287,23 +298,36 @@ async function saveData() {
       if (ops.length > 0) await Model.bulkWrite(ops, { ordered: false });
     };
 
+    // Upsert-only: sincroniza sem apagar registros antigos que não estão em memória
+    const bulkSyncUpsert = async (Model, items, keyField) => {
+      if (!items || items.length === 0) return; // Não apagar - pode haver registros antigos no MongoDB
+      const ops = items.map(item => {
+        const filter = {};
+        filter[keyField] = item[keyField];
+        const doc = { ...item };
+        return {
+          replaceOne: {
+            filter,
+            replacement: doc,
+            upsert: true
+          }
+        };
+      });
+      if (ops.length > 0) await Model.bulkWrite(ops, { ordered: false });
+    };
+
     await bulkSync(Produto, db.produtos, 'id');
     await bulkSync(Categoria, db.categorias, 'id');
-    await bulkSync(Venda, db.vendas, 'id');
+    await bulkSyncUpsert(Venda, db.vendas, 'id'); // Upsert-only: preserva vendas antigas
     await bulkSync(Usuario, db.usuarios, 'id');
     await bulkSync(Dispositivo, db.dispositivos, 'deviceId');
     await bulkSync(Empresa, db.empresas, 'id');
     await bulkSync(Cliente, db.clientes, 'id');
 
-    // Operações e auditoria: deleteAll + insertAll (não têm ID estável)
-    await Operacao.deleteMany({});
-    if (db.operacoes.length) await Operacao.insertMany(db.operacoes);
-
-    await AuditoriaDoc.deleteMany({});
-    if (db.auditoria.length) await AuditoriaDoc.insertMany(db.auditoria);
-
-    await CaixaSessao.deleteMany({});
-    if (db.caixaSessoes.length) await CaixaSessao.insertMany(db.caixaSessoes);
+    // Operações e auditoria: upsert-only para preservar registros antigos
+    await bulkSyncUpsert(Operacao, db.operacoes, 'id');
+    await bulkSyncUpsert(AuditoriaDoc, db.auditoria, 'id');
+    await bulkSyncUpsert(CaixaSessao, db.caixaSessoes, 'id');
 
     // Config
     if (db.config && Object.keys(db.config).length) {
