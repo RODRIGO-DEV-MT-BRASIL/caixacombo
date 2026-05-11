@@ -64,7 +64,32 @@ const upload = multer({
 // ==================== PERSISTÊNCIA DE DADOS (MongoDB) ====================
 const { db, saveData, saveAuditoria, connectMongo } = require('./database-mongo');
 
+// Debounce para saveData - evita múltiplos bulkWrites seguidos
+let saveDataTimer = null;
+const SAVEDATA_DEBOUNCE_MS = 2000; // 2 segundos
+function debouncedSaveData() {
+  if (saveDataTimer) clearTimeout(saveDataTimer);
+  saveDataTimer = setTimeout(async () => {
+    await saveData();
+    saveDataTimer = null;
+  }, SAVEDATA_DEBOUNCE_MS);
+}
+
 // Seed do admin será feito após connectMongo() para verificar dados do MongoDB primeiro
+
+// Gerador de IDs único - evita colisões quando múltiplas operações rodam no mesmo milissegundo
+let _idCounter = 0;
+let _lastIdTime = 0;
+function generateId() {
+  const now = Date.now();
+  if (now === _lastIdTime) {
+    _idCounter++;
+  } else {
+    _idCounter = 0;
+    _lastIdTime = now;
+  }
+  return now * 1000 + _idCounter; // Garante unicidade mesmo no mesmo ms
+}
 
 const serverStartTime = new Date(); // Para detectar restart e forçar sync inicial
 const connectedDevices = new Map();
@@ -82,17 +107,17 @@ async function initializeApp() {
   if (!existingAdmin) {
     if (!db.usuarios) db.usuarios = [];
     db.usuarios.push({
-      id: Date.now(),
+      id: generateId(),
       username: adminUsername,
       password: bcrypt.hashSync(adminPassword, 10),
       role: 'admin'
     });
-    saveData();
+    await saveData();
     console.log(`👤 Admin criado: ${adminUsername}`);
   } else if (!bcrypt.compareSync(adminPassword, existingAdmin.password)) {
     // Admin existe mas a senha não confere com a env var - atualizar
     existingAdmin.password = bcrypt.hashSync(adminPassword, 10);
-    saveData();
+    await saveData();
     console.log(`👤 Admin "${adminUsername}" atualizado com nova senha`);
   } else {
     console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
@@ -108,7 +133,7 @@ async function initializeApp() {
       }
     });
     if (imagensLimpas > 0) {
-      saveData();
+      await saveData();
       console.log(`🧹 ${imagensLimpas} imagens /uploads/ limpas (arquivos não existem mais no Render)`);
     }
   }
@@ -136,7 +161,7 @@ async function initializeApp() {
 // Função para adicionar logs de auditoria
 function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
   const log = {
-    id: Date.now(),
+    id: generateId(),
     timestamp: new Date(),
     tipo, // 'conexao', 'desconexao', 'bloqueio', 'desbloqueio', 'mudanca_status'
     deviceId,
@@ -163,9 +188,10 @@ function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
 }
 
 // Salvar dados periodicamente a cada 30 segundos
-setInterval(() => {
-  saveData();
-  console.log('💾 Dados salvos automaticamente');
+setInterval(async () => {
+  await saveData();
+  if (isConnected()) console.log('💾 Dados salvos no MongoDB');
+  else console.log('⚠️ MongoDB desconectado - dados apenas em memória');
 }, 30000);
 
 // ==================== CONTROLE VIA ADB ====================
@@ -222,9 +248,9 @@ async function sendAdbCommand(action, deviceId) {
 }
 
 // Salvar dados ao encerrar servidor
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n🔄 Salvando dados antes de encerrar...');
-  saveData();
+  await saveData();
   saveAuditoria();
   process.exit(0);
 });
@@ -259,7 +285,7 @@ function authenticateToken(req, res, next) {
 }
 
 // ==================== ROTAS API ====================
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   console.log(`[LOGIN] Tentativa: username="${username}", usuarios no db=${db.usuarios.length}, empresas no db=${(db.empresas || []).length}`);
   
@@ -311,7 +337,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
 });
 
 // Verificar senha para ações sensíveis
-app.post('/api/auth/verify-password', authenticateToken, (req, res) => {
+app.post('/api/auth/verify-password', authenticateToken, async (req, res) => {
   const { password } = req.body;
   const user = db.usuarios.find(u => u.id === req.user.id || u.username === req.user.username);
   if (!user) return res.status(401).json({ valid: false, error: 'Usuário não encontrado' });
@@ -320,7 +346,7 @@ app.post('/api/auth/verify-password', authenticateToken, (req, res) => {
 });
 
 // Reimprimir venda
-app.post('/api/vendas/:id/reimprimir', authenticateToken, (req, res) => {
+app.post('/api/vendas/:id/reimprimir', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const venda = (db.vendas || []).find(v => v.id == id);
   if (!venda) return res.status(404).json({ error: 'Venda não encontrada' });
@@ -340,7 +366,7 @@ app.post('/api/vendas/:id/reimprimir', authenticateToken, (req, res) => {
 });
 
 // Cancelar venda
-app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
+app.post('/api/vendas/:id/cancelar', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { motivo } = req.body;
   const vendaIndex = (db.vendas || []).findIndex(v => v.id == id);
@@ -361,7 +387,7 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, (req, res) => {
   db.vendas[vendaIndex].canceladaEm = new Date().toISOString();
   db.vendas[vendaIndex].canceladaPor = req.user.username;
   db.vendas[vendaIndex].motivoCancelamento = motivo || '';
-  saveData();
+  debouncedSaveData();
   
   // Enviar comando de cancelamento para o dispositivo com ATK e amount
   const amount = Math.round((venda.total || 0) * 100); // valor em centavos
@@ -393,10 +419,10 @@ app.get('/api/config', authenticateToken, (req, res) => {
   res.json(db.config);
 });
 
-app.post('/api/config', authenticateToken, (req, res) => {
+app.post('/api/config', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   db.config = { ...db.config, ...req.body, updatedAt: new Date().toISOString() };
-  saveData();
+  debouncedSaveData();
   io.emit('config_updated', db.config);
   addAuditoria('config', null, 'Configurações atualizadas', req.user.username);
   res.json({ success: true, config: db.config });
@@ -427,9 +453,9 @@ app.get('/api/categorias', authenticateToken, (req, res) => {
   res.json(db.categorias);
 });
 
-app.post('/api/categorias', authenticateToken, (req, res) => {
+app.post('/api/categorias', authenticateToken, async (req, res) => {
   const categoria = {
-    id: Date.now(),
+    id: generateId(),
     nome: req.body.nome,
     descricao: req.body.descricao,
     cor: req.body.cor || null,
@@ -439,31 +465,31 @@ app.post('/api/categorias', authenticateToken, (req, res) => {
     createdAt: new Date()
   };
   db.categorias.push(categoria);
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('categoria_added', categoria);
   broadcastCategoriasSync('added', categoria);
   
   res.json(categoria);
 });
 
-app.put('/api/categorias/:id', authenticateToken, (req, res) => {
+app.put('/api/categorias/:id', authenticateToken, async (req, res) => {
   const index = db.categorias.findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
   
   db.categorias[index] = { ...db.categorias[index], ...req.body };
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('categoria_updated', db.categorias[index]);
   broadcastCategoriasSync('updated', db.categorias[index]);
   
   res.json(db.categorias[index]);
 });
 
-app.delete('/api/categorias/:id', authenticateToken, (req, res) => {
+app.delete('/api/categorias/:id', authenticateToken, async (req, res) => {
   const index = db.categorias.findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
   
   const deleted = db.categorias.splice(index, 1)[0];
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('categoria_deleted', deleted);
   broadcastCategoriasSync('deleted', deleted);
   
@@ -489,7 +515,7 @@ app.post('/api/upload', authenticateToken, upload.single('imagem'), (req, res) =
 });
 
 // Upload de imagem via base64 (usado pelo ProdutoModal)
-app.post('/api/upload-base64', authenticateToken, (req, res) => {
+app.post('/api/upload-base64', authenticateToken, async (req, res) => {
   try {
     const { base64 } = req.body;
     if (!base64) return res.status(400).json({ error: 'Nenhuma imagem enviada' });
@@ -516,16 +542,26 @@ app.post('/api/upload-base64', authenticateToken, (req, res) => {
 
 // ==================== ROTAS DE PRODUTOS ====================
 app.get('/api/produtos', authenticateToken, (req, res) => {
-  res.json(db.produtos);
+  const { limit, offset } = req.query;
+  if (!limit && !offset) return res.json(db.produtos); // Retrocompatível: sem paginação retorna array
+  let result = db.produtos;
+  if (offset) result = result.slice(Number(offset));
+  if (limit) result = result.slice(0, Number(limit));
+  res.json({ data: result, total: db.produtos.length });
 });
 
 // Rota para buscar vendas
 app.get('/api/vendas', authenticateToken, (req, res) => {
-  res.json(db.vendas);
+  const { limit, offset } = req.query;
+  if (!limit && !offset) return res.json(db.vendas); // Retrocompatível: sem paginação retorna array
+  let result = db.vendas;
+  if (offset) result = result.slice(Number(offset));
+  if (limit) result = result.slice(0, Number(limit));
+  res.json({ data: result, total: db.vendas.length });
 });
 
 // Endpoint admin para limpar dados antigos
-app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
+app.post('/api/admin/clear-old-data', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   
   const today = new Date().toDateString();
@@ -571,7 +607,7 @@ app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
 
   console.log(`🧹 Limpeza: ${nullCount} dispositivos com deviceId null removidos, testes removidos`);
   
-  saveData();
+  await saveData();
   
   res.json({
     success: true,
@@ -583,9 +619,9 @@ app.post('/api/admin/clear-old-data', authenticateToken, (req, res) => {
   });
 });
 
-app.post('/api/produtos', authenticateToken, (req, res) => {
+app.post('/api/produtos', authenticateToken, async (req, res) => {
   const produto = {
-    id: Date.now(),
+    id: generateId(),
     nome: req.body.nome,
     descricao: req.body.descricao,
     preco: req.body.preco,
@@ -597,14 +633,14 @@ app.post('/api/produtos', authenticateToken, (req, res) => {
     createdAt: new Date()
   };
   db.produtos.push(produto);
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('produto_added', produto);
   broadcastProdutosSync('added', produto);
   
   res.json(produto);
 });
 
-app.put('/api/produtos/:id', authenticateToken, (req, res) => {
+app.put('/api/produtos/:id', authenticateToken, async (req, res) => {
   const index = db.produtos.findIndex(p => p.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
   
@@ -613,14 +649,14 @@ app.put('/api/produtos/:id', authenticateToken, (req, res) => {
     updateData.categoriaId = updateData.categoriaId ? Number(updateData.categoriaId) : null;
   }
   db.produtos[index] = { ...db.produtos[index], ...updateData };
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('produto_updated', db.produtos[index]);
   broadcastProdutosSync('updated', db.produtos[index]);
   
   res.json(db.produtos[index]);
 });
 
-app.delete('/api/produtos/:id', authenticateToken, (req, res) => {
+app.delete('/api/produtos/:id', authenticateToken, async (req, res) => {
   const index = db.produtos.findIndex(p => p.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
   
@@ -634,7 +670,7 @@ app.delete('/api/produtos/:id', authenticateToken, (req, res) => {
     }
   }
   
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
   io.emit('produto_deleted', deleted);
   broadcastProdutosSync('deleted', deleted);
   
@@ -646,7 +682,7 @@ app.get('/api/empresas', authenticateToken, (req, res) => {
   res.json(db.empresas || []);
 });
 
-app.post('/api/empresas', authenticateToken, (req, res) => {
+app.post('/api/empresas', authenticateToken, async (req, res) => {
   const { nome, cnpj, email, telefone, login, senha, permissoes } = req.body;
   
   if (!nome || !login || !senha) {
@@ -660,7 +696,7 @@ app.post('/api/empresas', authenticateToken, (req, res) => {
   }
   
   const empresa = {
-    id: Date.now(),
+    id: generateId(),
     nome,
     cnpj: cnpj || null,
     email: email || null,
@@ -680,7 +716,7 @@ app.post('/api/empresas', authenticateToken, (req, res) => {
   
   if (!db.empresas) db.empresas = [];
   db.empresas.push(empresa);
-  saveData();
+  debouncedSaveData();
   
   // Sincronizar empresa com os terminais
   broadcastEmpresasSync();
@@ -688,7 +724,7 @@ app.post('/api/empresas', authenticateToken, (req, res) => {
   res.json(empresa);
 });
 
-app.put('/api/empresas/:id', authenticateToken, (req, res) => {
+app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
   
@@ -712,27 +748,32 @@ app.put('/api/empresas/:id', authenticateToken, (req, res) => {
     updatedAt: new Date()
   };
   
-  saveData();
+  debouncedSaveData();
   broadcastEmpresasSync();
   res.json(db.empresas[index]);
 });
 
-app.delete('/api/empresas/:id', authenticateToken, (req, res) => {
+app.delete('/api/empresas/:id', authenticateToken, async (req, res) => {
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
   
   const deleted = db.empresas.splice(index, 1)[0];
-  saveData();
+  debouncedSaveData();
   broadcastEmpresasSync();
   res.json(deleted);
 });
 
 // ==================== ROTAS DE CLIENTES ====================
 app.get('/api/clientes', authenticateToken, (req, res) => {
-  res.json(db.clientes || []);
+  const { limit, offset } = req.query;
+  if (!limit && !offset) return res.json(db.clientes || []); // Retrocompatível: sem paginação retorna array
+  let result = db.clientes || [];
+  if (offset) result = result.slice(Number(offset));
+  if (limit) result = result.slice(0, Number(limit));
+  res.json({ data: result, total: (db.clientes || []).length });
 });
 
-app.post('/api/clientes', authenticateToken, (req, res) => {
+app.post('/api/clientes', authenticateToken, async (req, res) => {
   const { nome, cpfCnpj, telefone, email, endereco, cidade, cep, observacao } = req.body;
   
   if (!nome) {
@@ -740,7 +781,7 @@ app.post('/api/clientes', authenticateToken, (req, res) => {
   }
   
   const cliente = {
-    id: Date.now(),
+    id: generateId(),
     nome,
     cpfCnpj: cpfCnpj || '',
     telefone: telefone || '',
@@ -755,7 +796,7 @@ app.post('/api/clientes', authenticateToken, (req, res) => {
   
   if (!db.clientes) db.clientes = [];
   db.clientes.push(cliente);
-  saveData();
+  debouncedSaveData();
   
   // Notificar terminais via WebSocket e polling
   broadcastClientesSync();
@@ -763,24 +804,24 @@ app.post('/api/clientes', authenticateToken, (req, res) => {
   res.json(cliente);
 });
 
-app.put('/api/clientes/:id', authenticateToken, (req, res) => {
+app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
   const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
   
   db.clientes[index] = { ...db.clientes[index], ...req.body, id: db.clientes[index].id };
-  saveData();
+  debouncedSaveData();
   
   broadcastClientesSync();
   
   res.json(db.clientes[index]);
 });
 
-app.delete('/api/clientes/:id', authenticateToken, (req, res) => {
+app.delete('/api/clientes/:id', authenticateToken, async (req, res) => {
   const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
   
   const deleted = db.clientes.splice(index, 1)[0];
-  saveData();
+  debouncedSaveData();
   
   broadcastClientesSync();
   
@@ -852,7 +893,7 @@ function broadcastEmpresasSync() {
 }
 
 // Rota para associar dispositivo a empresa
-app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => {
+app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, async (req, res) => {
   const { deviceId } = req.params;
   const { empresaId } = req.body;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
@@ -871,7 +912,7 @@ app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => 
   const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
   if (deviceIndex !== -1) {
     db.dispositivos[deviceIndex].empresaId = empresaId;
-    saveData();
+    debouncedSaveData();
   }
 
   io.emit('device_status_update', { deviceId, empresaId });
@@ -883,7 +924,7 @@ app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, (req, res) => 
 });
 
 // ==================== ROTAS DE DISPOSITIVOS ====================
-app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) => {
+app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, res) => {
   const { deviceId } = req.params;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
 
@@ -901,7 +942,7 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, (req, res) =>
 
   // Atualizar senha no banco de dados
   db.dispositivos[deviceIndex].lockPassword = newPassword;
-  saveData(); // Salvar imediatamente
+  debouncedSaveData(); // Salvar imediatamente
 
   // Atualizar também no mapa de dispositivos conectados
   const connectedDevice = connectedDevices.get(deviceId);
@@ -1013,14 +1054,19 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
 // ==================== API DE OPERAÇÕES DE CAIXA ====================
 app.get('/api/operacoes', authenticateToken, (req, res) => {
   // Retornar operações do banco local (do dashboard)
-  res.json(db.operacoes || []);
+  const { limit, offset } = req.query;
+  if (!limit && !offset) return res.json(db.operacoes || []); // Retrocompatível: sem paginação retorna array
+  let result = db.operacoes || [];
+  if (offset) result = result.slice(Number(offset));
+  if (limit) result = result.slice(0, Number(limit));
+  res.json({ data: result, total: (db.operacoes || []).length });
 });
 
-app.post('/api/operacoes', authenticateToken, (req, res) => {
+app.post('/api/operacoes', authenticateToken, async (req, res) => {
   const { tipo, valor, deviceId, nomeOperador, observacao } = req.body;
   
   const operacao = {
-    id: Date.now(),
+    id: generateId(),
     tipo, // 'abertura', 'fechamento', 'suprimento', 'sangria'
     valor: parseFloat(valor) || 0,
     deviceId,
@@ -1061,7 +1107,7 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
       });
 
       const sessao = {
-        id: Date.now(),
+        id: generateId(),
         deviceId: deviceId || 'geral',
         aberturaEm: ultimaAbertura.dataHora,
         fechamentoEm: operacao.dataHora,
@@ -1094,7 +1140,7 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
     }
   }
   
-  saveData();
+  debouncedSaveData();
   
   // Broadcast para dashboards
   io.emit('operacao_adicionada', operacao);
@@ -1116,7 +1162,7 @@ app.post('/api/operacoes', authenticateToken, (req, res) => {
 });
 
 // DELETE operação (para limpar dados incorretos)
-app.delete('/api/operacoes/:id', authenticateToken, (req, res) => {
+app.delete('/api/operacoes/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   
   if (!db.operacoes) {
@@ -1129,7 +1175,7 @@ app.delete('/api/operacoes/:id', authenticateToken, (req, res) => {
   }
   
   const operacaoRemovida = db.operacoes.splice(index, 1)[0];
-  saveData();
+  debouncedSaveData();
   
   // Broadcast para dashboards
   io.emit('operacao_removida', { id: id });
@@ -1366,7 +1412,7 @@ app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
 const BLOCKED_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check'];
 
 // Dispositivo faz heartbeat e recebe comandos pendentes
-app.post('/api/device/poll', (req, res) => {
+app.post('/api/device/poll', async (req, res) => {
   const { deviceId, deviceName, deviceType, serialNumber, status, caixaData } = req.body;
   
   if (!deviceId) {
@@ -1414,7 +1460,7 @@ app.post('/api/device/poll', (req, res) => {
   } else {
     db.dispositivos[deviceIndex] = { ...db.dispositivos[deviceIndex], ...deviceData };
   }
-  saveData();
+  debouncedSaveData();
 
   // Detectar mudança de status e notificar dashboards
   const newStatus = status || existing?.status || 'online';
@@ -1481,7 +1527,7 @@ app.post('/api/device/poll', (req, res) => {
 });
 
 // Enviar venda via REST
-app.post('/api/device/sale', (req, res) => {
+app.post('/api/device/sale', async (req, res) => {
   const { deviceId, sale } = req.body;
   
   console.log(`💰 [SALE] Venda recebida via REST - deviceId: ${deviceId}, sale.id: ${sale?.id}, total: ${sale?.total}, forma: ${sale?.formaPagamento}`);
@@ -1509,7 +1555,7 @@ app.post('/api/device/sale', (req, res) => {
   } else {
     db.vendas[existingIndex] = enrichedSale;
   }
-  saveData();
+  debouncedSaveData();
 
   // Notificar dashboards
   io.emit('venda_added', enrichedSale);
@@ -1524,7 +1570,7 @@ app.post('/api/device/sale', (req, res) => {
 });
 
 // Enviar operação de caixa via REST (sem autenticação - usado pelos terminais Android)
-app.post('/api/device/operacao', (req, res) => {
+app.post('/api/device/operacao', async (req, res) => {
   const { deviceId, tipo, valor, nomeOperador, observacao } = req.body;
   
   if (!deviceId || !tipo) {
@@ -1534,7 +1580,7 @@ app.post('/api/device/operacao', (req, res) => {
   const deviceInfo = connectedDevices.get(deviceId);
 
   const operacao = {
-    id: Date.now(),
+    id: generateId(),
     tipo,
     valor: parseFloat(valor) || 0,
     deviceId,
@@ -1570,7 +1616,7 @@ app.post('/api/device/operacao', (req, res) => {
       });
       
       db.caixaSessoes.push({
-        id: Date.now(),
+        id: generateId(),
         deviceId: deviceId || 'geral',
         aberturaEm: ultimaAbertura.dataHora,
         fechamentoEm: operacao.dataHora,
@@ -1600,7 +1646,7 @@ app.post('/api/device/operacao', (req, res) => {
     }
   }
 
-  saveData();
+  debouncedSaveData();
 
   // Broadcast para todos os dashboards
   io.emit('operacao_adicionada', operacao);
@@ -1622,7 +1668,7 @@ app.post('/api/device/operacao', (req, res) => {
 });
 
 // Enviar status do dispositivo via REST
-app.post('/api/device/status', (req, res) => {
+app.post('/api/device/status', async (req, res) => {
   const { deviceId, status } = req.body;
   
   if (!deviceId) {
@@ -1647,7 +1693,7 @@ app.post('/api/device/status', (req, res) => {
 });
 
 // Enviar atualização de estoque via REST
-app.post('/api/device/estoque', (req, res) => {
+app.post('/api/device/estoque', async (req, res) => {
   const { deviceId, produtoId, novoEstoque } = req.body;
   
   if (!deviceId) {
@@ -1658,7 +1704,7 @@ app.post('/api/device/estoque', (req, res) => {
   if (produto) {
     const estoqueAnterior = produto.estoque;
     produto.estoque = novoEstoque;
-    saveData();
+    debouncedSaveData();
     io.emit('estoque_update', { deviceId, produtoId, novoEstoque });
     addAuditoria('estoque', deviceId, `Estoque atualizado: ${produto.nome} (${estoqueAnterior} -> ${novoEstoque})`, connectedDevices.get(deviceId)?.deviceName);
   }
@@ -1667,7 +1713,7 @@ app.post('/api/device/estoque', (req, res) => {
 });
 
 // Confirmar bloqueio via REST
-app.post('/api/device/lock-confirmed', (req, res) => {
+app.post('/api/device/lock-confirmed', async (req, res) => {
   const { deviceId } = req.body;
   const device = connectedDevices.get(deviceId);
   if (device) {
@@ -1679,7 +1725,7 @@ app.post('/api/device/lock-confirmed', (req, res) => {
 });
 
 // Confirmar desbloqueio via REST
-app.post('/api/device/unlock-confirmed', (req, res) => {
+app.post('/api/device/unlock-confirmed', async (req, res) => {
   const { deviceId } = req.body;
   const device = connectedDevices.get(deviceId);
   if (device) {
@@ -1691,7 +1737,7 @@ app.post('/api/device/unlock-confirmed', (req, res) => {
 });
 
 // Tentativa de desbloqueio via REST
-app.post('/api/device/unlock-attempt', (req, res) => {
+app.post('/api/device/unlock-attempt', async (req, res) => {
   const { deviceId, password } = req.body;
   const device = connectedDevices.get(deviceId);
   
@@ -1715,14 +1761,14 @@ app.post('/api/device/unlock-attempt', (req, res) => {
 });
 
 // Enviar resultado de controle via REST
-app.post('/api/device/control-result', (req, res) => {
+app.post('/api/device/control-result', async (req, res) => {
   const { deviceId, action, success, error } = req.body;
   io.emit('control_result', { deviceId, action, success, error });
   res.json({ success: true });
 });
 
 // Forçar sincronização de produtos/categorias para todos os terminais (dashboard)
-app.post('/api/force-sync', authenticateToken, (req, res) => {
+app.post('/api/force-sync', authenticateToken, async (req, res) => {
   const { type } = req.body; // 'produtos', 'categorias', 'all'
   let synced = [];
   
@@ -1768,7 +1814,7 @@ app.post('/api/force-sync', authenticateToken, (req, res) => {
 });
 
 // Sincronizar produtos via REST (dispositivo envia seus produtos)
-app.post('/api/device/produtos-sync', (req, res) => {
+app.post('/api/device/produtos-sync', async (req, res) => {
   const { deviceId, produtos } = req.body;
   // Notificar dashboards
   io.emit('produtos_sync', { deviceId, produtos });
@@ -1776,7 +1822,7 @@ app.post('/api/device/produtos-sync', (req, res) => {
 });
 
 // Terminal salva/edita produto sem autenticação JWT (usa deviceId)
-app.post('/api/device/produto-save', (req, res) => {
+app.post('/api/device/produto-save', async (req, res) => {
   const { deviceId, produto } = req.body;
   if (!produto || !produto.nome) {
     return res.status(400).json({ error: 'Dados do produto obrigatórios' });
@@ -1797,7 +1843,7 @@ app.post('/api/device/produto-save', (req, res) => {
     }
 
     db.produtos[index] = { ...db.produtos[index], ...updateData };
-    saveData();
+    debouncedSaveData();
     io.emit('produto_updated', db.produtos[index]);
     broadcastProdutosSync('updated', db.produtos[index]);
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} editou produto: ${produto.nome}`);
@@ -1805,7 +1851,7 @@ app.post('/api/device/produto-save', (req, res) => {
   } else {
     // Criar novo produto
     const novo = {
-      id: Date.now(),
+      id: generateId(),
       nome: produto.nome,
       descricao: produto.descricao || '',
       preco: produto.preco || 0,
@@ -1817,7 +1863,7 @@ app.post('/api/device/produto-save', (req, res) => {
       createdAt: new Date()
     };
     db.produtos.push(novo);
-    saveData();
+    debouncedSaveData();
     io.emit('produto_added', novo);
     broadcastProdutosSync('added', novo);
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} criou produto: ${novo.nome}`);
@@ -1841,7 +1887,7 @@ function enqueueDeviceCommand(deviceId, command, params = {}) {
 io.on('connection', (socket) => {
   console.log('🔌 Socket:', socket.id);
 
-  socket.on('device_connect', (data) => {
+  socket.on('device_connect', async (data) => {
     const { deviceId, deviceName, deviceType, serialNumber } = data;
 
     const existing = connectedDevices.get(deviceId);
@@ -1900,14 +1946,14 @@ io.on('connection', (socket) => {
         lockPassword: lockPassword,
         empresaId: existing ? existing.empresaId : null
       });
-      saveData();
+      debouncedSaveData();
       console.log(`💾 Dispositivo ${deviceId} salvo no banco de dados`);
     } else {
       // Atualizar dispositivo existente
       db.dispositivos[deviceIndex].status = connectedDevices.get(deviceId).status;
       db.dispositivos[deviceIndex].lockPassword = lockPassword;
       db.dispositivos[deviceIndex].connectedAt = new Date();
-      saveData();
+      debouncedSaveData();
     }
 
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);
@@ -1921,7 +1967,7 @@ io.on('connection', (socket) => {
     console.log(`📦 Enviados ${db.produtos.length} produtos para ${deviceId}`);
   });
 
-  socket.on('device_status', (data) => {
+  socket.on('device_status', async (data) => {
     const { deviceId, status } = data;
     const device = connectedDevices.get(deviceId);
     if (device) {
@@ -1950,7 +1996,7 @@ io.on('connection', (socket) => {
   });
 
   // Receber atualizações de estoque dos dispositivos
-  socket.on('estoque_update', (data) => {
+  socket.on('estoque_update', async (data) => {
     console.log(`📦 [ESTOQUE] Atualização de ${data.deviceId}: produto ${data.produtoId} -> ${data.novoEstoque}`);
     
     // Atualizar estoque no banco local
@@ -1958,7 +2004,7 @@ io.on('connection', (socket) => {
     if (produto) {
       const estoqueAnterior = produto.estoque;
       produto.estoque = data.novoEstoque;
-      saveData();
+      debouncedSaveData();
       
       // Broadcast para todos os dashboards
       io.emit('estoque_atualizado', {
@@ -1981,7 +2027,7 @@ io.on('connection', (socket) => {
   });
 
   // Receber operações de caixa do Android
-  socket.on('operacao_data', (data) => {
+  socket.on('operacao_data', async (data) => {
     console.log('🔓 [DEBUG] operacao_data recebido:', data);
     const { deviceId, operacao } = data;
     console.log(`💰 [OPERAÇÃO] Recebida de ${deviceId}:`, operacao);
@@ -1993,7 +2039,7 @@ io.on('connection', (socket) => {
       deviceId,
       timestamp: Date.now()
     });
-    saveData();
+    debouncedSaveData();
     
     // Broadcast para todos os dashboards
     io.emit('operacao_adicionada', {
@@ -2006,7 +2052,7 @@ io.on('connection', (socket) => {
   });
 
   // Receber dados de venda do Android
-  socket.on('sale_data', (data) => {
+  socket.on('sale_data', async (data) => {
     const { deviceId, sale } = data;
     console.log('💰 Venda recebida do dispositivo:', deviceId);
     
@@ -2029,7 +2075,7 @@ io.on('connection', (socket) => {
     
     // Salvar venda no banco de dados
     const venda = {
-      id: Date.now(),
+      id: generateId(),
       deviceId: deviceId,
       numero: sale.numero || `V${Date.now()}`,
       itens: sale.itens || [],
@@ -2043,7 +2089,7 @@ io.on('connection', (socket) => {
     };
     
     db.vendas.push(venda);
-    saveData();
+    debouncedSaveData();
     
     // Emitir evento para atualizar dashboards
     io.emit('venda_added', venda);
@@ -2052,7 +2098,7 @@ io.on('connection', (socket) => {
   });
 
   // Validar senha de desbloqueio enviada pelo terminal
-  socket.on('unlock_attempt', (data) => {
+  socket.on('unlock_attempt', async (data) => {
     const { deviceId, password } = data;
     const device = connectedDevices.get(deviceId);
     
@@ -2093,7 +2139,7 @@ io.on('connection', (socket) => {
   });
 
   // Dispositivo confirmando desbloqueio via terminal (legado - manter compatibilidade)
-  socket.on('unlock_confirmed', (data) => {
+  socket.on('unlock_confirmed', async (data) => {
     console.log('🔓 [DEBUG] Evento unlock_confirmed recebido:', data);
     const { deviceId } = data;
     const device = connectedDevices.get(deviceId);
@@ -2160,7 +2206,7 @@ io.on('connection', (socket) => {
   });
 
   // Resultado de comando de controle do dispositivo
-  socket.on('control_result', (data) => {
+  socket.on('control_result', async (data) => {
     const { deviceId, action, success, error } = data;
     console.log(`🎮 [CONTROL_RESULT] ${deviceId} - ${action} - sucesso=${success} ${error ? `- erro: ${error}` : ''}`);
 
@@ -2174,13 +2220,13 @@ io.on('connection', (socket) => {
   });
 
   // Log de comando recebido pelo dispositivo (para rastreamento)
-  socket.on('control_log', (data) => {
+  socket.on('control_log', async (data) => {
     const { deviceId, action, timestamp } = data;
     console.log(`📝 [CONTROL_LOG] Dispositivo ${deviceId} recebeu comando: ${action} em ${new Date(timestamp).toLocaleString('pt-BR')}`);
   });
 
   // Endpoint alternativo para forçar desbloqueio (se o app não enviar unlock_confirmed)
-  socket.on('force_unlock', (data) => {
+  socket.on('force_unlock', async (data) => {
     const { deviceId } = data;
     const device = connectedDevices.get(deviceId);
     const dashboardInfo = connectedDashboards.get(socket.id);
@@ -2202,7 +2248,7 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].status = 'online';
         db.dispositivos[deviceIndex].lockReason = null;
         db.dispositivos[deviceIndex].lockedAt = null;
-        saveData();
+        debouncedSaveData();
         io.emit('device_status_update', { deviceId, status: 'online' });
         addAuditoria('desbloqueio', deviceId, 'Desbloqueio forçado (offline)', dashboardInfo?.usuario);
       }
@@ -2210,7 +2256,7 @@ io.on('connection', (socket) => {
   });
 
   // Definir tempo de uso para dispositivo
-  socket.on('set_usage_time', (data) => {
+  socket.on('set_usage_time', async (data) => {
     const { deviceId, minutes } = data;
     const device = connectedDevices.get(deviceId);
     const dashboardInfo = connectedDashboards.get(socket.id);
@@ -2288,7 +2334,7 @@ io.on('connection', (socket) => {
   }, 1000); // Verificar a cada segundo para contador preciso
 
   // Endpoint para sincronizar dados com dispositivos
-  socket.on('sync_data', (data) => {
+  socket.on('sync_data', async (data) => {
     const { deviceId, type } = data;
     const dashboardInfo = connectedDashboards.get(socket.id);
     
@@ -2335,7 +2381,7 @@ io.on('connection', (socket) => {
     addAuditoria('mudanca_status', deviceId, `Sincronização solicitada: ${type}`, dashboardInfo?.usuario);
   });
 
-  socket.on('dashboard_connect', (data) => {
+  socket.on('dashboard_connect', async (data) => {
     const { token } = data || {};
     let usuario = 'dashboard';
     
@@ -2377,7 +2423,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('lock_device', (data) => {
+  socket.on('lock_device', async (data) => {
     const { deviceId, reason } = data;
     const device = connectedDevices.get(deviceId);
     const dashboardInfo = connectedDashboards.get(socket.id);
@@ -2403,14 +2449,14 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].status = 'locked';
         db.dispositivos[deviceIndex].lockReason = reason;
         db.dispositivos[deviceIndex].lockedAt = new Date();
-        saveData();
+        debouncedSaveData();
         io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
         addAuditoria('bloqueio', deviceId, `Bloqueado (offline): ${reason}`, dashboardInfo?.usuario);
       }
     }
   });
 
-  socket.on('unlock_device', (data) => {
+  socket.on('unlock_device', async (data) => {
     const { deviceId } = data;
     const device = connectedDevices.get(deviceId);
     const dashboardInfo = connectedDashboards.get(socket.id);
@@ -2430,7 +2476,7 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].status = 'online';
         db.dispositivos[deviceIndex].lockReason = null;
         db.dispositivos[deviceIndex].lockedAt = null;
-        saveData();
+        debouncedSaveData();
         io.emit('device_status_update', { deviceId, status: 'online' });
         addAuditoria('desbloqueio', deviceId, 'Desbloqueado (offline)', dashboardInfo?.usuario);
       }

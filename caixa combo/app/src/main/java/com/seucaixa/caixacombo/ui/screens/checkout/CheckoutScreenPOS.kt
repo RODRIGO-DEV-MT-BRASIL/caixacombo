@@ -48,6 +48,13 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 
+private const val CODE_WEIGHT = 0.15f
+private const val PRODUCT_WEIGHT = 0.25f
+private const val QTD_WEIGHT = 0.15f
+private const val VALUE_WEIGHT = 0.15f
+private const val TOTAL_WEIGHT = 0.15f
+private const val ACTION_WEIGHT = 0.10f
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreenPOS(
@@ -791,12 +798,13 @@ private fun CarrinhoTableHeader(primaryColor: Color, isSmallScreen: Boolean = fa
             .background(primaryColor.copy(alpha = 0.15f))
             .padding(horizontal = if (isSmallScreen) 4.dp else 12.dp, vertical = if (isSmallScreen) 5.dp else 8.dp)
     ) {
-        Text("CÓD", modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.1f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
-        Text("PRODUTO", modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
-        Text("QTD", modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.12f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.Center)
-        Text("VL UNIT", modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
-        Text("TOTAL", modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.16f), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
-        Spacer(modifier = Modifier.weight(if (isSmallScreen) 0.12f else 0.16f))
+        Text("CÓD", modifier = Modifier.weight(CODE_WEIGHT), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("PRODUTO", modifier = Modifier.weight(PRODUCT_WEIGHT), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor)
+        Text("QTD", modifier = Modifier.weight(QTD_WEIGHT), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.Center)
+        Text("VL UNIT", modifier = Modifier.weight(VALUE_WEIGHT), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
+        Text("TOTAL", modifier = Modifier.weight(TOTAL_WEIGHT), fontWeight = FontWeight.Bold, fontSize = fs, color = primaryColor, textAlign = TextAlign.End)
+        Spacer(modifier = Modifier.weight(ACTION_WEIGHT))
     }
 }
 
@@ -820,16 +828,17 @@ private fun CarrinhoTableRow(
             val idStr = item.produtoId.toString()
             if (idStr.length > 5) "#" + idStr.takeLast(5) else idStr
         } else item.produtoId.toString()
-        Text(codDisplay, modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.1f), fontSize = if (isSmallScreen) 10.sp else fs, fontFamily = FontFamily.Monospace, maxLines = 1)
-        Text(item.produtoNome, modifier = Modifier.weight(if (isSmallScreen) 0.28f else 0.3f), fontSize = fs, fontWeight = FontWeight.Medium, maxLines = 1)
-        Row(modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.16f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+        Text(codDisplay, modifier = Modifier.weight(CODE_WEIGHT), fontSize = if (isSmallScreen) 10.sp else fs, fontFamily = FontFamily.Monospace, maxLines = 1)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(item.produtoNome, modifier = Modifier.weight(PRODUCT_WEIGHT), fontSize = fs, fontWeight = FontWeight.Medium, maxLines = 1)
+        Row(modifier = Modifier.weight(QTD_WEIGHT), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Remove, null, modifier = Modifier.size(iconSize).clickable { onQuantidadeChange(item.quantidade - 1) }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("%.0f".format(item.quantidade), fontSize = if (isSmallScreen) 14.sp else 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 6.dp))
             Icon(Icons.Default.Add, null, modifier = Modifier.size(iconSize).clickable { onQuantidadeChange(item.quantidade + 1) }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text("R$%.2f".format(item.precoUnitario), modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.16f), fontSize = fs, textAlign = TextAlign.End)
-        Text("R$%.2f".format(item.total), modifier = Modifier.weight(if (isSmallScreen) 0.15f else 0.16f), fontSize = fs, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.primary)
-        Icon(Icons.Default.Close, null, modifier = Modifier.size(if (isSmallScreen) 12.dp else 14.dp).weight(if (isSmallScreen) 0.1f else 0.16f).clickable { onRemover() }, tint = MaterialTheme.colorScheme.error)
+        Text("R$%.2f".format(item.precoUnitario), modifier = Modifier.weight(VALUE_WEIGHT), fontSize = fs, textAlign = TextAlign.End)
+        Text("R$%.2f".format(item.total), modifier = Modifier.weight(TOTAL_WEIGHT), fontSize = fs, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = MaterialTheme.colorScheme.primary)
+        Icon(Icons.Default.Close, null, modifier = Modifier.size(if (isSmallScreen) 12.dp else 14.dp).weight(ACTION_WEIGHT).clickable { onRemover() }, tint = MaterialTheme.colorScheme.error)
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 }
