@@ -13,6 +13,7 @@ const ProdutoSchema = new mongoose.Schema({
   imagem: { type: String, default: '' },
   unidade: { type: String, default: 'UN' },
   ativo: { type: Boolean, default: true },
+  empresaId: { type: String, default: null },
   createdAt: { type: String }
 }, { versionKey: false });
 ProdutoSchema.index({ id: 1 }, { background: true });
@@ -25,7 +26,8 @@ const CategoriaSchema = new mongoose.Schema({
   cor: { type: String, default: null },
   icone: { type: String, default: null },
   ordem: { type: Number, default: 0 },
-  ativa: { type: Boolean, default: true }
+  ativa: { type: Boolean, default: true },
+  empresaId: { type: String, default: null }
 }, { versionKey: false });
 
 const VendaItemSchema = new mongoose.Schema({
@@ -131,6 +133,7 @@ const ClienteSchema = new mongoose.Schema({
   cep: { type: String, default: '' },
   observacao: { type: String, default: '' },
   ativo: { type: Boolean, default: true },
+  empresaId: { type: String, default: null },
   dataCriacao: { type: Number, default: null }
 }, { versionKey: false });
 

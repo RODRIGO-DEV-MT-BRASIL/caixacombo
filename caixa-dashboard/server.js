@@ -479,6 +479,10 @@ app.get('/api/auditoria', authenticateToken, (req, res) => {
 
 // ==================== ROTAS DE CATEGORIAS ====================
 app.get('/api/categorias', authenticateToken, (req, res) => {
+  // Se for empresa, filtrar apenas suas categorias (ou categorias globais sem empresaId)
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    return res.json(db.categorias.filter(c => !c.empresaId || c.empresaId === req.user.empresaId));
+  }
   res.json(db.categorias);
 });
 
@@ -491,13 +495,13 @@ app.post('/api/categorias', authenticateToken, async (req, res) => {
     icone: req.body.icone || null,
     ordem: req.body.ordem || 0,
     ativa: req.body.ativa !== false,
+    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null),
     createdAt: new Date()
   };
   db.categorias.push(categoria);
-  debouncedSaveData(); // Salvar imediatamente
+  debouncedSaveData();
   io.emit('categoria_added', categoria);
   broadcastCategoriasSync('added', categoria);
-  
   res.json(categoria);
 });
 
@@ -572,21 +576,31 @@ app.post('/api/upload-base64', authenticateToken, async (req, res) => {
 // ==================== ROTAS DE PRODUTOS ====================
 app.get('/api/produtos', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
-  if (!limit && !offset) return res.json(db.produtos); // Retrocompatível: sem paginação retorna array
   let result = db.produtos;
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    result = result.filter(p => !p.empresaId || p.empresaId === req.user.empresaId);
+  }
+  const total = result.length;
+  if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
   if (limit) result = result.slice(0, Number(limit));
-  res.json({ data: result, total: db.produtos.length });
+  res.json({ data: result, total });
 });
 
 // Rota para buscar vendas
 app.get('/api/vendas', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
-  if (!limit && !offset) return res.json(db.vendas); // Retrocompatível: sem paginação retorna array
   let result = db.vendas;
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    result = result.filter(v => !v.empresaId || v.empresaId === req.user.empresaId);
+  }
+  const total = result.length;
+  if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
   if (limit) result = result.slice(0, Number(limit));
-  res.json({ data: result, total: db.vendas.length });
+  res.json({ data: result, total });
 });
 
 // Endpoint admin para limpar dados antigos
@@ -659,13 +673,13 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
     estoque: req.body.estoque || 0,
     unidade: req.body.unidade || 'un',
     imagem: (req.body.imagem && (req.body.imagem.startsWith('/uploads/') || req.body.imagem.startsWith('data:image/'))) ? req.body.imagem : null,
+    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null),
     createdAt: new Date()
   };
   db.produtos.push(produto);
-  debouncedSaveData(); // Salvar imediatamente
+  debouncedSaveData();
   io.emit('produto_added', produto);
   broadcastProdutosSync('added', produto);
-  
   res.json(produto);
 });
 
@@ -762,39 +776,59 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
-  const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
-  if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
-  
-  const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas, ativo } = req.body;
-  
-  // Verificar se login já existe (excluindo a empresa atual)
-  const existingLogin = (db.empresas || []).find(e => e.login === login && e.id != req.params.id);
-  if (existingLogin) {
-    return res.status(400).json({ error: 'Login já existe' });
+  const isAdmin = req.user.role === 'admin'
+  const isOwnEmpresa = req.user.role === 'empresa' && req.user.empresaId == req.params.id
+
+  if (!isAdmin && !isOwnEmpresa) {
+    return res.status(403).json({ error: 'Acesso negado' })
   }
-  
-  db.empresas[index] = {
-    ...db.empresas[index],
-    nome: nome || db.empresas[index].nome,
-    cnpj: cnpj !== undefined ? cnpj : db.empresas[index].cnpj,
-    email: email !== undefined ? email : db.empresas[index].email,
-    telefone: telefone !== undefined ? telefone : db.empresas[index].telefone,
-    login: login || db.empresas[index].login,
-    senha: senha ? bcrypt.hashSync(senha, 10) : db.empresas[index].senha,
-    permissoes: permissoes || db.empresas[index].permissoes,
-    primaryColor: primaryColor !== undefined ? primaryColor : (db.empresas[index].primaryColor || '#3b82f6'),
-    secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
-    accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
-    logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
-    paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
-    ativo: ativo !== undefined ? ativo : (db.empresas[index].ativo !== undefined ? db.empresas[index].ativo : true),
-    updatedAt: new Date()
-  };
-  
-  debouncedSaveData();
-  broadcastEmpresasSync();
-  res.json(db.empresas[index]);
+
+  const index = (db.empresas || []).findIndex(e => e.id == req.params.id)
+  if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' })
+
+  const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas, ativo } = req.body
+
+  // Verificar se login já existe (excluindo a empresa atual) - apenas admin pode mudar login
+  if (login && isAdmin) {
+    const existingLogin = (db.empresas || []).find(e => e.login === login && e.id != req.params.id)
+    if (existingLogin) return res.status(400).json({ error: 'Login já existe' })
+  }
+
+  // Empresa só pode atualizar suas próprias cores/nome/logo
+  if (isOwnEmpresa) {
+    db.empresas[index] = {
+      ...db.empresas[index],
+      nome: nome || db.empresas[index].nome,
+      primaryColor: primaryColor !== undefined ? primaryColor : (db.empresas[index].primaryColor || '#3b82f6'),
+      secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
+      accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
+      logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
+      updatedAt: new Date()
+    }
+  } else {
+    // Admin pode atualizar tudo
+    db.empresas[index] = {
+      ...db.empresas[index],
+      nome: nome || db.empresas[index].nome,
+      cnpj: cnpj !== undefined ? cnpj : db.empresas[index].cnpj,
+      email: email !== undefined ? email : db.empresas[index].email,
+      telefone: telefone !== undefined ? telefone : db.empresas[index].telefone,
+      login: login || db.empresas[index].login,
+      senha: senha ? bcrypt.hashSync(senha, 10) : db.empresas[index].senha,
+      permissoes: permissoes || db.empresas[index].permissoes,
+      primaryColor: primaryColor !== undefined ? primaryColor : (db.empresas[index].primaryColor || '#3b82f6'),
+      secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
+      accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
+      logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
+      paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+      ativo: ativo !== undefined ? ativo : (db.empresas[index].ativo !== undefined ? db.empresas[index].ativo : true),
+      updatedAt: new Date()
+    }
+  }
+
+  debouncedSaveData()
+  broadcastEmpresasSync()
+  res.json(db.empresas[index])
 });
 
 app.delete('/api/empresas/:id', authenticateToken, async (req, res) => {
@@ -811,20 +845,21 @@ app.delete('/api/empresas/:id', authenticateToken, async (req, res) => {
 // ==================== ROTAS DE CLIENTES ====================
 app.get('/api/clientes', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
-  if (!limit && !offset) return res.json(db.clientes || []); // Retrocompatível: sem paginação retorna array
   let result = db.clientes || [];
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    result = result.filter(c => !c.empresaId || c.empresaId === req.user.empresaId);
+  }
+  const total = result.length;
+  if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
   if (limit) result = result.slice(0, Number(limit));
-  res.json({ data: result, total: (db.clientes || []).length });
+  res.json({ data: result, total });
 });
 
 app.post('/api/clientes', authenticateToken, async (req, res) => {
   const { nome, cpfCnpj, telefone, email, endereco, cidade, cep, observacao } = req.body;
-  
-  if (!nome) {
-    return res.status(400).json({ error: 'Nome é obrigatório' });
-  }
-  
+  if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' });
   const cliente = {
     id: generateId(),
     nome,
@@ -836,6 +871,7 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
     cep: cep || '',
     observacao: observacao || '',
     ativo: true,
+    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null),
     dataCriacao: Date.now()
   };
   

@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { useToast } from '../components/Toast'
-import { 
+import {
   LayoutDashboard, Package, Tags, ShoppingCart, Wifi, WifiOff,
-  LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play, 
+  LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play,
   ChevronRight, Activity, TrendingUp, AlertTriangle, CheckCircle2,
   Search, RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
   Settings,
-  Play as PlayIcon, X as CloseIcon, Power, History, Building2, Users
+  Play as PlayIcon, X as CloseIcon, Power, History, Building2, Users,
+  BarChart3, PieChart, TrendingUp as Trending, DollarSign as Dollar
 } from 'lucide-react'
 import Produtos from './Produtos'
 import Categorias from './Categorias'
@@ -19,6 +20,7 @@ import Auditoria from './Auditoria'
 import Empresas from './Empresas'
 import Terminais from './Terminais'
 import Configuracoes from './Configuracoes'
+import DashboardCharts from './DashboardCharts'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
@@ -35,12 +37,8 @@ const navItems = [
 
 export default function Dashboard() {
   const { user, logout, token, hasPermission, hasPageAccess } = useAuth()
-  const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp, timeUpdates, socket } = useSocket()
-  const { success } = useToast()
-  const [page, setPage] = useState(() => {
-    // Se for empresa, começar na primeira página permitida
-    return 'dashboard'
-  })
+  const { devices, connected, socket } = useSocket()
+  const [page, setPage] = useState('dashboard')
 
   // Redirecionar se página atual não está permitida
   useEffect(() => {
@@ -49,72 +47,13 @@ export default function Dashboard() {
       if (firstAllowed) setPage(firstAllowed.id)
     }
   }, [user, page, hasPageAccess])
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [usageModal, setUsageModal] = useState(null)
-  const [usageMinutes, setUsageMinutes] = useState('')
-  const [lockModal, setLockModal] = useState(null)
-  const [lockReason, setLockReason] = useState('')
-  const [showPassword, setShowPassword] = useState({})
-  const [changePasswordModal, setChangePasswordModal] = useState(null)
 
-  // Listener para eventos de desbloqueio e bloqueio de terminal
-  useEffect(() => {
-    const handleDeviceUnlocked = (event) => {
-      const { deviceId, deviceName } = event.detail
-      console.log(`🔓 Terminal desbloqueado: ${deviceName}`)
-
-      // Mostrar notificação toast
-      success(
-        `🔓 Terminal desbloqueado: ${deviceName}`,
-        5000
-      )
-    }
-
-    const handleDeviceLocked = (event) => {
-      const { deviceId, deviceName, reason } = event.detail
-      console.log(`🔒 Terminal bloqueado: ${deviceName} - ${reason}`)
-
-      // Mostrar notificação toast
-      success(
-        `🔒 Terminal bloqueado: ${deviceName} - ${reason}`,
-        5000
-      )
-    }
-
-    const handleControlResult = (event) => {
-      const { deviceId, action, success: isSuccess, error } = event.detail
-      const deviceName = event.detail.deviceName || deviceId
-
-      const actionNames = {
-        'open_app': 'Abrir app',
-        'close_app': 'Fechar app',
-        'restart': 'Reiniciar dispositivo',
-        'shutdown': 'Desligar dispositivo'
-      }
-
-      if (isSuccess) {
-        success(`✅ ${actionNames[action] || action} executado com sucesso em ${deviceName}`, 3000)
-      } else {
-        success(`❌ Erro ao ${actionNames[action] || action} em ${deviceName}: ${error}`, 5000)
-      }
-    }
-
-    window.addEventListener('device_unlocked', handleDeviceUnlocked)
-    window.addEventListener('device_locked', handleDeviceLocked)
-    window.addEventListener('control_result', handleControlResult)
-
-    return () => {
-      window.removeEventListener('device_unlocked', handleDeviceUnlocked)
-      window.removeEventListener('device_locked', handleDeviceLocked)
-      window.removeEventListener('control_result', handleControlResult)
-    }
-  }, [success])
 
   const onlineDevices = devices.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
-  const lockedDevices = devices.filter(d => d.status === 'locked')
   const inUseDevices = devices.filter(d => d.status === 'in_use')
-  const freeOnlineDevices = devices.filter(d => d.status === 'online' || (d.online && d.status !== 'locked' && d.status !== 'in_use'))
 
   // Filtrar itens do menu baseado em permissões e páginas permitidas
   const filteredNavItems = navItems.filter(item => {
@@ -124,121 +63,11 @@ export default function Dashboard() {
     return true
   })
 
-  // Função para formatar tempo (MM:SS)
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  // Verificar se tempo expirou para mostrar botão "Forçar Bloqueio"
-  const isTimeExpired = (deviceId) => {
-    const timeUpdate = timeUpdates[deviceId]
-    return timeUpdate && timeUpdate.remaining <= 0
-  }
-
-  const statusConfig = {
-    online: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Disponível' },
-    locked: { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20', icon: Lock, label: 'Bloqueado' },
-    locked_timer: { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: Clock, label: 'Bloq. por Tempo' },
-    offline: { color: 'text-gray-500', bg: 'bg-gray-500/10', border: 'border-gray-500/20', icon: WifiOff, label: 'Offline' },
-    in_use: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Clock, label: 'Em Uso' },
-  }
-
-  const getDeviceStatus = (device) => {
-    if (device.status === 'locked') {
-      return device.lockReason === 'Tempo de uso expirado' ? 'locked_timer' : 'locked'
-    }
-    if (device.status === 'in_use') return 'in_use'
-    if (device.online === false && device.status !== 'online') return 'offline'
-    return 'online'
-  }
-
-  const getConnectedTime = (connectedAt) => {
-    if (!connectedAt) return '-'
-    const now = new Date()
-    const connDate = new Date(connectedAt)
-    const diff = now - connDate
-    const minutes = Math.floor(diff / 60000)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-    
-    if (days > 0) return `${days}d ${hours % 24}h`
-    if (hours > 0) return `${hours}h ${minutes % 60}m`
-    return `${minutes}m`
-  }
-
-  const handleChangePassword = async (deviceId) => {
-    try {
-      const res = await fetch(`/api/dispositivos/${deviceId}/password`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        }
-      })
-      const data = await res.json()
-      if (res.ok) {
-        // Mostrar notificação de sucesso
-        success(`🔑 Nova senha gerada: ${data.lockPassword}`, 5000)
-        setChangePasswordModal(null)
-      } else {
-        console.error('Erro ao gerar nova senha:', data.error)
-      }
-    } catch (err) {
-      console.error('Erro ao gerar nova senha:', err)
-    }
-  }
-
-  const handleControlDevice = useCallback(async (deviceId, action) => {
-    try {
-      const res = await fetch(`/api/dispositivos/${deviceId}/control`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ action })
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        if (data.error) {
-          success(`❌ Erro: ${data.error}`, 5000)
-        }
-      } else {
-        const actionNames = {
-          'open_app': 'Abrindo app',
-          'close_app': 'Fechando app',
-          'restart': 'Reiniciando dispositivo',
-          'shutdown': 'Desligando dispositivo'
-        }
-        success(`✅ ${actionNames[action] || 'Comando enviado'}`, 3000)
-      }
-    } catch (err) {
-      success('❌ Erro ao enviar comando', 3000)
-    }
-  }, [token, success])
-
   const handleForceSync = async () => {
     if (socket && connected) {
       socket.emit('dashboard_connect', { token })
     } else {
       if (socket) socket.connect()
-    }
-    try {
-      const res = await fetch('/api/force-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: 'all' })
-      })
-      const data = await res.json()
-      if (data.success) {
-        success(`🔄 Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`, 3000)
-      } else {
-        success('🔄 Reconectando WebSocket...', 3000)
-      }
-    } catch {
-      success('🔄 Reconectando WebSocket...', 3000)
     }
   }
 
@@ -364,29 +193,29 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="stat-card glow-blue">
                   <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                    <Monitor size={24} className="text-blue-400" />
+                    <Dollar size={24} className="text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{onlineDevices.length}</p>
-                    <p className="text-xs text-gray-400">Dispositivos Conectados</p>
+                    <p className="text-2xl font-bold text-white">R$ 0,00</p>
+                    <p className="text-xs text-gray-400">Vendas Hoje</p>
                   </div>
                 </div>
                 <div className="stat-card glow-green">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                    <Wifi size={24} className="text-emerald-400" />
+                    <Trending size={24} className="text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{freeOnlineDevices.length}</p>
-                    <p className="text-xs text-gray-400">Online</p>
+                    <p className="text-2xl font-bold text-white">0</p>
+                    <p className="text-xs text-gray-400">Vendas no Dia</p>
                   </div>
                 </div>
                 <div className="stat-card glow-red">
                   <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                    <Lock size={24} className="text-red-400" />
+                    <Monitor size={24} className="text-red-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{lockedDevices.length}</p>
-                    <p className="text-xs text-gray-400">Bloqueados</p>
+                    <p className="text-2xl font-bold text-white">{onlineDevices.length}</p>
+                    <p className="text-xs text-gray-400">Terminais Online</p>
                   </div>
                 </div>
                 <div className="stat-card">
@@ -395,174 +224,13 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-white">{inUseDevices.length}</p>
-                    <p className="text-xs text-gray-400">Em Uso</p>
+                    <p className="text-xs text-gray-400">Terminais em Uso</p>
                   </div>
                 </div>
               </div>
 
-              {/* Devices Grid */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Activity size={20} className="text-blue-400" />
-                  Dispositivos
-                </h3>
-                {onlineDevices.length === 0 ? (
-                  <div className="glass p-12 text-center">
-                    <Monitor size={48} className="mx-auto text-gray-600 mb-3" />
-                    <p className="text-gray-400">Nenhum dispositivo conectado</p>
-                    <p className="text-gray-600 text-sm mt-1">Dispositivos Android aparecerão aqui ao conectar</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {onlineDevices.map(device => {
-                      const status = getDeviceStatus(device)
-                      const cfg = statusConfig[status] || statusConfig.offline
-                      const StatusIcon = cfg.icon
-                      const isLocked = status === 'locked' || status === 'locked_timer'
-                      const hasTimer = !!device.usageTimeLimit
-                      const timerRemaining = timeUpdates[device.deviceId]?.remaining
-                      const timerTotal = device.usageTimeLimit ? device.usageTimeLimit * 60 : 0
-                      const timerProgress = timerRemaining != null && timerTotal > 0 ? Math.max(0, (timerRemaining / timerTotal) * 100) : null
-                      return (
-                        <div key={device.deviceId} className={`glass glass-hover border ${cfg.border} overflow-hidden`}>
-                          {/* Header */}
-                          <div className="flex items-center justify-between p-4 border-b border-white/5">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-lg ${cfg.bg} flex items-center justify-center`}>
-                                <Monitor size={20} className={cfg.color} />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-white text-sm">{device.deviceName || device.deviceId}</p>
-                                <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                                  <span className="font-mono">{device.serialNumber || device.deviceId}</span>
-                                  <span>·</span>
-                                  <span>{getConnectedTime(device.connectedAt)}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md ${cfg.bg} text-[11px] font-semibold ${cfg.color}`}>
-                              <StatusIcon size={12} />
-                              {cfg.label}
-                            </div>
-                          </div>
-
-                          {/* Timer Section */}
-                          {hasTimer && !isLocked && (
-                            <div className="px-4 py-3 border-b border-white/5 bg-amber-500/5">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1.5">
-                                  <Clock size={12} /> Tempo de Uso
-                                </span>
-                                <span className={`text-sm font-mono font-bold ${timerRemaining != null && timerRemaining <= 60 ? 'text-red-400 animate-pulse' : 'text-amber-300'}`}>
-                                  {timerRemaining != null ? formatTime(timerRemaining) : `${device.usageTimeLimit}:00`}
-                                </span>
-                              </div>
-                              {timerProgress != null && (
-                                <div className="w-full h-1.5 rounded-full bg-black/30 overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-1000 ${timerRemaining <= 60 ? 'bg-red-500' : timerRemaining <= 300 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                    style={{ width: `${timerProgress}%` }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Lock Reason */}
-                          {isLocked && device.lockReason && (
-                            <div className={`px-4 py-2.5 border-b border-white/5 flex items-center gap-2 text-xs ${
-                              status === 'locked_timer' ? 'bg-orange-500/5 text-orange-400' : 'bg-red-500/5 text-red-400'
-                            }`}>
-                              {status === 'locked_timer' ? <Clock size={12} /> : <AlertTriangle size={12} />}
-                              <span>{status === 'locked_timer' ? 'Tempo de uso expirado' : device.lockReason}</span>
-                            </div>
-                          )}
-
-                          {/* Lock Password */}
-                          {device.lockPassword && (
-                            <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
-                              <span className="text-[11px] text-gray-500 flex items-center gap-1.5">
-                                <Lock size={11} /> Senha de desbloqueio
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-mono font-bold text-blue-300 bg-black/30 px-2 py-0.5 rounded border border-blue-500/20">
-                                  {showPassword[device.deviceId] ? device.lockPassword : '••••••'}
-                                </span>
-                                <button
-                                  onClick={() => setShowPassword({ ...showPassword, [device.deviceId]: !showPassword[device.deviceId] })}
-                                  className="text-gray-600 hover:text-white transition-colors p-0.5 rounded hover:bg-white/5"
-                                >
-                                  {showPassword[device.deviceId] ? <EyeOff size={12} /> : <Eye size={12} />}
-                                </button>
-                                <button
-                                  onClick={() => setChangePasswordModal(device.deviceId)}
-                                  className="text-gray-600 hover:text-blue-400 transition-colors p-0.5 rounded hover:bg-white/5"
-                                  title="Gerar nova senha"
-                                >
-                                  <RotateCw size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="px-4 py-3">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              {/* Access Control */}
-                              {isLocked ? (
-                                <button
-                                  onClick={() => unlockDevice(device.deviceId)}
-                                  className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
-                                >
-                                  <Unlock size={12} /> Desbloquear
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => setLockModal(device.deviceId)}
-                                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
-                                >
-                                  <Lock size={12} /> Bloquear
-                                </button>
-                              )}
-
-                              {/* Timer Control */}
-                              {!isLocked && (
-                                <button
-                                  onClick={() => setUsageModal(device.deviceId)}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                                    hasTimer
-                                      ? 'bg-amber-600/25 hover:bg-amber-600/35 border border-amber-500/25 text-amber-300'
-                                      : 'bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white'
-                                  }`}
-                                >
-                                  <Clock size={12} /> {hasTimer ? 'Alterar Timer' : 'Definir Timer'}
-                                </button>
-                              )}
-
-                              {/* Divider */}
-                              <div className="w-px h-5 bg-white/10 mx-1" />
-
-                              {/* System Controls */}
-                              <button onClick={() => handleControlDevice(device.deviceId, 'open_app')} className="p-1.5 bg-white/5 hover:bg-blue-600/20 border border-white/5 hover:border-blue-500/20 text-gray-500 hover:text-blue-400 rounded-md transition-all" title="Abrir App">
-                                <PlayIcon size={12} />
-                              </button>
-                              <button onClick={() => handleControlDevice(device.deviceId, 'close_app')} className="p-1.5 bg-white/5 hover:bg-purple-600/20 border border-white/5 hover:border-purple-500/20 text-gray-500 hover:text-purple-400 rounded-md transition-all" title="Fechar App">
-                                <CloseIcon size={12} />
-                              </button>
-                              <button onClick={() => handleControlDevice(device.deviceId, 'restart')} className="p-1.5 bg-white/5 hover:bg-orange-600/20 border border-white/5 hover:border-orange-500/20 text-gray-500 hover:text-orange-400 rounded-md transition-all" title="Reiniciar">
-                                <RotateCw size={12} />
-                              </button>
-                              <button onClick={() => handleControlDevice(device.deviceId, 'shutdown')} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Desligar">
-                                <Power size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+              {/* Dashboard Charts */}
+              <DashboardCharts />
             </div>
           )}
 
@@ -577,114 +245,6 @@ export default function Dashboard() {
           {page === 'config' && <Configuracoes />}
         </div>
       </main>
-
-      {/* Lock Modal */}
-      {lockModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setLockModal(null)}>
-          <div className="glass p-6 w-full max-w-sm glow-red" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Lock size={20} className="text-red-400" />
-              Bloquear Dispositivo
-            </h3>
-            <input
-              type="text"
-              value={lockReason}
-              onChange={e => setLockReason(e.target.value)}
-              className="input-field mb-4"
-              placeholder="Motivo do bloqueio (opcional)"
-            />
-            <div className="flex gap-3">
-              <button onClick={() => setLockModal(null)} className="btn-ghost flex-1">Cancelar</button>
-              <button
-                onClick={() => { lockDevice(lockModal, lockReason || 'Bloqueado pelo administrador'); setLockModal(null); setLockReason('') }}
-                className="btn-danger flex-1"
-              >
-                Bloquear
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Usage Time Modal */}
-      {usageModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setUsageModal(null)}>
-          <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-amber-400" />
-              {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit ? 'Alterar Tempo de Uso' : 'Definir Tempo de Uso'}
-            </h3>
-            {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit && (
-              <div className="mb-4 p-3 rounded-lg bg-amber-600/10 border border-amber-500/20">
-                <p className="text-xs text-amber-300">
-                  Timer ativo: {devices.find(d => d.deviceId === usageModal).usageTimeLimit} min
-                  {timeUpdates[usageModal] && ` — restam ${formatTime(timeUpdates[usageModal].remaining)}`}
-                </p>
-              </div>
-            )}
-            <input
-              type="number"
-              value={usageMinutes}
-              onChange={e => setUsageMinutes(e.target.value)}
-              className="input-field mb-4"
-              placeholder="Minutos (ex: 30)"
-              min="1"
-            />
-            <div className="flex gap-2 mb-4">
-              {[15, 30, 60, 120].map(m => (
-                <button
-                  key={m}
-                  onClick={() => setUsageMinutes(String(m))}
-                  className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-all"
-                >
-                  {m}min
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setUsageModal(null)} className="btn-ghost flex-1">Cancelar</button>
-              {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit && (
-                <button
-                  onClick={() => { unlockDevice(usageModal); setUsageModal(null); setUsageMinutes('') }}
-                  className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all"
-                >
-                  Remover Timer
-                </button>
-              )}
-              <button
-                onClick={() => { if (usageMinutes > 0) { setUsageTime(usageModal, parseInt(usageMinutes)); setUsageModal(null); setUsageMinutes('') } }}
-                className="btn-primary flex-1"
-              >
-                Definir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Change Password Modal */}
-      {changePasswordModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setChangePasswordModal(null)}>
-          <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <RotateCw size={20} className="text-blue-400" />
-              Mudar Senha de Bloqueio
-            </h3>
-            <p className="text-sm text-gray-400 mb-4">
-              Uma nova senha de 6 dígitos será gerada para o dispositivo.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setChangePasswordModal(null)} className="btn-ghost flex-1">Cancelar</button>
-              <button
-                onClick={() => handleChangePassword(changePasswordModal)}
-                className="btn-primary flex-1"
-              >
-                Gerar Nova Senha
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

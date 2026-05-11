@@ -20,30 +20,63 @@ export default function Configuracoes() {
   const [showSenhaModal, setShowSenhaModal] = useState(false)
   const [isAdmin, setIsAdmin] = useState(user?.role === 'admin')
 
+  const isEmpresa = user?.role === 'empresa'
+  const empresaId = user?.empresaId
+
   useEffect(() => {
-    fetch(apiUrl('/api/config'), { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => { setConfig({ ...defaultConfig, ...data }); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [token])
+    // Se for empresa, usar cores do user.branding
+    if (isEmpresa && user?.branding) {
+      setConfig({
+        ...defaultConfig,
+        primaryColor: user.branding.primaryColor || defaultConfig.primaryColor,
+        secondaryColor: user.branding.secondaryColor || defaultConfig.secondaryColor,
+        accentColor: user.branding.accentColor || defaultConfig.accentColor,
+        companyName: user.branding.companyName || user.empresaNome || defaultConfig.companyName,
+        logoUrl: user.branding.logoUrl || defaultConfig.logoUrl
+      })
+      setLoading(false)
+    } else {
+      // Admin: buscar config global
+      fetch(apiUrl('/api/config'), { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(data => { setConfig({ ...defaultConfig, ...data }); setLoading(false) })
+        .catch(() => setLoading(false))
+    }
+  }, [token, user, isEmpresa])
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await fetch(apiUrl('/api/config'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(config)
-      })
+      let res
+      if (isEmpresa && empresaId) {
+        // Empresa: atualizar sua própria empresa
+        res = await fetch(apiUrl(`/api/empresas/${empresaId}`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            primaryColor: config.primaryColor,
+            secondaryColor: config.secondaryColor,
+            accentColor: config.accentColor,
+            logoUrl: config.logoUrl,
+            nome: config.companyName
+          })
+        })
+      } else {
+        // Admin: atualizar config global
+        res = await fetch(apiUrl('/api/config'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(config)
+        })
+      }
       const data = await res.json()
-      if (data.success) {
+      if (res.ok) {
         alert('✅ Configurações salvas com sucesso')
-        // Aplicar cores via CSS custom properties
         applyColors(config)
       } else {
-        alert('❌ Erro: ' + data.error)
+        alert('❌ Erro: ' + (data.error || 'Erro ao salvar'))
       }
-    } catch {
+    } catch (e) {
       alert('❌ Erro ao salvar configurações')
     }
     setSaving(false)
@@ -70,20 +103,13 @@ export default function Configuracoes() {
     )
   }
 
-  if (!isAdmin) {
+  // Empresa pode acessar diretamente, Admin precisa confirmar senha
+  if (!isAdmin && !isEmpresa) {
     return (
       <div className="glass p-12 text-center">
         <Shield size={48} className="mx-auto text-red-400 mb-3" />
-        <p className="text-red-400 font-medium">Acesso restrito a administradores</p>
-        <p className="text-gray-500 text-sm mt-1">Confirme sua senha para acessar</p>
-        <button onClick={() => setShowSenhaModal(true)} className="btn-primary mt-4 text-sm">Confirmar Acesso</button>
-        <SenhaConfirmModal
-          open={showSenhaModal}
-          onClose={() => setShowSenhaModal(false)}
-          onConfirm={() => { setIsAdmin(true); setShowSenhaModal(false) }}
-          title="Acesso Administrativo"
-          description="Confirme sua senha para acessar as configurações"
-        />
+        <p className="text-red-400 font-medium">Acesso restrito</p>
+        <p className="text-gray-500 text-sm mt-1">Você não tem permissão para acessar esta página</p>
       </div>
     )
   }
@@ -92,7 +118,8 @@ export default function Configuracoes() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Palette size={24} className="text-blue-400" /> Configurações Whitelabel
+          <Palette size={24} className="text-blue-400" />
+          {isEmpresa ? 'Minha Marca' : 'Configurações Whitelabel'}
         </h2>
         <div className="flex gap-2">
           <button onClick={handleReset} className="btn-ghost flex items-center gap-2 text-sm">
@@ -164,18 +191,16 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* Ações Sensíveis */}
-      <div className="glass p-4 space-y-3 border border-red-500/20">
-        <h3 className="text-sm font-semibold text-red-400 flex items-center gap-2">
-          <Shield size={16} /> Ações Sensíveis
+      {/* Info */}
+      <div className="glass p-4 space-y-3 border border-blue-500/20">
+        <h3 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
+          <Shield size={16} /> {isEmpresa ? 'Sua Marca' : 'Configurações'}
         </h3>
-        <p className="text-xs text-gray-500">As ações abaixo requerem confirmação de senha do administrador:</p>
-        <ul className="text-xs text-gray-400 space-y-1 list-disc list-inside">
-          <li>Reimpressão de comprovante de venda</li>
-          <li>Cancelamento de venda</li>
-          <li>Fechamento geral do caixa</li>
-          <li>Alteração de configurações whitelabel</li>
-        </ul>
+        <p className="text-xs text-gray-400">
+          {isEmpresa
+            ? 'Personalize as cores e identidade da sua empresa. As alterações serão aplicadas imediatamente após salvar.'
+            : 'Configure as cores padrão do sistema. Empresas podem personalizar suas próprias cores.'}
+        </p>
       </div>
     </div>
   )

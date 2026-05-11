@@ -1,195 +1,233 @@
-import { useState, useEffect } from 'react'
-import { Monitor, Wifi, WifiOff, Lock, Unlock, Smartphone, Search, RefreshCw, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
-import { apiUrl } from '../utils/api'
-import { useToastContext } from '../contexts/ToastContext'
+import { useToast } from '../components/Toast'
+import {
+  Monitor, Wifi, WifiOff, Lock, Unlock, Clock, AlertTriangle, CheckCircle2,
+  Eye, EyeOff, RefreshCw as RotateCw, Power, Play as PlayIcon, X as CloseIcon, Search
+} from 'lucide-react'
+
+const statusConfig = {
+  online: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Disponível' },
+  locked: { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20', icon: Lock, label: 'Bloqueado' },
+  locked_timer: { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: Clock, label: 'Bloq. por Tempo' },
+  offline: { color: 'text-gray-500', bg: 'bg-gray-500/10', border: 'border-gray-500/20', icon: WifiOff, label: 'Offline' },
+  in_use: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Clock, label: 'Em Uso' },
+}
+
+function getDeviceStatus(device) {
+  if (device.status === 'locked') return device.lockReason === 'Tempo de uso expirado' ? 'locked_timer' : 'locked'
+  if (device.status === 'in_use') return 'in_use'
+  if (device.online === false && device.status !== 'online') return 'offline'
+  return 'online'
+}
+
+function getConnectedTime(connectedAt) {
+  if (!connectedAt) return '-'
+  const diff = Date.now() - new Date(connectedAt).getTime()
+  const m = Math.floor(diff / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24)
+  if (d > 0) return `${d}d ${h % 24}h`
+  if (h > 0) return `${h}h ${m % 60}m`
+  return `${m}m`
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60), s = seconds % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 export default function Terminais() {
-  const { user } = useAuth()
-  const { devices } = useSocket()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedEmpresa, setSelectedEmpresa] = useState(null)
-  const [syncing, setSyncing] = useState(false)
-  const { token } = useAuth()
-  const toast = useToastContext()
+  const { user, token } = useAuth()
+  const { devices, connected, lockDevice, unlockDevice, setUsageTime, timeUpdates, socket } = useSocket()
+  const { success } = useToast()
+  const [usageModal, setUsageModal] = useState(null)
+  const [usageMinutes, setUsageMinutes] = useState('')
+  const [lockModal, setLockModal] = useState(null)
+  const [lockReason, setLockReason] = useState('')
+  const [showPassword, setShowPassword] = useState({})
+  const [search, setSearch] = useState('')
 
-  const isAdmin = user?.role === 'admin'
-  const userEmpresaId = user?.role === 'empresa' ? user.empresaId : null
+  const empresaId = user?.role === 'empresa' ? user?.empresaId : null
+  const filtered = empresaId ? devices.filter(d => !d.empresaId || d.empresaId === empresaId) : devices
+  const online = filtered.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
 
-  // Filtrar dispositivos (apenas conectados)
-  const filteredDevices = devices.filter(device => {
-    // Mostrar apenas dispositivos online/conectados
-    const isConnected = device.online || device.status === 'online' || device.status === 'locked' || device.status === 'in_use'
-    if (!isConnected) return false
+  const sl = search.toLowerCase()
+  const searched = search ? online.filter(d =>
+    (d.deviceName || '').toLowerCase().includes(sl) || (d.deviceId || '').toLowerCase().includes(sl)
+  ) : online
 
-    const matchesSearch = device.deviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         device.deviceId?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    // Se for empresa, mostrar apenas dispositivos da empresa
-    if (userEmpresaId) {
-      return matchesSearch && device.empresaId === userEmpresaId
-    }
-    
-    // Se for admin e selecionou uma empresa, mostrar dispositivos da empresa
-    if (isAdmin && selectedEmpresa) {
-      return matchesSearch && device.empresaId === selectedEmpresa
-    }
-    
-    // Se for admin e não selecionou empresa, mostrar todos
-    return matchesSearch
-  })
-
-  // Obter lista única de empresas dos dispositivos
-  const empresasDisponiveis = [...new Set(devices.map(d => d.empresaId).filter(Boolean))]
-
-  const handleSyncTerminais = async () => {
-    setSyncing(true)
+  const handleControl = useCallback(async (deviceId, action) => {
     try {
-      const res = await fetch(apiUrl('/api/force-sync'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: 'all' })
+      const res = await fetch(`/api/dispositivos/${deviceId}/control`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action })
       })
       const data = await res.json()
-      if (data.success) {
-        toast.success(`Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`)
-      } else {
-        toast.error('Erro ao sincronizar terminais')
-      }
-    } catch {
-      toast.error('Erro ao conectar com o servidor')
-    } finally {
-      setSyncing(false)
-    }
+      if (!res.ok && data.error) success(`Erro: ${data.error}`, 5000)
+      else success('Comando enviado', 3000)
+    } catch { success('Erro ao enviar comando', 3000) }
+  }, [token, success])
+
+  const handleSync = async () => {
+    if (socket && connected) socket.emit('dashboard_connect', { token })
+    else if (socket) socket.connect()
+    try {
+      await fetch('/api/force-sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+      success('Sincronizado', 3000)
+    } catch { success('Reconectando...', 3000) }
   }
 
+  useEffect(() => {
+    const h = (e) => success(`Terminal ${e.type === 'device_unlocked' ? 'desbloqueado' : 'bloqueado'}: ${e.detail.deviceName}`, 5000)
+    window.addEventListener('device_unlocked', h)
+    window.addEventListener('device_locked', h)
+    return () => { window.removeEventListener('device_unlocked', h); window.removeEventListener('device_locked', h) }
+  }, [success])
+
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white mb-2">Terminais</h1>
-        <p className="text-gray-400">
-          {isAdmin ? 'Gerencie os terminais conectados' : 'Visualize seus terminais conectados'}
-        </p>
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-6 flex gap-4 items-center">
-        <button onClick={handleSyncTerminais} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0">
-          {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Sincronizar
-        </button>
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar terminal..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        
-        {isAdmin && empresasDisponiveis.length > 0 && (
-          <select
-            value={selectedEmpresa || ''}
-            onChange={(e) => setSelectedEmpresa(e.target.value || null)}
-            className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
-          >
-            <option value="">Todas as empresas</option>
-            {empresasDisponiveis.map(empresaId => (
-              <option key={empresaId} value={empresaId}>Empresa {empresaId}</option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Lista de terminais */}
-      <div className="grid gap-4">
-        {filteredDevices.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Monitor size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Nenhum terminal encontrado</p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center"><Monitor size={24} className="text-blue-400" /></div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Terminais</h3>
+            <p className="text-xs text-gray-400">{online.length} conectados · {filtered.filter(d => d.status === 'locked').length} bloqueados</p>
           </div>
-        ) : (
-          filteredDevices.map(device => (
-            <div
-              key={device.deviceId}
-              className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${
-                    device.online ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    {device.online ? <Wifi size={24} /> : <WifiOff size={24} />}
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar terminal..."
+              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all w-48" />
+          </div>
+          <button onClick={handleSync} className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1">
+            <RotateCw size={14} /> Sincronizar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {searched.map(device => {
+          const status = getDeviceStatus(device)
+          const cfg = statusConfig[status] || statusConfig.offline
+          const StatusIcon = cfg.icon
+          const isLocked = status === 'locked' || status === 'locked_timer'
+          const hasTimer = !!device.usageTimeLimit
+          const tr = timeUpdates[device.deviceId]?.remaining
+          const tt = device.usageTimeLimit ? device.usageTimeLimit * 60 : 0
+          const tp = tr != null && tt > 0 ? Math.max(0, (tr / tt) * 100) : null
+          return (
+            <div key={device.deviceId} className={`glass border ${cfg.border} overflow-hidden`}>
+              <div className="flex items-center justify-between p-4 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg ${cfg.bg} flex items-center justify-center`}>
+                    <Monitor size={20} className={cfg.color} />
                   </div>
-                  
                   <div>
-                    <h3 className="font-semibold text-white">{device.deviceName}</h3>
-                    <p className="text-sm text-gray-400">{device.deviceId}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Smartphone size={14} className="text-gray-500" />
-                      <span className="text-xs text-gray-500">{device.deviceType}</span>
-                      {device.empresaId && (
-                        <>
-                          <span className="text-gray-600">•</span>
-                          <span className="text-xs text-blue-400">Empresa {device.empresaId}</span>
-                        </>
-                      )}
+                    <p className="font-semibold text-white text-sm">{device.deviceName || device.deviceId}</p>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                      <span className="font-mono">{device.serialNumber || device.deviceId}</span>
+                      <span>·</span>
+                      <span>{getConnectedTime(device.connectedAt)}</span>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <div className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                    device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' :
-                    device.status === 'locked' ? 'bg-red-500/20 text-red-400' :
-                    device.status === 'in_use' ? 'bg-blue-500/20 text-blue-400' :
-                    'bg-gray-700 text-gray-400'
-                  }`}>
-                    {device.status === 'online' ? 'Online' :
-                     device.status === 'locked' ? 'Bloqueado' :
-                     device.status === 'in_use' ? 'Em uso' :
-                     device.status}
-                  </div>
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md ${cfg.bg} text-[11px] font-semibold ${cfg.color}`}>
+                  <StatusIcon size={12} /> {cfg.label}
                 </div>
               </div>
-
-              {/* Informações adicionais */}
-              {device.usageTimeLimit && (
-                <div className="mt-3 pt-3 border-t border-gray-700">
-                  <p className="text-xs text-gray-400">
-                    Tempo de uso: {device.usageTimeLimit} minutos
-                  </p>
+              {hasTimer && !isLocked && (
+                <div className="px-4 py-3 border-b border-white/5 bg-amber-500/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1.5"><Clock size={12} /> Tempo</span>
+                    <span className={`text-sm font-mono font-bold ${tr && tr <= 60 ? 'text-red-400 animate-pulse' : 'text-amber-300'}`}>
+                      {tr != null ? formatTime(tr) : `${device.usageTimeLimit}:00`}
+                    </span>
+                  </div>
+                  {tp != null && (
+                    <div className="w-full h-1.5 rounded-full bg-black/30 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-1000 ${tr <= 60 ? 'bg-red-500' : tr <= 300 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${tp}%` }} />
+                    </div>
+                  )}
                 </div>
               )}
+              {isLocked && device.lockReason && (
+                <div className={`px-4 py-2.5 border-b border-white/5 flex items-center gap-2 text-xs ${status === 'locked_timer' ? 'bg-orange-500/5 text-orange-400' : 'bg-red-500/5 text-red-400'}`}>
+                  {status === 'locked_timer' ? <Clock size={12} /> : <AlertTriangle size={12} />}
+                  <span>{status === 'locked_timer' ? 'Tempo expirado' : device.lockReason}</span>
+                </div>
+              )}
+              {device.lockPassword && (
+                <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 flex items-center gap-1.5"><Lock size={11} /> Senha</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-mono font-bold text-blue-300 bg-black/30 px-2 py-0.5 rounded border border-blue-500/20">
+                      {showPassword[device.deviceId] ? device.lockPassword : '••••••'}
+                    </span>
+                    <button onClick={() => setShowPassword({ ...showPassword, [device.deviceId]: !showPassword[device.deviceId] })} className="text-gray-600 hover:text-white transition-colors p-0.5 rounded hover:bg-white/5">
+                      {showPassword[device.deviceId] ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {isLocked ? (
+                    <button onClick={() => unlockDevice(device.deviceId)} className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5">
+                      <Unlock size={12} /> Desbloquear
+                    </button>
+                  ) : (
+                    <button onClick={() => setLockModal(device.deviceId)} className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5">
+                      <Lock size={12} /> Bloquear
+                    </button>
+                  )}
+                  {!isLocked && (
+                    <button onClick={() => setUsageModal(device.deviceId)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${hasTimer ? 'bg-amber-600/25 hover:bg-amber-600/35 border border-amber-500/25 text-amber-300' : 'bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white'}`}>
+                      <Clock size={12} /> {hasTimer ? 'Alterar' : 'Timer'}
+                    </button>
+                  )}
+                  <div className="w-px h-5 bg-white/10 mx-1" />
+                  <button onClick={() => handleControl(device.deviceId, 'open_app')} className="p-1.5 bg-white/5 hover:bg-blue-600/20 border border-white/5 hover:border-blue-500/20 text-gray-500 hover:text-blue-400 rounded-md transition-all" title="Abrir"><PlayIcon size={12} /></button>
+                  <button onClick={() => handleControl(device.deviceId, 'close_app')} className="p-1.5 bg-white/5 hover:bg-purple-600/20 border border-white/5 hover:border-purple-500/20 text-gray-500 hover:text-purple-400 rounded-md transition-all" title="Fechar"><CloseIcon size={12} /></button>
+                  <button onClick={() => handleControl(device.deviceId, 'restart')} className="p-1.5 bg-white/5 hover:bg-orange-600/20 border border-white/5 hover:border-orange-500/20 text-gray-500 hover:text-orange-400 rounded-md transition-all" title="Reiniciar"><RotateCw size={12} /></button>
+                  <button onClick={() => handleControl(device.deviceId, 'shutdown')} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Desligar"><Power size={12} /></button>
+                </div>
+              </div>
             </div>
-          ))
-        )}
+          )
+        })}
       </div>
 
-      {/* Legenda */}
-      <div className="mt-6 p-4 bg-gray-800/30 rounded-xl border border-gray-700">
-        <h4 className="text-sm font-medium text-white mb-2">Legenda de status</h4>
-        <div className="flex flex-wrap gap-4 text-xs text-gray-400">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-            <span>Online</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-            <span>Em uso</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-red-400"></div>
-            <span>Bloqueado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-            <span>Offline</span>
+      {lockModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setLockModal(null)}>
+          <div className="glass p-6 w-full max-w-sm glow-red" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Lock size={20} className="text-red-400" /> Bloquear</h3>
+            <input type="text" value={lockReason} onChange={e => setLockReason(e.target.value)} className="input-field mb-4" placeholder="Motivo (opcional)" />
+            <div className="flex gap-3">
+              <button onClick={() => setLockModal(null)} className="btn-ghost flex-1">Cancelar</button>
+              <button onClick={() => { lockDevice(lockModal, lockReason || 'Bloqueado pelo admin'); setLockModal(null); setLockReason('') }} className="btn-danger flex-1">Bloquear</button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {usageModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setUsageModal(null)}>
+          <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Clock size={20} className="text-amber-400" /> Tempo de Uso</h3>
+            <input type="number" value={usageMinutes} onChange={e => setUsageMinutes(e.target.value)} className="input-field mb-4" placeholder="Minutos" min="1" />
+            <div className="flex gap-2 mb-4">
+              {[15, 30, 60, 120].map(m => (
+                <button key={m} onClick={() => setUsageMinutes(String(m))} className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300 transition-all">{m}min</button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setUsageModal(null)} className="btn-ghost flex-1">Cancelar</button>
+              <button onClick={() => { if (usageMinutes > 0) { setUsageTime(usageModal, parseInt(usageMinutes)); setUsageModal(null); setUsageMinutes('') } }} className="btn-primary flex-1">Definir</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
