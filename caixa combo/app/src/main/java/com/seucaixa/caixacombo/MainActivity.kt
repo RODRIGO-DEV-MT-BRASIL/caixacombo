@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Inventory
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -82,6 +86,10 @@ class MainActivity : ComponentActivity() {
 
     // Estado de sincronização para o dialog
     private val syncResultState = androidx.compose.runtime.mutableStateOf<SyncResult?>(null)
+
+    // Estado de aprovação do terminal
+    private val isApprovedState = androidx.compose.runtime.mutableStateOf(true) // Assume aprovado até saber o contrário
+    private var approvalDialog: android.app.Dialog? = null
 
     // Callback para resultado do Stone deeplink
     private var stonePaymentCallback: ((StoneDeeplinkService.PaymentResult?) -> Unit)? = null
@@ -232,6 +240,25 @@ class MainActivity : ComponentActivity() {
                     android.util.Log.d("MainActivity", "Sincronização completa: $produtos produtos, $categorias categorias, $clientes clientes")
                     syncResultState.value = SyncResult(produtos, categorias, clientes)
                 }
+            },
+            onApprovalStatus = { approved, status, empresaId ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Approval status: approved=$approved, status=$status, empresaId=$empresaId")
+                    isApprovedState.value = approved
+                    if (!approved) {
+                        // Terminal pendente - mostrar tela de aguardando aprovação
+                        showApprovalPendingScreen()
+                    } else {
+                        // Terminal aprovado - fechar tela de pendência se aberta
+                        hideApprovalPendingScreen()
+                    }
+                }
+            },
+            onEmpresaConfig = { config ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Empresa config recebida: $config")
+                    applyWhitelabelConfig(config)
+                }
             }
         )
         
@@ -292,6 +319,12 @@ class MainActivity : ComponentActivity() {
                         syncResult = syncResult,
                         onDismiss = { syncResultState.value = null }
                     )
+
+                    // Tela de aguardando aprovação
+                    val isApproved by isApprovedState
+                    if (!isApproved) {
+                        ApprovalPendingScreen()
+                    }
 
                     NavHost(
                         navController = navController,
@@ -798,6 +831,104 @@ class MainActivity : ComponentActivity() {
      */
     private var lockDialog: android.app.Dialog? = null
     private var currentLockPassword: String? = null
+    
+    /**
+     * Exibe tela de aguardando aprovação do admin
+     */
+    private fun showApprovalPendingScreen() {
+        if (approvalDialog?.isShowing == true) return
+        try {
+            val dialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+            dialog.setContentView(viewsApprovalPending())
+            dialog.setCancelable(false)
+            dialog.show()
+            approvalDialog = dialog
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao mostrar tela de aprovação", e)
+        }
+    }
+    
+    private fun hideApprovalPendingScreen() {
+        approvalDialog?.dismiss()
+        approvalDialog = null
+    }
+    
+    private fun viewsApprovalPending(): android.view.View {
+        val context = this
+        val layout = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(64, 0, 64, 0)
+            setBackgroundColor(android.graphics.Color.parseColor("#0F172A"))
+        }
+        val icon = android.widget.TextView(context).apply {
+            text = "⏳"
+            textSize = 64f
+            gravity = android.view.Gravity.CENTER
+        }
+        val title = android.widget.TextView(context).apply {
+            text = "Aguardando Aprovação"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 24f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = android.view.Gravity.CENTER
+        }
+        val subtitle = android.widget.TextView(context).apply {
+            text = "Este terminal precisa ser aprovado\npelo administrador no dashboard.\n\nAguarde..."
+            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
+            textSize = 16f
+            gravity = android.view.Gravity.CENTER
+        }
+        layout.addView(icon)
+        layout.addView(title)
+        val params = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.topMargin = 24
+        layout.addView(subtitle, params)
+        return layout
+    }
+    
+    /**
+     * Aplica configuração de whitelabel recebida do servidor
+     */
+    private fun applyWhitelabelConfig(config: org.json.JSONObject) {
+        try {
+            val primaryColor = config.optString("primaryColor", "#3b82f6")
+            val secondaryColor = config.optString("secondaryColor", "#06b6d4")
+            val accentColor = config.optString("accentColor", "#10b981")
+            val logoUrl = config.optString("logoUrl", "")
+            val nome = config.optString("nome", "")
+            val empresaId = config.optString("empresaId", "")
+            
+            val prefs = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("primary_color_hex", primaryColor)
+                .putString("secondary_color_hex", secondaryColor)
+                .putString("accent_color_hex", accentColor)
+                .putString("logo_url", logoUrl)
+                .putString("empresa_nome", nome)
+                .putString("empresa_id", empresaId)
+                // Também salvar como int para compatibilidade com código existente
+                .putInt("primary_color", parseColor(primaryColor))
+                .putInt("secondary_color", parseColor(secondaryColor))
+                .putInt("tertiary_color", parseColor(accentColor))
+                .apply()
+            
+            android.util.Log.d("MainActivity", "Whitelabel aplicado: nome=$nome, primary=$primaryColor, logo=$logoUrl")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel", e)
+        }
+    }
+    
+    private fun parseColor(hex: String): Int {
+        return try {
+            android.graphics.Color.parseColor(hex)
+        } catch (e: Exception) {
+            0xFF6200EE.toInt()
+        }
+    }
     
     private fun showLockScreen(reason: String) {
         try {
@@ -1473,4 +1604,44 @@ fun SyncDialog(
         },
         shape = RoundedCornerShape(16.dp)
     )
+}
+
+@Composable
+fun ApprovalPendingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0F172A))
+            .zIndex(999f),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "⏳",
+                fontSize = 64.sp
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Aguardando Aprovação",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Este terminal precisa ser aprovado\npelo administrador no dashboard.",
+                color = Color(0xFF94A3B8),
+                fontSize = 16.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            CircularProgressIndicator(
+                color = Color(0xFF3B82F6),
+                modifier = Modifier.size(32.dp)
+            )
+        }
+    }
 }
