@@ -103,6 +103,7 @@ DispositivoSchema.index({ deviceId: 1 }, { background: true });
 const EmpresaSchema = new mongoose.Schema({
   id: { type: String, required: true },
   nome: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
   cnpj: { type: String, default: '' },
   endereco: { type: String, default: '' },
   telefone: { type: String, default: '' },
@@ -121,6 +122,7 @@ const EmpresaSchema = new mongoose.Schema({
   createdAt: { type: String, default: null },
   updatedAt: { type: String, default: null }
 }, { versionKey: false });
+EmpresaSchema.index({ slug: 1 }, { background: true });
 
 const ClienteSchema = new mongoose.Schema({
   id: { type: Number, required: true },
