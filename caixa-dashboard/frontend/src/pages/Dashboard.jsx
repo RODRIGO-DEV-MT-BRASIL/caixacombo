@@ -126,14 +126,17 @@ export default function Dashboard() {
   }
 
   const statusConfig = {
-    online: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Online' },
+    online: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: 'Disponível' },
     locked: { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20', icon: Lock, label: 'Bloqueado' },
+    locked_timer: { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: Clock, label: 'Bloq. por Tempo' },
     offline: { color: 'text-gray-500', bg: 'bg-gray-500/10', border: 'border-gray-500/20', icon: WifiOff, label: 'Offline' },
     in_use: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Clock, label: 'Em Uso' },
   }
 
   const getDeviceStatus = (device) => {
-    if (device.status === 'locked') return 'locked'
+    if (device.status === 'locked') {
+      return device.lockReason === 'Tempo de uso expirado' ? 'locked_timer' : 'locked'
+    }
     if (device.status === 'in_use') return 'in_use'
     if (device.online === false && device.status !== 'online') return 'offline'
     return 'online'
@@ -403,155 +406,141 @@ export default function Dashboard() {
                       const status = getDeviceStatus(device)
                       const cfg = statusConfig[status] || statusConfig.offline
                       const StatusIcon = cfg.icon
+                      const isLocked = status === 'locked' || status === 'locked_timer'
+                      const hasTimer = !!device.usageTimeLimit
+                      const timerRemaining = timeUpdates[device.deviceId]?.remaining
+                      const timerTotal = device.usageTimeLimit ? device.usageTimeLimit * 60 : 0
+                      const timerProgress = timerRemaining != null && timerTotal > 0 ? Math.max(0, (timerRemaining / timerTotal) * 100) : null
                       return (
-                        <div key={device.deviceId} className={`glass glass-hover p-5 border ${cfg.border}`}>
-                          <div className="flex items-start justify-between mb-4">
+                        <div key={device.deviceId} className={`glass glass-hover border ${cfg.border} overflow-hidden`}>
+                          {/* Header */}
+                          <div className="flex items-center justify-between p-4 border-b border-white/5">
                             <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 rounded-xl ${cfg.bg} flex items-center justify-center`}>
-                                <Monitor size={24} className={cfg.color} />
+                              <div className={`w-10 h-10 rounded-lg ${cfg.bg} flex items-center justify-center`}>
+                                <Monitor size={20} className={cfg.color} />
                               </div>
                               <div>
-                                <p className="font-semibold text-white text-base">{device.deviceName || device.deviceId}</p>
-                                <p className="text-xs text-gray-400 font-mono">{device.deviceId}</p>
+                                <p className="font-semibold text-white text-sm">{device.deviceName || device.deviceId}</p>
+                                <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                                  <span className="font-mono">{device.serialNumber || device.deviceId}</span>
+                                  <span>·</span>
+                                  <span>{getConnectedTime(device.connectedAt)}</span>
+                                </div>
                               </div>
                             </div>
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${cfg.bg} text-xs font-medium ${cfg.color}`}>
-                              <StatusIcon size={14} />
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md ${cfg.bg} text-[11px] font-semibold ${cfg.color}`}>
+                              <StatusIcon size={12} />
                               {cfg.label}
                             </div>
                           </div>
 
-                          {/* Dados completos do dispositivo */}
-                          <div className="grid grid-cols-1 gap-3 mb-4 text-xs">
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <Cpu size={14} />
-                              <span className="font-mono">S/N: {device.serialNumber || device.deviceId}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <Clock size={14} />
-                              <span>Conectado: {getConnectedTime(device.connectedAt)}</span>
-                            </div>
-                            {device.connectedAt && (
-                              <div className="flex items-center gap-2 text-gray-400">
-                                <Activity size={14} />
-                                <span>Desde: {new Date(device.connectedAt).toLocaleString('pt-BR')}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Senha de bloqueio */}
-                          {device.lockPassword && (
-                            <div className="mb-4 p-3 rounded-lg bg-blue-600/10 border border-blue-500/20">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Lock size={14} className="text-blue-400" />
-                                  <span className="text-xs text-gray-400">Senha de Bloqueio:</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg font-mono font-bold text-blue-300 bg-black/30 px-2 py-1 rounded border border-blue-500/30">
-                                    {showPassword[device.deviceId] ? device.lockPassword : '••••••'}
-                                  </span>
-                                  <button
-                                    onClick={() => setShowPassword({ ...showPassword, [device.deviceId]: !showPassword[device.deviceId] })}
-                                    className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-white/5"
-                                    title={showPassword[device.deviceId] ? "Ocultar senha" : "Mostrar senha"}
-                                  >
-                                    {showPassword[device.deviceId] ? <EyeOff size={14} /> : <Eye size={14} />}
-                                  </button>
-                                  <button
-                                    onClick={() => setChangePasswordModal(device.deviceId)}
-                                    className="text-gray-500 hover:text-blue-400 transition-colors p-1 rounded hover:bg-white/5"
-                                    title="Mudar senha"
-                                  >
-                                    <RotateCw size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {device.lockReason && device.status === 'locked' && (
-                            <div className={`flex items-center gap-1.5 text-xs mb-3 p-2 rounded-lg ${
-                              device.lockReason === 'Tempo de uso expirado' 
-                                ? 'bg-amber-600/10 border border-amber-500/20 text-amber-400'
-                                : 'bg-red-600/10 border border-red-500/20 text-red-400'
-                            }`}>
-                              {device.lockReason === 'Tempo de uso expirado' ? <Clock size={12} /> : <AlertTriangle size={12} />}
-                              {device.lockReason === 'Tempo de uso expirado' ? 'Bloqueado por tempo expirado' : device.lockReason}
-                            </div>
-                          )}
-
-                          {device.usageTimeLimit && (
-                            <div className="flex items-center gap-1.5 text-xs text-amber-400 mb-3">
-                              <Clock size={12} />
-                              {timeUpdates[device.deviceId] ? (
-                                <span className={`font-mono ${timeUpdates[device.deviceId].remaining <= 60 ? 'text-red-400 animate-pulse' : ''}`}>
-                                  {formatTime(timeUpdates[device.deviceId].remaining)}
+                          {/* Timer Section */}
+                          {hasTimer && !isLocked && (
+                            <div className="px-4 py-3 border-b border-white/5 bg-amber-500/5">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-medium text-amber-400 flex items-center gap-1.5">
+                                  <Clock size={12} /> Tempo de Uso
                                 </span>
-                              ) : (
-                                <span>{device.usageTimeLimit} min</span>
+                                <span className={`text-sm font-mono font-bold ${timerRemaining != null && timerRemaining <= 60 ? 'text-red-400 animate-pulse' : 'text-amber-300'}`}>
+                                  {timerRemaining != null ? formatTime(timerRemaining) : `${device.usageTimeLimit}:00`}
+                                </span>
+                              </div>
+                              {timerProgress != null && (
+                                <div className="w-full h-1.5 rounded-full bg-black/30 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-1000 ${timerRemaining <= 60 ? 'bg-red-500' : timerRemaining <= 300 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                    style={{ width: `${timerProgress}%` }}
+                                  />
+                                </div>
                               )}
                             </div>
                           )}
 
-                          <div className="flex gap-2 mt-3">
-                            {/* Toggle Bloquear/Desbloquear */}
-                            {status === 'locked' ? (
-                              <button
-                                onClick={() => unlockDevice(device.deviceId)}
-                                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
-                              >
-                                <Unlock size={12} /> Desbloquear
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => setLockModal(device.deviceId)}
-                                className="btn-danger text-xs py-1.5 px-3 flex items-center gap-1"
-                              >
-                                <Lock size={12} /> Bloquear
-                              </button>
-                            )}
-                            {/* Botão Tempo: visível sempre (exceto bloqueado) para definir/alterar/cancelar */}
-                            {status !== 'locked' && (
-                              <button
-                                onClick={() => setUsageModal(device.deviceId)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${
-                                  device.usageTimeLimit 
-                                    ? 'bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/30 text-amber-300'
-                                    : 'bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400'
-                                }`}
-                              >
-                                <Clock size={12} /> {device.usageTimeLimit ? 'Alterar Timer' : 'Tempo'}
-                              </button>
-                            )}
-                            {/* Botões de controle do app */}
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleControlDevice(device.deviceId, 'open_app')}
-                                className="px-2 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
-                                title="Abrir App"
-                              >
+                          {/* Lock Reason */}
+                          {isLocked && device.lockReason && (
+                            <div className={`px-4 py-2.5 border-b border-white/5 flex items-center gap-2 text-xs ${
+                              status === 'locked_timer' ? 'bg-orange-500/5 text-orange-400' : 'bg-red-500/5 text-red-400'
+                            }`}>
+                              {status === 'locked_timer' ? <Clock size={12} /> : <AlertTriangle size={12} />}
+                              <span>{status === 'locked_timer' ? 'Tempo de uso expirado' : device.lockReason}</span>
+                            </div>
+                          )}
+
+                          {/* Lock Password */}
+                          {device.lockPassword && (
+                            <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between">
+                              <span className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                                <Lock size={11} /> Senha de desbloqueio
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-mono font-bold text-blue-300 bg-black/30 px-2 py-0.5 rounded border border-blue-500/20">
+                                  {showPassword[device.deviceId] ? device.lockPassword : '••••••'}
+                                </span>
+                                <button
+                                  onClick={() => setShowPassword({ ...showPassword, [device.deviceId]: !showPassword[device.deviceId] })}
+                                  className="text-gray-600 hover:text-white transition-colors p-0.5 rounded hover:bg-white/5"
+                                >
+                                  {showPassword[device.deviceId] ? <EyeOff size={12} /> : <Eye size={12} />}
+                                </button>
+                                <button
+                                  onClick={() => setChangePasswordModal(device.deviceId)}
+                                  className="text-gray-600 hover:text-blue-400 transition-colors p-0.5 rounded hover:bg-white/5"
+                                  title="Gerar nova senha"
+                                >
+                                  <RotateCw size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div className="px-4 py-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {/* Access Control */}
+                              {isLocked ? (
+                                <button
+                                  onClick={() => unlockDevice(device.deviceId)}
+                                  className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                                >
+                                  <Unlock size={12} /> Desbloquear
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setLockModal(device.deviceId)}
+                                  className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                                >
+                                  <Lock size={12} /> Bloquear
+                                </button>
+                              )}
+
+                              {/* Timer Control */}
+                              {!isLocked && (
+                                <button
+                                  onClick={() => setUsageModal(device.deviceId)}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                                    hasTimer
+                                      ? 'bg-amber-600/25 hover:bg-amber-600/35 border border-amber-500/25 text-amber-300'
+                                      : 'bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white'
+                                  }`}
+                                >
+                                  <Clock size={12} /> {hasTimer ? 'Alterar Timer' : 'Definir Timer'}
+                                </button>
+                              )}
+
+                              {/* Divider */}
+                              <div className="w-px h-5 bg-white/10 mx-1" />
+
+                              {/* System Controls */}
+                              <button onClick={() => handleControlDevice(device.deviceId, 'open_app')} className="p-1.5 bg-white/5 hover:bg-blue-600/20 border border-white/5 hover:border-blue-500/20 text-gray-500 hover:text-blue-400 rounded-md transition-all" title="Abrir App">
                                 <PlayIcon size={12} />
                               </button>
-                              <button
-                                onClick={() => handleControlDevice(device.deviceId, 'close_app')}
-                                className="px-2 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/20 text-purple-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
-                                title="Fechar App"
-                              >
+                              <button onClick={() => handleControlDevice(device.deviceId, 'close_app')} className="p-1.5 bg-white/5 hover:bg-purple-600/20 border border-white/5 hover:border-purple-500/20 text-gray-500 hover:text-purple-400 rounded-md transition-all" title="Fechar App">
                                 <CloseIcon size={12} />
                               </button>
-                              <button
-                                onClick={() => handleControlDevice(device.deviceId, 'restart')}
-                                className="px-2 py-1.5 bg-orange-600/20 hover:bg-orange-600/30 border border-orange-500/20 text-orange-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
-                                title="Reiniciar"
-                              >
+                              <button onClick={() => handleControlDevice(device.deviceId, 'restart')} className="p-1.5 bg-white/5 hover:bg-orange-600/20 border border-white/5 hover:border-orange-500/20 text-gray-500 hover:text-orange-400 rounded-md transition-all" title="Reiniciar">
                                 <RotateCw size={12} />
                               </button>
-                              <button
-                                onClick={() => handleControlDevice(device.deviceId, 'shutdown')}
-                                className="px-2 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
-                                title="Desligar"
-                              >
+                              <button onClick={() => handleControlDevice(device.deviceId, 'shutdown')} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Desligar">
                                 <Power size={12} />
                               </button>
                             </div>
