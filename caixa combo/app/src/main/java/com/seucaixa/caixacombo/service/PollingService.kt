@@ -58,6 +58,8 @@ class PollingService : Service() {
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
         private var onEmpresasReceived: ((JSONArray) -> Unit)? = null     // empresas do servidor
         private var onSyncComplete: ((Int, Int, Int) -> Unit)? = null     // produtos, categorias, clientes
+        private var onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null  // approved, status, empresaId
+        private var onEmpresaConfig: ((JSONObject) -> Unit)? = null       // empresa config (whitelabel)
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -109,7 +111,9 @@ class PollingService : Service() {
             onClientesReceived: ((JSONArray) -> Unit)? = null,
             onCategoriasReceived: ((JSONArray) -> Unit)? = null,
             onEmpresasReceived: ((JSONArray) -> Unit)? = null,
-            onSyncComplete: ((Int, Int, Int) -> Unit)? = null
+            onSyncComplete: ((Int, Int, Int) -> Unit)? = null,
+            onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null,
+            onEmpresaConfig: ((JSONObject) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -123,6 +127,8 @@ class PollingService : Service() {
             this.onCategoriasReceived = onCategoriasReceived
             this.onEmpresasReceived = onEmpresasReceived
             this.onSyncComplete = onSyncComplete
+            this.onApprovalStatus = onApprovalStatus
+            this.onEmpresaConfig = onEmpresaConfig
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -658,6 +664,25 @@ class PollingService : Service() {
                 Log.d(TAG, "empresas_sync recebido: ${empresas?.length() ?: 0} empresas")
                 if (empresas != null) {
                     onEmpresasReceived?.invoke(empresas)
+                }
+            }
+            "approval_status" -> {
+                val approved = params?.optBoolean("approved", false) ?: false
+                val status = params?.optString("status", "pending") ?: "pending"
+                val empresaId = params?.optString("empresaId", null)
+                Log.d(TAG, "approval_status recebido: approved=$approved, status=$status, empresaId=$empresaId")
+                onApprovalStatus?.invoke(approved, status, empresaId)
+            }
+            "empresa_config" -> {
+                Log.d(TAG, "empresa_config recebido: $params")
+                if (params != null) {
+                    onEmpresaConfig?.invoke(params)
+                }
+            }
+            "empresa_config_updated" -> {
+                Log.d(TAG, "empresa_config_updated recebido: $params")
+                if (params != null) {
+                    onEmpresaConfig?.invoke(params)
                 }
             }
             else -> {
