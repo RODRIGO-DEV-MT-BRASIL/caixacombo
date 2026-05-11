@@ -275,11 +275,9 @@ async function saveData() {
   if (!isConnected) return;
   try {
     // Usar bulkWrite com replace + upsert para cada collection
+    // NUNCA apagar tudo quando array está vazio - protege contra perda de dados se loadFromMongo falhar
     const bulkSync = async (Model, items, keyField) => {
-      if (!items || items.length === 0) {
-        await Model.deleteMany({});
-        return;
-      }
+      if (!items || items.length === 0) return; // Não apagar - pode ser falha de carregamento
       const ops = items.map(item => {
         const filter = {};
         filter[keyField] = item[keyField];
@@ -292,7 +290,7 @@ async function saveData() {
           }
         };
       });
-      // Remover documentos que não estão mais na lista
+      // Remover documentos que não estão mais na lista (só quando temos dados carregados)
       const ids = items.map(i => i[keyField]);
       await Model.deleteMany({ [keyField]: { $nin: ids } });
       if (ops.length > 0) await Model.bulkWrite(ops, { ordered: false });
