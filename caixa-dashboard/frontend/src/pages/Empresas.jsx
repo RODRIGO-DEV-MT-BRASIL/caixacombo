@@ -364,8 +364,56 @@ export default function Empresas() {
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL do Logo</label>
-            <input type="text" value={formData.logoUrl} onChange={e => setFormData({ ...formData, logoUrl: e.target.value })} className="input-field" placeholder="https://..." />
+            <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Logo da Empresa</label>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <label className={`group relative flex flex-col items-center justify-center w-32 h-32 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${formData.logoUrl ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/10 bg-white/[0.02] hover:border-blue-500/30 hover:bg-blue-500/5'}`}>
+                {formData.logoUrl ? (
+                  <>
+                    <img src={formData.logoUrl} alt="Logo" className="w-24 h-24 rounded-xl object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+                    <div className="hidden w-24 h-24 items-center justify-center text-gray-500"><Building2 size={32} /></div>
+                    <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Upload size={20} className="text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={24} className="text-gray-500 mb-2" />
+                    <span className="text-[10px] text-gray-500 text-center px-2">Clique ou arraste</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  const reader = new FileReader()
+                  reader.onload = async (ev) => {
+                    const base64 = ev.target.result
+                    try {
+                      const res = await fetch('/api/upload-base64', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ base64 })
+                      })
+                      if (res.ok) {
+                        const data = await res.json()
+                        setFormData({ ...formData, logoUrl: data.url })
+                      }
+                    } catch (err) { console.error('Erro upload logo:', err) }
+                  }
+                  reader.readAsDataURL(file)
+                }} />
+              </label>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <label className="block text-[10px] text-gray-600 mb-1">Ou cole uma URL:</label>
+                  <input type="text" value={formData.logoUrl?.startsWith('/uploads/') ? '' : formData.logoUrl} onChange={e => setFormData({ ...formData, logoUrl: e.target.value })} className="input-field text-xs" placeholder="https://..." />
+                </div>
+                {formData.logoUrl && (
+                  <button type="button" onClick={() => setFormData({ ...formData, logoUrl: '' })} className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1">
+                    <X size={10} /> Remover logo
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
           <div className="rounded-2xl border border-white/5 p-4 bg-white/[0.02]">
             <p className="text-[11px] font-semibold text-gray-400 mb-3 uppercase tracking-wider">Preview</p>
