@@ -48,7 +48,7 @@ export default function Terminais() {
   const [search, setSearch] = useState('')
 
   const empresaId = user?.role === 'empresa' ? user?.empresaId : null
-  const filtered = empresaId ? devices.filter(d => !d.empresaId || d.empresaId === empresaId) : devices
+  const filtered = empresaId ? devices.filter(d => d.empresaId === empresaId) : devices
   const online = filtered.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
 
   const sl = search.toLowerCase()

@@ -7,7 +7,8 @@ const defaultFormData = {
   nome: '', cnpj: '', email: '', telefone: '', login: '', senha: '',
   permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
   primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '',
-  paginasPermitidas: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa']
+  paginasPermitidas: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+  slug: ''
 }
 
 const STEPS = [
@@ -135,12 +136,13 @@ export default function Empresas() {
     setEditando(empresa)
     setFormData({
       nome: empresa.nome,
-      cnpj: empresa.cnpj || '',
-      email: empresa.email || '',
-      telefone: empresa.telefone || '',
+      slug: empresa.slug || '',
+      cnpj: empresa.cnpj,
+      email: empresa.email,
+      telefone: empresa.telefone,
       login: empresa.login,
       senha: '',
-      permissoes: empresa.permissoes || { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
+      permissoes: empresa.permissoes || {},
       primaryColor: empresa.primaryColor || '#3b82f6',
       secondaryColor: empresa.secondaryColor || '#06b6d4',
       accentColor: empresa.accentColor || '#10b981',
@@ -270,6 +272,28 @@ export default function Empresas() {
               <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Nome *</label>
               <input type="text" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="input-field text-base" required />
             </div>
+            {editando && (
+              <div className="md:col-span-2">
+                <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL da Empresa</label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-blue-400 font-mono truncate">
+                    {window.location.origin}/{formData.slug}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = `${window.location.origin}/${formData.slug}`;
+                      navigator.clipboard.writeText(url);
+                      success('URL copiada!', 2000);
+                    }}
+                    className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all"
+                  >
+                    Copiar Link
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1">Slug: {formData.slug}</p>
+              </div>
+            )}
             <div>
               <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">CNPJ</label>
               <input type="text" value={formData.cnpj} onChange={e => setFormData({ ...formData, cnpj: e.target.value })} className="input-field" />
@@ -656,6 +680,24 @@ export default function Empresas() {
                       <div className="w-5 h-5 rounded" style={{ backgroundColor: empresa.accentColor || '#10b981' }} />
                     </div>
                     <span className="text-[10px] text-gray-500">Whitelabel</span>
+                  </div>
+                )}
+                {/* URL da Empresa */}
+                {empresa.slug && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex-1 px-2 py-1.5 bg-white/5 rounded-lg text-xs text-blue-400 font-mono truncate">
+                      {window.location.origin}/{empresa.slug}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/${empresa.slug}`);
+                        success('URL copiada!', 2000);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-blue-400 transition-colors"
+                      title="Copiar link"
+                    >
+                      <Globe size={14} />
+                    </button>
                   </div>
                 )}
                 {empresa.cnpj && <div className="text-xs text-gray-400 mb-2"><span className="font-medium">CNPJ:</span> {empresa.cnpj}</div>}

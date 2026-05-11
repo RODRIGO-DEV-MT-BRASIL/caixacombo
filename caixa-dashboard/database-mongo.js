@@ -154,7 +154,8 @@ const CaixaSessaoSchema = new mongoose.Schema({
   vendasDinheiro: { type: Number, default: 0 },
   vendasPix: { type: Number, default: 0 },
   vendasCredito: { type: Number, default: 0 },
-  vendasDebito: { type: Number, default: 0 }
+  vendasDebito: { type: Number, default: 0 },
+  empresaId: { type: String, default: null }
 }, { versionKey: false });
 
 const AuditoriaSchema = new mongoose.Schema({
@@ -163,7 +164,8 @@ const AuditoriaSchema = new mongoose.Schema({
   deviceId: { type: String, default: '' },
   descricao: { type: String, default: '' },
   username: { type: String, default: '' },
-  timestamp: { type: String, default: '' }
+  timestamp: { type: String, default: '' },
+  empresaId: { type: String, default: null }
 }, { versionKey: false });
 
 const ConfigSchema = new mongoose.Schema({
