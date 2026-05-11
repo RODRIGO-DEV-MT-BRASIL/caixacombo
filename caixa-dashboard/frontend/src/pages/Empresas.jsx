@@ -26,7 +26,13 @@ export default function Empresas() {
       vendas: false,
       caixa: false,
       auditoria: false
-    }
+    },
+    // Whitelabel
+    primaryColor: '#3b82f6',
+    secondaryColor: '#06b6d4',
+    accentColor: '#10b981',
+    logoUrl: '',
+    paginasPermitidas: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa']
   })
   const [clienteForm, setClienteForm] = useState({
     nome: '',
@@ -156,7 +162,12 @@ export default function Empresas() {
         vendas: false,
         caixa: false,
         auditoria: false
-      }
+      },
+      primaryColor: empresa.primaryColor || '#3b82f6',
+      secondaryColor: empresa.secondaryColor || '#06b6d4',
+      accentColor: empresa.accentColor || '#10b981',
+      logoUrl: empresa.logoUrl || '',
+      paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa']
     })
     setModalOpen(true)
   }
@@ -169,6 +180,12 @@ export default function Empresas() {
         [permissao]: !formData.permissoes[permissao]
       }
     })
+  }
+
+  const togglePagina = (pagina) => {
+    const current = formData.paginasPermitidas || []
+    const updated = current.includes(pagina) ? current.filter(p => p !== pagina) : [...current, pagina]
+    setFormData({ ...formData, paginasPermitidas: updated })
   }
 
   // ==================== CLIENTES CRUD ====================
@@ -260,7 +277,7 @@ export default function Empresas() {
         <button
           onClick={() => {
             if (activeTab === 'empresas') {
-              setModalOpen(true); setEditando(null); setFormData({ nome: '', cnpj: '', email: '', telefone: '', login: '', senha: '', permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false } })
+              setModalOpen(true); setEditando(null); setFormData({ nome: '', cnpj: '', email: '', telefone: '', login: '', senha: '', permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false }, primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '', paginasPermitidas: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'] })
             } else {
               setModalOpen(true); setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' })
             }
@@ -299,15 +316,23 @@ export default function Empresas() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {empresas.map(empresa => (
-              <div key={empresa.id} className="glass p-5 border border-white/5 hover:border-blue-500/20 transition-all">
+              <div key={empresa.id} className={`glass p-5 border transition-all ${empresa.ativo !== false ? 'border-white/5 hover:border-blue-500/20' : 'border-red-500/10 opacity-60'}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    {empresa.logoUrl ? (
+                      <img src={empresa.logoUrl} alt="" className="w-10 h-10 rounded-lg object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+                    ) : null}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${empresa.logoUrl ? 'hidden' : 'bg-blue-500/20'}`}>
                       <Building2 size={20} className="text-blue-400" />
                     </div>
                     <div>
                       <p className="font-semibold text-white">{empresa.nome}</p>
-                      <p className="text-xs text-gray-400">{empresa.login}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-400">{empresa.login}</p>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${empresa.ativo !== false ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                          {empresa.ativo !== false ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -319,18 +344,26 @@ export default function Empresas() {
                     </button>
                   </div>
                 </div>
+                {/* Branding Preview */}
+                {(empresa.primaryColor || empresa.logoUrl) && (
+                  <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-black/20">
+                    <div className="flex gap-1">
+                      <div className="w-5 h-5 rounded" style={{ backgroundColor: empresa.primaryColor || '#3b82f6' }} />
+                      <div className="w-5 h-5 rounded" style={{ backgroundColor: empresa.secondaryColor || '#06b6d4' }} />
+                      <div className="w-5 h-5 rounded" style={{ backgroundColor: empresa.accentColor || '#10b981' }} />
+                    </div>
+                    <span className="text-[10px] text-gray-500">Whitelabel</span>
+                  </div>
+                )}
                 {empresa.cnpj && <div className="text-xs text-gray-400 mb-2"><span className="font-medium">CNPJ:</span> {empresa.cnpj}</div>}
                 {empresa.email && <div className="text-xs text-gray-400 mb-2"><span className="font-medium">Email:</span> {empresa.email}</div>}
                 {empresa.telefone && <div className="text-xs text-gray-400 mb-3"><span className="font-medium">Telefone:</span> {empresa.telefone}</div>}
                 <div className="border-t border-white/5 pt-3">
-                  <p className="text-xs text-gray-400 mb-2 flex items-center gap-1"><Shield size={12} /> Permissões:</p>
+                  <p className="text-xs text-gray-400 mb-2 flex items-center gap-1"><Shield size={12} /> Páginas:</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {empresa.permissoes?.dashboard && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded">Dashboard</span>}
-                    {empresa.permissoes?.produtos && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">Produtos</span>}
-                    {empresa.permissoes?.categorias && <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">Categorias</span>}
-                    {empresa.permissoes?.vendas && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs rounded">Vendas</span>}
-                    {empresa.permissoes?.caixa && <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs rounded">Caixa</span>}
-                    {empresa.permissoes?.auditoria && <span className="px-2 py-0.5 bg-pink-500/20 text-pink-400 text-xs rounded">Auditoria</span>}
+                    {(empresa.paginasPermitidas || []).map(pg => (
+                      <span key={pg} className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] rounded capitalize">{pg}</span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -450,6 +483,70 @@ export default function Empresas() {
                     <button key={perm.key} type="button" onClick={() => togglePermissao(perm.key)} className={`p-3 rounded-lg border transition-all flex items-center gap-2 ${formData.permissoes[perm.key] ? `bg-${perm.color}-500/20 border-${perm.color}-500/30 text-${perm.color}-400` : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>
                       {formData.permissoes[perm.key] ? <Check size={16} /> : <X size={16} />}
                       <span className="text-sm">{perm.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Whitelabel */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <p className="text-sm text-gray-400 mb-3 flex items-center gap-2"><Building2 size={16} /> Identidade Visual (Whitelabel):</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor Primária</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor Secundária</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor de Destaque</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-xs text-gray-500 mb-1">URL do Logo</label>
+                  <input type="text" value={formData.logoUrl} onChange={e => setFormData({ ...formData, logoUrl: e.target.value })} className="input-field text-xs" placeholder="https://..." />
+                </div>
+                {/* Preview */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20 mb-4">
+                  {formData.logoUrl && <img src={formData.logoUrl} alt="Logo" className="w-10 h-10 rounded object-contain" onError={(e) => { e.target.style.display = 'none' }} />}
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.primaryColor }}>P</div>
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.secondaryColor }}>S</div>
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.accentColor }}>A</div>
+                  </div>
+                  <span className="text-xs text-gray-400">{formData.nome || 'Nome da Empresa'}</span>
+                </div>
+              </div>
+
+              {/* Páginas Permitidas */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <p className="text-sm text-gray-400 mb-3 flex items-center gap-2"><Shield size={16} /> Páginas Acessíveis:</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { id: 'dashboard', label: 'Dashboard' },
+                    { id: 'terminais', label: 'Terminais' },
+                    { id: 'categorias', label: 'Categorias' },
+                    { id: 'produtos', label: 'Produtos' },
+                    { id: 'vendas', label: 'Vendas' },
+                    { id: 'caixa', label: 'Caixa' },
+                    { id: 'fechamento', label: 'Fechamento' },
+                    { id: 'empresas', label: 'Clientes' }
+                  ].map(pg => (
+                    <button key={pg.id} type="button" onClick={() => togglePagina(pg.id)} className={`px-3 py-2 rounded-lg border text-xs transition-all flex items-center gap-1.5 ${(formData.paginasPermitidas || []).includes(pg.id) ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'}`}>
+                      {(formData.paginasPermitidas || []).includes(pg.id) ? <Check size={12} /> : <X size={12} />}
+                      {pg.label}
                     </button>
                   ))}
                 </div>

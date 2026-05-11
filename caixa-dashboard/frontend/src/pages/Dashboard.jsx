@@ -34,10 +34,21 @@ const navItems = [
 ]
 
 export default function Dashboard() {
-  const { user, logout, token, hasPermission } = useAuth()
+  const { user, logout, token, hasPermission, hasPageAccess } = useAuth()
   const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp, timeUpdates, socket } = useSocket()
   const { success } = useToast()
-  const [page, setPage] = useState('dashboard')
+  const [page, setPage] = useState(() => {
+    // Se for empresa, começar na primeira página permitida
+    return 'dashboard'
+  })
+
+  // Redirecionar se página atual não está permitida
+  useEffect(() => {
+    if (user && !hasPageAccess(page)) {
+      const firstAllowed = navItems.find(item => hasPageAccess(item.id))
+      if (firstAllowed) setPage(firstAllowed.id)
+    }
+  }, [user, page, hasPageAccess])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [usageModal, setUsageModal] = useState(null)
@@ -105,8 +116,9 @@ export default function Dashboard() {
   const inUseDevices = devices.filter(d => d.status === 'in_use')
   const freeOnlineDevices = devices.filter(d => d.status === 'online' || (d.online && d.status !== 'locked' && d.status !== 'in_use'))
 
-  // Filtrar itens do menu baseado em permissões
+  // Filtrar itens do menu baseado em permissões e páginas permitidas
   const filteredNavItems = navItems.filter(item => {
+    if (!hasPageAccess(item.id)) return false
     if (item.adminOnly) return user?.role === 'admin'
     if (item.permission) return hasPermission(item.permission)
     return true
@@ -237,11 +249,11 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'p-4 justify-center' : 'p-6'}`}>
-            <img src="/controle.png" alt="CaixaCombo" className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-14 h-14'} rounded-xl object-contain shrink-0`} />
+            <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-14 h-14'} rounded-xl object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-white text-lg leading-tight">CaixaCombo</h1>
-                <p className="text-xs text-gray-500">Dashboard v1.1</p>
+                <h1 className="font-bold text-white text-lg leading-tight">{user?.branding?.companyName || 'CaixaCombo'}</h1>
+                <p className="text-xs text-gray-500">{user?.role === 'empresa' ? user?.empresaNome || 'Empresa' : 'Dashboard v1.1'}</p>
               </div>
             )}
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-gray-400 hover:text-white">

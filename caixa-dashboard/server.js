@@ -298,13 +298,16 @@ app.post('/api/auth/login', async (req, res) => {
     const empresa = (db.empresas || []).find(e => e.login === username);
     console.log(`[LOGIN] Empresa encontrada: ${empresa ? `id=${empresa.id}, login=${empresa.login}, temSenha=${!!empresa.senha}` : 'NENHUMA'}`);
     if (empresa) {
+      if (!empresa.ativo) {
+        return res.status(403).json({ error: 'Empresa desativada. Contate o administrador.' });
+      }
       if (!empresa.senha || !bcrypt.compareSync(password, empresa.senha)) {
         console.log(`[LOGIN] Senha da empresa não confere ou senha ausente`);
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
       
       const token = jwt.sign(
-        { id: empresa.id, username: empresa.login, role: 'empresa', empresaId: empresa.id, permissoes: empresa.permissoes },
+        { id: empresa.id, username: empresa.login, role: 'empresa', empresaId: empresa.id, permissoes: empresa.permissoes, paginasPermitidas: empresa.paginasPermitidas },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -315,7 +318,16 @@ app.post('/api/auth/login', async (req, res) => {
           username: empresa.login,
           role: 'empresa',
           empresaNome: empresa.nome,
-          permissoes: empresa.permissoes
+          empresaId: empresa.id,
+          permissoes: empresa.permissoes,
+          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+          branding: {
+            primaryColor: empresa.primaryColor || '#3b82f6',
+            secondaryColor: empresa.secondaryColor || '#06b6d4',
+            accentColor: empresa.accentColor || '#10b981',
+            logoUrl: empresa.logoUrl || '',
+            companyName: empresa.nome
+          }
         }
       });
     }
@@ -333,7 +345,24 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/verify', authenticateToken, (req, res) => {
-  res.json({ valid: true, user: req.user });
+  const userData = { ...req.user };
+  // Se for empresa, buscar branding atualizado
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    const empresa = (db.empresas || []).find(e => e.id === req.user.empresaId);
+    if (empresa) {
+      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'];
+      userData.branding = {
+        primaryColor: empresa.primaryColor || '#3b82f6',
+        secondaryColor: empresa.secondaryColor || '#06b6d4',
+        accentColor: empresa.accentColor || '#10b981',
+        logoUrl: empresa.logoUrl || '',
+        companyName: empresa.nome
+      };
+      userData.empresaNome = empresa.nome;
+      if (!empresa.ativo) return res.status(403).json({ error: 'Empresa desativada' });
+    }
+  }
+  res.json({ valid: true, user: userData });
 });
 
 // Verificar senha para ações sensíveis
@@ -683,7 +712,7 @@ app.get('/api/empresas', authenticateToken, (req, res) => {
 });
 
 app.post('/api/empresas', authenticateToken, async (req, res) => {
-  const { nome, cnpj, email, telefone, login, senha, permissoes } = req.body;
+  const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas } = req.body;
   
   if (!nome || !login || !senha) {
     return res.status(400).json({ error: 'Nome, login e senha são obrigatórios' });
@@ -711,6 +740,12 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
       caixa: false,
       auditoria: false
     },
+    primaryColor: primaryColor || '#3b82f6',
+    secondaryColor: secondaryColor || '#06b6d4',
+    accentColor: accentColor || '#10b981',
+    logoUrl: logoUrl || '',
+    paginasPermitidas: paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+    ativo: true,
     createdAt: new Date()
   };
   
@@ -728,7 +763,7 @@ app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
   const index = (db.empresas || []).findIndex(e => e.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Empresa não encontrada' });
   
-  const { nome, cnpj, email, telefone, login, senha, permissoes } = req.body;
+  const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas, ativo } = req.body;
   
   // Verificar se login já existe (excluindo a empresa atual)
   const existingLogin = (db.empresas || []).find(e => e.login === login && e.id != req.params.id);
@@ -745,6 +780,12 @@ app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
     login: login || db.empresas[index].login,
     senha: senha ? bcrypt.hashSync(senha, 10) : db.empresas[index].senha,
     permissoes: permissoes || db.empresas[index].permissoes,
+    primaryColor: primaryColor !== undefined ? primaryColor : (db.empresas[index].primaryColor || '#3b82f6'),
+    secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
+    accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
+    logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
+    paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+    ativo: ativo !== undefined ? ativo : (db.empresas[index].ativo !== undefined ? db.empresas[index].ativo : true),
     updatedAt: new Date()
   };
   

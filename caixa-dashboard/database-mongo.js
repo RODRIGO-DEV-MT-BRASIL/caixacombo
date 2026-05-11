@@ -109,6 +109,13 @@ const EmpresaSchema = new mongoose.Schema({
   senha: { type: String, default: '' },
   permissoes: { type: mongoose.Schema.Types.Mixed, default: {} },
   observacao: { type: String, default: '' },
+  // Whitelabel
+  primaryColor: { type: String, default: '#3b82f6' },
+  secondaryColor: { type: String, default: '#06b6d4' },
+  accentColor: { type: String, default: '#10b981' },
+  logoUrl: { type: String, default: '' },
+  paginasPermitidas: { type: [String], default: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'] },
+  ativo: { type: Boolean, default: true },
   createdAt: { type: String, default: null },
   updatedAt: { type: String, default: null }
 }, { versionKey: false });
