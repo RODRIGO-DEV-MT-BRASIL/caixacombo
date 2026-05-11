@@ -2265,6 +2265,10 @@ io.on('connection', (socket) => {
       console.log(`⏱️ Definindo tempo de uso: ${deviceId} - ${minutes} minutos por ${dashboardInfo?.usuario}`);
       device.usageTimeLimit = minutes;
       device.usageStartTime = new Date();
+      // Mudar status para 'in_use' quando timer está ativo
+      if (device.status !== 'locked') {
+        device.status = 'in_use';
+      }
       
       // Enviar comando para o dispositivo
       enqueueDeviceCommand(deviceId, 'usage_time_set', { minutes, startTime: device.usageStartTime });
@@ -2277,6 +2281,7 @@ io.on('connection', (socket) => {
       
       io.emit('device_status_update', { 
         deviceId, 
+        status: device.status,
         usageTimeLimit: minutes, 
         usageStartTime: device.usageStartTime 
       });
@@ -2436,6 +2441,9 @@ io.on('connection', (socket) => {
       device.status = 'locked';
       device.lockReason = reason;
       device.lockedAt = new Date();
+      // Cancelar timer de uso ao bloquear manualmente
+      device.usageTimeLimit = null;
+      device.usageStartTime = null;
       enqueueDeviceCommand(deviceId, 'device_locked', { reason, lockPassword: device.lockPassword });
       if (device.socketId) io.to(device.socketId).emit('device_locked', { reason, lockPassword: device.lockPassword });
       io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, lockPassword: device.lockPassword, usageTimeLimit: null, usageStartTime: null });
@@ -2463,9 +2471,14 @@ io.on('connection', (socket) => {
     
     if (device) {
       device.status = 'online';
+      // Limpar timer de uso ao desbloquear
+      device.usageTimeLimit = null;
+      device.usageStartTime = null;
+      delete device.lockReason;
+      delete device.lockedAt;
       enqueueDeviceCommand(deviceId, 'device_unlocked', {});
       if (device.socketId) io.to(device.socketId).emit('device_unlocked', {});
-      io.emit('device_status_update', { deviceId, status: 'online' });
+      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
       
       // Auditoria: Desbloqueio via dashboard
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via dashboard', dashboardInfo?.usuario);
