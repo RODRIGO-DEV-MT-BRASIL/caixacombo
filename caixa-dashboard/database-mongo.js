@@ -198,6 +198,24 @@ async function connectMongo() {
     await mongoose.connect(MONGO_URI);
     isConnected = true;
     console.log('📦 MongoDB conectado');
+    // Dropar índices unique antigos que conflitam com os novos (background)
+    try {
+      const dropOld = async (Model, indexName) => {
+        try {
+          const indexes = await Model.collection.indexes();
+          const idx = indexes.find(i => i.name === indexName);
+          if (idx && idx.unique) {
+            await Model.collection.dropIndex(indexName);
+            console.log(`🗑️ Índice antigo dropado: ${Model.modelName}.${indexName}`);
+          }
+        } catch (e) { /* índice não existe, ignorar */ }
+      };
+      await dropOld(Produto, 'id_1');
+      await dropOld(Venda, 'id_1');
+      await dropOld(Dispositivo, 'deviceId_1');
+    } catch (e) {
+      console.warn('⚠️ Erro ao dropar índices antigos:', e.message);
+    }
     // Criar índices em background - não crashar se falhar
     try {
       await Promise.all(Object.values(mongoose.models).map(m => m.ensureIndexes().catch(e => {
