@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext'
 import { useToast } from '../components/Toast'
 import {
   Monitor, Wifi, WifiOff, Lock, Unlock, Clock, AlertTriangle, CheckCircle2,
-  Eye, EyeOff, RefreshCw as RotateCw, Power, Play as PlayIcon, X as CloseIcon, Search
+  Eye, EyeOff, RefreshCw as RotateCw, Power, Play as PlayIcon, X as CloseIcon, Search, Shield, Check, Building2
 } from 'lucide-react'
 
 const statusConfig = {
@@ -13,9 +13,11 @@ const statusConfig = {
   locked_timer: { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20', icon: Clock, label: 'Bloq. por Tempo' },
   offline: { color: 'text-gray-500', bg: 'bg-gray-500/10', border: 'border-gray-500/20', icon: WifiOff, label: 'Offline' },
   in_use: { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Clock, label: 'Em Uso' },
+  pending: { color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: Shield, label: 'Pendente' },
 }
 
 function getDeviceStatus(device) {
+  if (device.status === 'pending') return 'pending'
   if (device.status === 'locked') return device.lockReason === 'Tempo de uso expirado' ? 'locked_timer' : 'locked'
   if (device.status === 'in_use') return 'in_use'
   if (device.online === false && device.status !== 'online') return 'offline'
@@ -46,9 +48,42 @@ export default function Terminais() {
   const [lockReason, setLockReason] = useState('')
   const [showPassword, setShowPassword] = useState({})
   const [search, setSearch] = useState('')
+  const [empresas, setEmpresas] = useState([])
+  const [approveModal, setApproveModal] = useState(null) // deviceId
+  const [selectedEmpresa, setSelectedEmpresa] = useState('')
+
+  // Buscar empresas para o modal de aprovação
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(setEmpresas).catch(() => {})
+    }
+  }, [user, token])
+
+  const handleApprove = async (deviceId, empresaId) => {
+    try {
+      const res = await fetch(`/api/dispositivos/${deviceId}/aprovar`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ empresaId })
+      })
+      const data = await res.json()
+      if (res.ok) { success('Terminal aprovado com sucesso', 3000); setApproveModal(null); setSelectedEmpresa('') }
+      else success(data.error || 'Erro ao aprovar', 5000)
+    } catch { success('Erro ao aprovar terminal', 5000) }
+  }
+
+  const handleReject = async (deviceId) => {
+    try {
+      const res = await fetch(`/api/dispositivos/${deviceId}/rejeitar`, {
+        method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) { success('Terminal rejeitado', 3000); setApproveModal(null) }
+    } catch { success('Erro ao rejeitar', 5000) }
+  }
 
   const empresaId = user?.role === 'empresa' ? user?.empresaId : null
   const filtered = empresaId ? devices.filter(d => d.empresaId === empresaId) : devices
+  const pending = filtered.filter(d => d.status === 'pending')
   const online = filtered.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
 
   const sl = search.toLowerCase()
@@ -91,7 +126,7 @@ export default function Terminais() {
           <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center"><Monitor size={24} className="text-blue-400" /></div>
           <div>
             <h3 className="text-lg font-semibold text-white">Terminais</h3>
-            <p className="text-xs text-gray-400">{online.length} conectados · {filtered.filter(d => d.status === 'locked').length} bloqueados</p>
+            <p className="text-xs text-gray-400">{online.length} conectados · {filtered.filter(d => d.status === 'locked').length} bloqueados · {pending.length} pendentes</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -105,6 +140,51 @@ export default function Terminais() {
           </button>
         </div>
       </div>
+
+      {/* Terminais Pendentes - Aprovação */}
+      {pending.length > 0 && user?.role === 'admin' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Shield size={18} className="text-yellow-400" />
+            <h4 className="text-sm font-semibold text-yellow-400">Terminais Pendentes ({pending.length})</h4>
+            <span className="text-[11px] text-gray-500">— Aguardando aprovação</span>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {pending.map(device => (
+              <div key={device.deviceId} className="glass border border-yellow-400/20 overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-yellow-400/10 flex items-center justify-center">
+                      <Monitor size={20} className="text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">{device.deviceName || device.deviceId}</p>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                        <span className="font-mono">{device.serialNumber || device.deviceId}</span>
+                        <span>·</span>
+                        <span>{getConnectedTime(device.connectedAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-yellow-400/10 text-[11px] font-semibold text-yellow-400">
+                    <Shield size={12} /> Pendente
+                  </div>
+                </div>
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setApproveModal(device.deviceId)} className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5">
+                      <Check size={12} /> Aprovar
+                    </button>
+                    <button onClick={() => handleReject(device.deviceId)} className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5">
+                      <CloseIcon size={12} /> Rejeitar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {searched.map(device => {
@@ -197,6 +277,26 @@ export default function Terminais() {
           )
         })}
       </div>
+
+      {/* Modal Aprovar Terminal */}
+      {approveModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setApproveModal(null)}>
+          <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Building2 size={20} className="text-emerald-400" /> Aprovar Terminal</h3>
+            <p className="text-sm text-gray-400 mb-4">Selecione a empresa para associar este terminal:</p>
+            <select value={selectedEmpresa} onChange={e => setSelectedEmpresa(e.target.value)} className="input-field mb-4">
+              <option value="">Selecione uma empresa...</option>
+              {empresas.filter(e => e.ativo !== false).map(e => (
+                <option key={e.id} value={e.id}>{e.nome} ({e.login})</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <button onClick={() => { setApproveModal(null); setSelectedEmpresa('') }} className="btn-ghost flex-1">Cancelar</button>
+              <button onClick={() => { if (selectedEmpresa) handleApprove(approveModal, selectedEmpresa) }} disabled={!selectedEmpresa} className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed">Aprovar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {lockModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setLockModal(null)}>
