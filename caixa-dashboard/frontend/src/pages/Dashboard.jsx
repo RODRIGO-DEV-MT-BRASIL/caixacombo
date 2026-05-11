@@ -471,9 +471,13 @@ export default function Dashboard() {
                           )}
 
                           {device.lockReason && device.status === 'locked' && (
-                            <div className="flex items-center gap-1.5 text-xs text-red-400 mb-3">
-                              <AlertTriangle size={12} />
-                              {device.lockReason}
+                            <div className={`flex items-center gap-1.5 text-xs mb-3 p-2 rounded-lg ${
+                              device.lockReason === 'Tempo de uso expirado' 
+                                ? 'bg-amber-600/10 border border-amber-500/20 text-amber-400'
+                                : 'bg-red-600/10 border border-red-500/20 text-red-400'
+                            }`}>
+                              {device.lockReason === 'Tempo de uso expirado' ? <Clock size={12} /> : <AlertTriangle size={12} />}
+                              {device.lockReason === 'Tempo de uso expirado' ? 'Bloqueado por tempo expirado' : device.lockReason}
                             </div>
                           )}
 
@@ -507,12 +511,17 @@ export default function Dashboard() {
                                 <Lock size={12} /> Bloquear
                               </button>
                             )}
-                            {status === 'online' && (
+                            {/* Botão Tempo: visível sempre (exceto bloqueado) para definir/alterar/cancelar */}
+                            {status !== 'locked' && (
                               <button
                                 onClick={() => setUsageModal(device.deviceId)}
-                                className="px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
+                                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${
+                                  device.usageTimeLimit 
+                                    ? 'bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/30 text-amber-300'
+                                    : 'bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/20 text-amber-400'
+                                }`}
                               >
-                                <Clock size={12} /> Tempo
+                                <Clock size={12} /> {device.usageTimeLimit ? 'Alterar Timer' : 'Tempo'}
                               </button>
                             )}
                             {/* Botões de controle do app */}
@@ -602,8 +611,16 @@ export default function Dashboard() {
           <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Clock size={20} className="text-amber-400" />
-              Definir Tempo de Uso
+              {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit ? 'Alterar Tempo de Uso' : 'Definir Tempo de Uso'}
             </h3>
+            {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit && (
+              <div className="mb-4 p-3 rounded-lg bg-amber-600/10 border border-amber-500/20">
+                <p className="text-xs text-amber-300">
+                  Timer ativo: {devices.find(d => d.deviceId === usageModal).usageTimeLimit} min
+                  {timeUpdates[usageModal] && ` — restam ${formatTime(timeUpdates[usageModal].remaining)}`}
+                </p>
+              </div>
+            )}
             <input
               type="number"
               value={usageMinutes}
@@ -625,6 +642,14 @@ export default function Dashboard() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setUsageModal(null)} className="btn-ghost flex-1">Cancelar</button>
+              {devices.find(d => d.deviceId === usageModal)?.usageTimeLimit && (
+                <button
+                  onClick={() => { unlockDevice(usageModal); setUsageModal(null); setUsageMinutes('') }}
+                  className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-lg text-xs font-medium transition-all"
+                >
+                  Remover Timer
+                </button>
+              )}
               <button
                 onClick={() => { if (usageMinutes > 0) { setUsageTime(usageModal, parseInt(usageMinutes)); setUsageModal(null); setUsageMinutes('') } }}
                 className="btn-primary flex-1"
