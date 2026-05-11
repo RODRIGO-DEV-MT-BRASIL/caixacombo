@@ -118,6 +118,24 @@ const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
 const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
 
+// Emitir evento apenas para dashboards da empresa específica (ou todos se empresaId=null)
+function emitToEmpresa(event, data, empresaId = null) {
+  connectedDashboards.forEach((info, socketId) => {
+    const socket = io.sockets.sockets.get(socketId);
+    if (!socket) return;
+    // Admin vê tudo, empresa só vê seus dados
+    if (info.role === 'admin' || !empresaId || info.empresaId === empresaId) {
+      socket.emit(event, data);
+    }
+  });
+}
+
+// Emitir evento de dispositivo filtrado pelo empresaId do dispositivo
+function emitDeviceEvent(event, data) {
+  const deviceEmpresaId = connectedDevices.get(data.deviceId)?.empresaId || null;
+  emitToEmpresa(event, data, deviceEmpresaId);
+}
+
 // Inicialização assíncrona: conectar MongoDB e carregar dados
 async function initializeApp() {
   await connectMongo();
@@ -182,6 +200,7 @@ async function initializeApp() {
 
 // Função para adicionar logs de auditoria
 function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
+  const deviceEmpresaId = deviceId ? (connectedDevices.get(deviceId)?.empresaId || null) : null;
   const log = {
     id: generateId(),
     timestamp: new Date(),
@@ -190,7 +209,8 @@ function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
     deviceName: connectedDevices.get(deviceId)?.deviceName || deviceId,
     detalhes,
     usuario: usuario || (connectedDevices.get(deviceId)?.deviceName || 'Sistema'),
-    ip: null // Poderia ser extraído do socket se necessário
+    ip: null, // Poderia ser extraído do socket se necessário
+    empresaId: deviceEmpresaId
   };
   
   db.auditoria.unshift(log); // Adicionar no início (mais recente primeiro)
@@ -203,8 +223,9 @@ function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
   // Salvar auditoria em disco
   saveAuditoria();
   
-  // Notificar dashboards sobre novo log
-  io.emit('auditoria_update', log);
+  // Notificar dashboards sobre novo log - filtrar por empresa
+  const logEmpresaId = log.empresaId || null;
+  emitToEmpresa('auditoria_update', log, logEmpresaId);
   
   console.log(`[AUDITORIA] ${tipo.toUpperCase()}: ${deviceId} - ${detalhes}`);
 }
@@ -402,6 +423,10 @@ app.post('/api/vendas/:id/reimprimir', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const venda = (db.vendas || []).find(v => v.id == id);
   if (!venda) return res.status(404).json({ error: 'Venda não encontrada' });
+  // Empresa só pode reimprimir suas próprias vendas
+  if (req.user.role === 'empresa' && venda.empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   
   const deviceId = venda.deviceId;
   const atk = venda.stoneAtk || venda.atk || null;
@@ -425,6 +450,10 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, async (req, res) => {
   if (vendaIndex === -1) return res.status(404).json({ error: 'Venda não encontrada' });
   
   const venda = db.vendas[vendaIndex];
+  // Empresa só pode cancelar suas próprias vendas
+  if (req.user.role === 'empresa' && venda.empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const deviceId = venda.deviceId;
   const atk = venda.stoneAtk || venda.atk || null;
   
@@ -449,19 +478,24 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, async (req, res) => {
     io.to(device.socketId).emit('cancelar_venda', { vendaId: id, atk, amount });
   }
   
-  // Notificar dashboards
-  io.emit('venda_cancelada', { vendaId: id, deviceId });
+  // Notificar dashboards da empresa
+  const vendaEmpresaId = venda.empresaId || null;
+  emitToEmpresa('venda_cancelada', { vendaId: id, deviceId }, vendaEmpresaId);
   
   addAuditoria('cancelamento', deviceId, `Venda #${id} cancelada: ${motivo || 'sem motivo'}${atk ? ' (atk: ' + atk + ')' : ''}`, req.user.username);
   res.json({ success: true, message: 'Venda cancelada com sucesso' });
 });
 
 app.get('/api/dispositivos', authenticateToken, (req, res) => {
-  const list = Array.from(connectedDevices.entries())
+  let list = Array.from(connectedDevices.entries())
     .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
     .map(([id, d]) => ({
       deviceId: id, ...d, online: d.socketId !== null
     }));
+  // Filtrar dispositivos por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    list = list.filter(d => d.empresaId === req.user.empresaId);
+  }
   res.json(list);
 });
 
@@ -483,28 +517,33 @@ app.post('/api/config', authenticateToken, async (req, res) => {
 app.get('/api/auditoria', authenticateToken, (req, res) => {
   const { limit = 50, tipo, deviceId } = req.query;
   let logs = db.auditoria;
-  
+
+  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    logs = logs.filter(log => log.empresaId === req.user.empresaId);
+  }
+
   // Filtrar por tipo se especificado
   if (tipo) {
     logs = logs.filter(log => log.tipo === tipo);
   }
-  
+
   // Filtrar por dispositivo se especificado
   if (deviceId) {
     logs = logs.filter(log => log.deviceId === deviceId);
   }
-  
+
   // Limitar número de resultados
   logs = logs.slice(0, parseInt(limit));
-  
+
   res.json(logs);
 });
 
 // ==================== ROTAS DE CATEGORIAS ====================
 app.get('/api/categorias', authenticateToken, (req, res) => {
-  // Se for empresa, filtrar apenas suas categorias (ou categorias globais sem empresaId)
+  // Se for empresa, filtrar APENAS suas categorias
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    return res.json(db.categorias.filter(c => !c.empresaId || c.empresaId === req.user.empresaId));
+    return res.json(db.categorias.filter(c => c.empresaId === req.user.empresaId));
   }
   res.json(db.categorias);
 });
@@ -523,7 +562,7 @@ app.post('/api/categorias', authenticateToken, async (req, res) => {
   };
   db.categorias.push(categoria);
   debouncedSaveData();
-  io.emit('categoria_added', categoria);
+  emitToEmpresa('categoria_added', categoria, categoria.empresaId);
   broadcastCategoriasSync('added', categoria);
   res.json(categoria);
 });
@@ -531,24 +570,28 @@ app.post('/api/categorias', authenticateToken, async (req, res) => {
 app.put('/api/categorias/:id', authenticateToken, async (req, res) => {
   const index = db.categorias.findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
-  
+  // Empresa só pode editar suas próprias categorias
+  if (req.user.role === 'empresa' && db.categorias[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   db.categorias[index] = { ...db.categorias[index], ...req.body };
-  debouncedSaveData(); // Salvar imediatamente
-  io.emit('categoria_updated', db.categorias[index]);
+  debouncedSaveData();
+  emitToEmpresa('categoria_updated', db.categorias[index], db.categorias[index].empresaId);
   broadcastCategoriasSync('updated', db.categorias[index]);
-  
   res.json(db.categorias[index]);
 });
 
 app.delete('/api/categorias/:id', authenticateToken, async (req, res) => {
   const index = db.categorias.findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Categoria não encontrada' });
-  
+  // Empresa só pode deletar suas próprias categorias
+  if (req.user.role === 'empresa' && db.categorias[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const deleted = db.categorias.splice(index, 1)[0];
-  debouncedSaveData(); // Salvar imediatamente
-  io.emit('categoria_deleted', deleted);
+  debouncedSaveData();
+  emitToEmpresa('categoria_deleted', deleted, deleted.empresaId);
   broadcastCategoriasSync('deleted', deleted);
-  
   res.json(deleted);
 });
 
@@ -600,9 +643,9 @@ app.post('/api/upload-base64', authenticateToken, async (req, res) => {
 app.get('/api/produtos', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.produtos;
-  // Filtrar por empresa se role=empresa
+  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(p => !p.empresaId || p.empresaId === req.user.empresaId);
+    result = result.filter(p => p.empresaId === req.user.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -615,9 +658,9 @@ app.get('/api/produtos', authenticateToken, (req, res) => {
 app.get('/api/vendas', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.vendas;
-  // Filtrar por empresa se role=empresa
+  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(v => !v.empresaId || v.empresaId === req.user.empresaId);
+    result = result.filter(v => v.empresaId === req.user.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -701,7 +744,7 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
   };
   db.produtos.push(produto);
   debouncedSaveData();
-  io.emit('produto_added', produto);
+  emitToEmpresa('produto_added', produto, produto.empresaId);
   broadcastProdutosSync('added', produto);
   res.json(produto);
 });
@@ -709,14 +752,17 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
 app.put('/api/produtos/:id', authenticateToken, async (req, res) => {
   const index = db.produtos.findIndex(p => p.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
-  
+  // Empresa só pode editar seus próprios produtos
+  if (req.user.role === 'empresa' && db.produtos[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const updateData = { ...req.body };
   if (updateData.categoriaId !== undefined) {
     updateData.categoriaId = updateData.categoriaId ? Number(updateData.categoriaId) : null;
   }
   db.produtos[index] = { ...db.produtos[index], ...updateData };
-  debouncedSaveData(); // Salvar imediatamente
-  io.emit('produto_updated', db.produtos[index]);
+  debouncedSaveData();
+  emitToEmpresa('produto_updated', db.produtos[index], db.produtos[index].empresaId);
   broadcastProdutosSync('updated', db.produtos[index]);
   
   res.json(db.produtos[index]);
@@ -725,7 +771,10 @@ app.put('/api/produtos/:id', authenticateToken, async (req, res) => {
 app.delete('/api/produtos/:id', authenticateToken, async (req, res) => {
   const index = db.produtos.findIndex(p => p.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Produto não encontrado' });
-  
+  // Empresa só pode deletar seus próprios produtos
+  if (req.user.role === 'empresa' && db.produtos[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const deleted = db.produtos.splice(index, 1)[0];
   
   // Remover imagem associada se existir
@@ -736,8 +785,8 @@ app.delete('/api/produtos/:id', authenticateToken, async (req, res) => {
     }
   }
   
-  debouncedSaveData(); // Salvar imediatamente
-  io.emit('produto_deleted', deleted);
+  debouncedSaveData();
+  emitToEmpresa('produto_deleted', deleted, deleted.empresaId);
   broadcastProdutosSync('deleted', deleted);
   
   res.json(deleted);
@@ -919,9 +968,9 @@ app.get('/api/empresas/:id/status', authenticateToken, (req, res) => {
 app.get('/api/clientes', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.clientes || [];
-  // Filtrar por empresa se role=empresa
+  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(c => !c.empresaId || c.empresaId === req.user.empresaId);
+    result = result.filter(c => c.empresaId === req.user.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -961,19 +1010,23 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
 app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
   const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
-  
+  // Empresa só pode editar seus próprios clientes
+  if (req.user.role === 'empresa' && db.clientes[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   db.clientes[index] = { ...db.clientes[index], ...req.body, id: db.clientes[index].id };
   debouncedSaveData();
-  
   broadcastClientesSync();
-  
   res.json(db.clientes[index]);
 });
 
 app.delete('/api/clientes/:id', authenticateToken, async (req, res) => {
   const index = (db.clientes || []).findIndex(c => c.id == req.params.id);
   if (index === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
-  
+  // Empresa só pode deletar seus próprios clientes
+  if (req.user.role === 'empresa' && db.clientes[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const deleted = db.clientes.splice(index, 1)[0];
   debouncedSaveData();
   
@@ -985,25 +1038,45 @@ app.delete('/api/clientes/:id', authenticateToken, async (req, res) => {
 // Função auxiliar: sincronizar clientes para todos os terminais
 function broadcastClientesSync() {
   const clientes = db.clientes || [];
-  // Via WebSocket para dashboards
-  io.emit('clientes_sync', clientes);
-  // Via polling para terminais Android
+  // Via WebSocket para dashboards - cada empresa só recebe seus clientes
+  connectedDashboards.forEach((info, socketId) => {
+    const socket = io.sockets.sockets.get(socketId);
+    if (!socket) return;
+    const filtered = info.role === 'empresa' && info.empresaId
+      ? clientes.filter(c => c.empresaId === info.empresaId)
+      : clientes;
+    socket.emit('clientes_sync', filtered);
+  });
+  // Via polling para terminais Android - filtrar por empresa do dispositivo
   connectedDevices.forEach((deviceInfo, deviceId) => {
-    enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes });
+    const filtered = deviceInfo.empresaId
+      ? clientes.filter(c => c.empresaId === deviceInfo.empresaId)
+      : clientes;
+    enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: filtered });
   });
 }
 
 // Função auxiliar: sincronizar produtos para todos os terminais
 function broadcastProdutosSync(action = 'sync', data = null) {
   const produtos = db.produtos || [];
-  const payload = { produtos, timestamp: new Date(), action };
-  if (data) payload.data = data;
-  // Via WebSocket para dashboards
-  io.emit('produtos_sync', payload);
-  // Via polling para terminais Android
+  // Via WebSocket para dashboards - cada empresa só recebe seus produtos
+  connectedDashboards.forEach((info, socketId) => {
+    const socket = io.sockets.sockets.get(socketId);
+    if (!socket) return;
+    const filtered = info.role === 'empresa' && info.empresaId
+      ? produtos.filter(p => p.empresaId === info.empresaId)
+      : produtos;
+    const payload = { produtos: filtered, timestamp: new Date(), action };
+    if (data) payload.data = data;
+    socket.emit('produtos_sync', payload);
+  });
+  // Via polling para terminais Android - filtrar por empresa do dispositivo
   const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
-    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos });
+    const filtered = deviceInfo.empresaId
+      ? produtos.filter(p => p.empresaId === deviceInfo.empresaId)
+      : produtos;
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
   });
   console.log(`📤 [BROADCAST-PRODUTOS] ${produtos.length} produtos para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
@@ -1012,14 +1085,24 @@ function broadcastProdutosSync(action = 'sync', data = null) {
 // Função auxiliar: sincronizar categorias para todos os terminais
 function broadcastCategoriasSync(action = 'sync', data = null) {
   const categorias = db.categorias || [];
-  const payload = { categorias, timestamp: new Date(), action };
-  if (data) payload.data = data;
-  // Via WebSocket para dashboards
-  io.emit('categorias_sync', payload);
-  // Via polling para terminais Android
+  // Via WebSocket para dashboards - cada empresa só recebe suas categorias
+  connectedDashboards.forEach((info, socketId) => {
+    const socket = io.sockets.sockets.get(socketId);
+    if (!socket) return;
+    const filtered = info.role === 'empresa' && info.empresaId
+      ? categorias.filter(c => c.empresaId === info.empresaId)
+      : categorias;
+    const payload = { categorias: filtered, timestamp: new Date(), action };
+    if (data) payload.data = data;
+    socket.emit('categorias_sync', payload);
+  });
+  // Via polling para terminais Android - filtrar por empresa do dispositivo
   const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
-    enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias });
+    const filtered = deviceInfo.empresaId
+      ? categorias.filter(c => c.empresaId === deviceInfo.empresaId)
+      : categorias;
+    enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: filtered });
     deviceIds.push(deviceId);
   });
   console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
@@ -1035,7 +1118,7 @@ function broadcastEmpresasSync() {
     telefone: e.telefone,
     permissoes: e.permissoes
   }));
-  // Via WebSocket para dashboards
+  // Via WebSocket para dashboards - empresas é global (admin e empresa precisam ver)
   io.emit('empresas_sync', { empresas });
   // Via polling para terminais Android
   const deviceIds = [];
@@ -1069,7 +1152,7 @@ app.put('/api/dispositivos/:deviceId/empresa', authenticateToken, async (req, re
     debouncedSaveData();
   }
 
-  io.emit('device_status_update', { deviceId, empresaId });
+  emitDeviceEvent('device_status_update', { deviceId, empresaId });
 
   // Auditoria
   addAuditoria('mudanca_status', deviceId, `Dispositivo associado à empresa ${empresaId}`, dashboardInfo?.usuario);
@@ -1113,7 +1196,7 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, r
   }
 
   // Notificar dashboards sobre nova senha
-  io.emit('device_password_updated', { deviceId, lockPassword: newPassword });
+  emitDeviceEvent('device_password_updated', { deviceId, lockPassword: newPassword });
 
   // Auditoria
   addAuditoria('mudanca_status', deviceId, 'Senha de bloqueio atualizada', dashboardInfo?.usuario);
@@ -1209,9 +1292,9 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
 app.get('/api/operacoes', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.operacoes || [];
-  // Filtrar por empresa se role=empresa
+  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(o => !o.empresaId || o.empresaId === req.user.empresaId);
+    result = result.filter(o => o.empresaId === req.user.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -1268,6 +1351,7 @@ app.post('/api/operacoes', authenticateToken, async (req, res) => {
       const sessao = {
         id: generateId(),
         deviceId: deviceId || 'geral',
+        empresaId: operacao.empresaId || null,
         aberturaEm: ultimaAbertura.dataHora,
         fechamentoEm: operacao.dataHora,
         operadorAbertura: ultimaAbertura.nomeOperador,
@@ -1301,17 +1385,21 @@ app.post('/api/operacoes', authenticateToken, async (req, res) => {
   
   debouncedSaveData();
   
-  // Broadcast para dashboards
-  io.emit('operacao_adicionada', operacao);
-  
-  // Broadcast para dispositivos
-  io.emit('operacoes_sync', {
-    operacoes: db.operacoes,
-  });
+  // Broadcast para dashboards da empresa
+  emitToEmpresa('operacao_adicionada', operacao, operacao.empresaId);
+
+  // Broadcast para dashboards da empresa
+  const opsFiltered = operacao.empresaId
+    ? db.operacoes.filter(o => o.empresaId === operacao.empresaId)
+    : db.operacoes;
+  emitToEmpresa('operacoes_sync', { operacoes: opsFiltered }, operacao.empresaId);
 
   // Se fechamento, sincronizar vendas também (foram removidas do banco ativo)
   if (tipo === 'fechamento') {
-    io.emit('vendas_sync', db.vendas || []);
+    const vendasFiltered = operacao.empresaId
+      ? (db.vendas || []).filter(v => v.empresaId === operacao.empresaId)
+      : db.vendas || [];
+    emitToEmpresa('vendas_sync', vendasFiltered, operacao.empresaId);
   }
 
   // Auditoria
@@ -1332,12 +1420,15 @@ app.delete('/api/operacoes/:id', authenticateToken, async (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: 'Operação não encontrada' });
   }
-  
+  // Empresa só pode deletar suas próprias operações
+  if (req.user.role === 'empresa' && db.operacoes[index].empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
   const operacaoRemovida = db.operacoes.splice(index, 1)[0];
   debouncedSaveData();
   
   // Broadcast para dashboards
-  io.emit('operacao_removida', { id: id });
+  emitDeviceEvent('operacao_removida', { id: id });
   
   // Auditoria
   addAuditoria('operacao_caixa', 'dashboard', `Operação removida: ${operacaoRemovida.tipo} R$ ${operacaoRemovida.valor}`, 'dashboard');
@@ -1347,13 +1438,23 @@ app.delete('/api/operacoes/:id', authenticateToken, async (req, res) => {
 
 // ==================== HISTÓRICO DE CAIXA E FATURAMENTO ====================
 app.get('/api/caixa-sessoes', authenticateToken, (req, res) => {
-  res.json(db.caixaSessoes || []);
+  let sessoes = db.caixaSessoes || [];
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    sessoes = sessoes.filter(s => s.empresaId === req.user.empresaId);
+  }
+  res.json(sessoes);
 });
 
 app.get('/api/faturamento', authenticateToken, (req, res) => {
   const periodo = req.query.periodo || 'diario'; // diario, semanal, mensal, anual
-  const sessoes = db.caixaSessoes || [];
-  const vendas = db.vendas || [];
+  let sessoes = db.caixaSessoes || [];
+  let vendas = db.vendas || [];
+  // Filtrar por empresa se role=empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    sessoes = sessoes.filter(s => s.empresaId === req.user.empresaId);
+    vendas = vendas.filter(v => v.empresaId === req.user.empresaId);
+  }
   const now = new Date();
   
   let resultado = [];
@@ -1624,7 +1725,7 @@ app.post('/api/device/poll', async (req, res) => {
   // Detectar mudança de status e notificar dashboards
   const newStatus = status || existing?.status || 'online';
   if (existing && existing.status !== newStatus) {
-    io.emit('device_status_update', {
+    emitDeviceEvent('device_status_update', {
       deviceId,
       status: newStatus,
       lockReason: connectedDevices.get(deviceId)?.lockReason,
@@ -1636,13 +1737,13 @@ app.post('/api/device/poll', async (req, res) => {
 
   // Processar dados de caixa se enviado
   if (caixaData) {
-    io.emit('caixa_data', { deviceId, caixa: caixaData });
+    emitDeviceEvent('caixa_data', { deviceId, caixa: caixaData });
   }
 
   // Notificar dashboards sobre o estado do dispositivo
   const now = new Date();
   const isPollingRecent = connectedDevices.get(deviceId)?.lastPoll && (now - new Date(connectedDevices.get(deviceId).lastPoll)) < 120000;
-  io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+  emitDeviceEvent('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
 
   // Se dispositivo é novo, reconectando após cold start, ou não sincronizou desde o restart do servidor
   // (equivalente ao que o WebSocket faz em device_connect com socket.emit('produtos_sync'))
@@ -1705,6 +1806,7 @@ app.post('/api/device/sale', async (req, res) => {
     ...sale,
     deviceId: sale.deviceId || deviceId,
     deviceName: sale.deviceName || deviceInfo?.deviceName || deviceId,
+    empresaId: sale.empresaId || deviceInfo?.empresaId || null,
     createdAt: sale.createdAt || new Date().toISOString()
   };
   
@@ -1716,8 +1818,8 @@ app.post('/api/device/sale', async (req, res) => {
   }
   debouncedSaveData();
 
-  // Notificar dashboards
-  io.emit('venda_added', enrichedSale);
+  // Notificar dashboards da empresa
+  emitToEmpresa('venda_added', enrichedSale, enrichedSale.empresaId);
 
   // Auto-unlock se dispositivo estava bloqueado
   const device = connectedDevices.get(deviceId);
@@ -1746,7 +1848,8 @@ app.post('/api/device/operacao', async (req, res) => {
     nomeOperador: nomeOperador || 'terminal',
     observacao: observacao || '',
     dataHora: new Date().toISOString(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    empresaId: deviceInfo?.empresaId || null
   };
 
   // Salvar no banco local
@@ -1777,6 +1880,7 @@ app.post('/api/device/operacao', async (req, res) => {
       db.caixaSessoes.push({
         id: generateId(),
         deviceId: deviceId || 'geral',
+        empresaId: operacao.empresaId || null,
         aberturaEm: ultimaAbertura.dataHora,
         fechamentoEm: operacao.dataHora,
         operadorAbertura: ultimaAbertura.nomeOperador,
@@ -1807,15 +1911,19 @@ app.post('/api/device/operacao', async (req, res) => {
 
   debouncedSaveData();
 
-  // Broadcast para todos os dashboards
-  io.emit('operacao_adicionada', operacao);
-  io.emit('operacoes_sync', {
-    operacoes: db.operacoes
-  });
+  // Broadcast para dashboards da empresa
+  emitToEmpresa('operacao_adicionada', operacao, operacao.empresaId);
+  const opsFiltered2 = operacao.empresaId
+    ? db.operacoes.filter(o => o.empresaId === operacao.empresaId)
+    : db.operacoes;
+  emitToEmpresa('operacoes_sync', { operacoes: opsFiltered2 }, operacao.empresaId);
 
-  // Se fechamento, sincronizar vendas também (foram removidas do banco ativo)
+  // Se fechamento, sincronizar vendas também
   if (tipo === 'fechamento') {
-    io.emit('vendas_sync', db.vendas || []);
+    const vendasFiltered2 = operacao.empresaId
+      ? (db.vendas || []).filter(v => v.empresaId === operacao.empresaId)
+      : db.vendas || [];
+    emitToEmpresa('vendas_sync', vendasFiltered2, operacao.empresaId);
   }
 
   // Auditoria
@@ -1845,7 +1953,7 @@ app.post('/api/device/status', async (req, res) => {
       addAuditoria('mudanca_status', deviceId, `Status alterado via REST: ${statusAnterior} → ${status}`);
     }
     
-    io.emit('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
+    emitDeviceEvent('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
   }
 
   res.json({ success: true });
@@ -1864,7 +1972,7 @@ app.post('/api/device/estoque', async (req, res) => {
     const estoqueAnterior = produto.estoque;
     produto.estoque = novoEstoque;
     debouncedSaveData();
-    io.emit('estoque_update', { deviceId, produtoId, novoEstoque });
+    emitDeviceEvent('estoque_update', { deviceId, produtoId, novoEstoque });
     addAuditoria('estoque', deviceId, `Estoque atualizado: ${produto.nome} (${estoqueAnterior} -> ${novoEstoque})`, connectedDevices.get(deviceId)?.deviceName);
   }
 
@@ -1877,7 +1985,7 @@ app.post('/api/device/lock-confirmed', async (req, res) => {
   const device = connectedDevices.get(deviceId);
   if (device) {
     device.status = 'locked';
-    io.emit('lock_confirmed', { deviceId });
+    emitDeviceEvent('lock_confirmed', { deviceId });
     addAuditoria('bloqueio', deviceId, 'Dispositivo bloqueado com sucesso', 'Sistema');
   }
   res.json({ success: true });
@@ -1889,7 +1997,7 @@ app.post('/api/device/unlock-confirmed', async (req, res) => {
   const device = connectedDevices.get(deviceId);
   if (device) {
     device.status = 'online';
-    io.emit('unlock_confirmed', { deviceId });
+    emitDeviceEvent('unlock_confirmed', { deviceId });
     addAuditoria('desbloqueio', deviceId, 'Dispositivo desbloqueado', 'Sistema');
   }
   res.json({ success: true });
@@ -1909,8 +2017,8 @@ app.post('/api/device/unlock-attempt', async (req, res) => {
     device.lockReason = null;
     device.lockedAt = null;
     // NÃO gerar nova senha aqui - manter a mesma até o próximo bloqueio
-    io.emit('unlock_response', { deviceId, success: true, message: 'Desbloqueado com sucesso' });
-    io.emit('device_status_update', { deviceId, status: 'online' });
+    emitDeviceEvent('unlock_response', { deviceId, success: true, message: 'Desbloqueado com sucesso' });
+    emitDeviceEvent('device_status_update', { deviceId, status: 'online' });
     addAuditoria('desbloqueio', deviceId, 'Desbloqueio via senha', 'Terminal');
     res.json({ success: true, message: 'Desbloqueado com sucesso' });
   } else {
@@ -1922,7 +2030,7 @@ app.post('/api/device/unlock-attempt', async (req, res) => {
 // Enviar resultado de controle via REST
 app.post('/api/device/control-result', async (req, res) => {
   const { deviceId, action, success, error } = req.body;
-  io.emit('control_result', { deviceId, action, success, error });
+  emitDeviceEvent('control_result', { deviceId, action, success, error });
   res.json({ success: true });
 });
 
@@ -1976,7 +2084,7 @@ app.post('/api/force-sync', authenticateToken, async (req, res) => {
 app.post('/api/device/produtos-sync', async (req, res) => {
   const { deviceId, produtos } = req.body;
   // Notificar dashboards
-  io.emit('produtos_sync', { deviceId, produtos });
+  emitDeviceEvent('produtos_sync', { deviceId, produtos });
   res.json({ success: true });
 });
 
@@ -2003,7 +2111,7 @@ app.post('/api/device/produto-save', async (req, res) => {
 
     db.produtos[index] = { ...db.produtos[index], ...updateData };
     debouncedSaveData();
-    io.emit('produto_updated', db.produtos[index]);
+    emitToEmpresa('produto_updated', db.produtos[index], db.produtos[index].empresaId);
     broadcastProdutosSync('updated', db.produtos[index]);
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} editou produto: ${produto.nome}`);
     res.json(db.produtos[index]);
@@ -2023,7 +2131,7 @@ app.post('/api/device/produto-save', async (req, res) => {
     };
     db.produtos.push(novo);
     debouncedSaveData();
-    io.emit('produto_added', novo);
+    emitToEmpresa('produto_added', novo, novo.empresaId);
     broadcastProdutosSync('added', novo);
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} criou produto: ${novo.nome}`);
     res.json(novo);
@@ -2066,7 +2174,7 @@ io.on('connection', (socket) => {
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (reconexão detectada)');
 
       // Notificar dashboards sobre desbloqueio
-      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     }
 
     // Auditoria: Conexão
@@ -2116,7 +2224,7 @@ io.on('connection', (socket) => {
     }
 
     console.log(`📱 ${deviceName} (${deviceId}) [${connectedDevices.get(deviceId).status}]`);
-    io.emit('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
+    emitDeviceEvent('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
 
     // Enviar produtos para o dispositivo recém-conectado
     socket.emit('produtos_sync', {
@@ -2150,7 +2258,7 @@ io.on('connection', (socket) => {
         addAuditoria('mudanca_status', deviceId, `Status alterado: ${statusAnterior} → ${status}`);
       }
       
-      io.emit('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
+      emitDeviceEvent('device_status_update', { deviceId, status, lockReason: device.lockReason, lockedAt: device.lockedAt, usageTimeLimit: device.usageTimeLimit, usageStartTime: device.usageStartTime });
     }
   });
 
@@ -2166,7 +2274,7 @@ io.on('connection', (socket) => {
       debouncedSaveData();
       
       // Broadcast para todos os dashboards
-      io.emit('estoque_atualizado', {
+      emitDeviceEvent('estoque_atualizado', {
         produtoId: data.produtoId,
         nome: produto.nome,
         estoqueAnterior,
@@ -2193,18 +2301,17 @@ io.on('connection', (socket) => {
     
     // Salvar no banco local
     if (!db.operacoes) db.operacoes = [];
+    const deviceInfo = connectedDevices.get(deviceId);
     db.operacoes.push({
       ...operacao,
       deviceId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      empresaId: operacao.empresaId || deviceInfo?.empresaId || null
     });
     debouncedSaveData();
     
-    // Broadcast para todos os dashboards
-    io.emit('operacao_adicionada', {
-      ...operacao,
-      deviceId
-    });
+    // Broadcast para dashboards da empresa
+    emitToEmpresa('operacao_adicionada', { ...operacao, deviceId }, operacao.empresaId);
     
     // Auditoria
     addAuditoria('operacao_caixa', deviceId, `${operacao.tipo}: R$ ${operacao.valor}`, operacao.nomeOperador);
@@ -2229,7 +2336,7 @@ io.on('connection', (socket) => {
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (atividade detectada)');
       
       // Notificar dashboards sobre desbloqueio
-      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     }
     
     // Salvar venda no banco de dados
@@ -2244,14 +2351,15 @@ io.on('connection', (socket) => {
       formaPagamento: sale.formaPagamento || 'DINHEIRO',
       valorRecebido: sale.valorRecebido || 0,
       troco: sale.troco || 0,
+      empresaId: device?.empresaId || null,
       createdAt: new Date()
     };
     
     db.vendas.push(venda);
     debouncedSaveData();
     
-    // Emitir evento para atualizar dashboards
-    io.emit('venda_added', venda);
+    // Emitir evento para atualizar dashboards da empresa
+    emitToEmpresa('venda_added', venda, venda.empresaId);
     
     console.log('✅ Venda processada e salva:', venda.id);
   });
@@ -2280,7 +2388,7 @@ io.on('connection', (socket) => {
         socket.emit('unlock_response', { deviceId, success: true, message: 'Senha correta' });
         
         // Notificar dashboards sobre desbloqueio
-        io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+        emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
       } else {
         // Senha incorreta
         console.log(`❌ Senha incorreta para ${deviceId}`);
@@ -2313,7 +2421,7 @@ io.on('connection', (socket) => {
       // Auditoria: Desbloqueio via terminal
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via terminal do dispositivo');
 
-      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     } else {
       console.log(`❌ [DEBUG] Dispositivo não encontrado para unlock_confirmed: ${deviceId}`);
     }
@@ -2370,7 +2478,7 @@ io.on('connection', (socket) => {
     console.log(`🎮 [CONTROL_RESULT] ${deviceId} - ${action} - sucesso=${success} ${error ? `- erro: ${error}` : ''}`);
 
     // Encaminhar resultado para todos os dashboards conectados
-    io.emit('control_result', data);
+    emitDeviceEvent('control_result', data);
 
     // Auditoria se houve erro
     if (!success && error) {
@@ -2399,7 +2507,7 @@ io.on('connection', (socket) => {
       // Auditoria: Desbloqueio forçado
       addAuditoria('desbloqueio', deviceId, 'Desbloqueio forçado via dashboard', dashboardInfo?.usuario);
       
-      io.emit('device_status_update', { deviceId, status: 'online' });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online' });
     } else {
       // Dispositivo offline - atualizar no banco de dados
       const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
@@ -2408,7 +2516,7 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].lockReason = null;
         db.dispositivos[deviceIndex].lockedAt = null;
         debouncedSaveData();
-        io.emit('device_status_update', { deviceId, status: 'online' });
+        emitDeviceEvent('device_status_update', { deviceId, status: 'online' });
         addAuditoria('desbloqueio', deviceId, 'Desbloqueio forçado (offline)', dashboardInfo?.usuario);
       }
     }
@@ -2438,7 +2546,7 @@ io.on('connection', (socket) => {
       // Auditoria: Tempo de uso definido
       addAuditoria('mudanca_status', deviceId, `Tempo de uso definido: ${minutes} minutos`, dashboardInfo?.usuario);
       
-      io.emit('device_status_update', { 
+      emitDeviceEvent('device_status_update', { 
         deviceId, 
         status: device.status,
         usageTimeLimit: minutes, 
@@ -2456,7 +2564,7 @@ io.on('connection', (socket) => {
         
         // Notificar tempo restante a cada segundo (apenas se dispositivo não estiver bloqueado por tempo expirado)
         if (device.status !== 'locked' || remaining > 0) {
-          io.emit('time_update', { 
+          emitDeviceEvent('time_update', { 
             deviceId, 
             elapsed, 
             remaining, 
@@ -2485,7 +2593,7 @@ io.on('connection', (socket) => {
           addAuditoria('bloqueio', deviceId, 'Bloqueado automaticamente - tempo expirado', 'Sistema');
           
           // Notificar dashboards
-          io.emit('device_status_update', { 
+          emitDeviceEvent('device_status_update', { 
             deviceId, 
             status: 'locked',
             lockReason: 'Tempo de uso expirado',
@@ -2518,7 +2626,7 @@ io.on('connection', (socket) => {
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado automaticamente (sincronização detectada)');
       
       // Notificar dashboards sobre desbloqueio
-      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
     }
     
     if (type === 'produtos' || type === 'all') {
@@ -2548,43 +2656,57 @@ io.on('connection', (socket) => {
   socket.on('dashboard_connect', async (data) => {
     const { token } = data || {};
     let usuario = 'dashboard';
-    
+    let role = null;
+    let empresaId = null;
+
     // Tentar identificar o usuário do dashboard
     if (token) {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         usuario = decoded.username;
-        connectedDashboards.set(socket.id, { usuario, socketId: socket.id });
+        role = decoded.role;
+        empresaId = decoded.empresaId || null;
+        connectedDashboards.set(socket.id, { usuario, socketId: socket.id, role, empresaId });
       } catch (e) {
         console.log('Token inválido no dashboard_connect');
       }
     }
-    
-    console.log(`🖥️ Dashboard conectado: ${usuario}`);
-    
+
+    console.log(`🖥️ Dashboard conectado: ${usuario} (role=${role}, empresaId=${empresaId})`);
+
     // Enviar dispositivos conectados (WebSocket ou polling recente)
     const now = new Date();
-    const list = Array.from(connectedDevices.entries())
+    let list = Array.from(connectedDevices.entries())
       .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
       .map(([id, d]) => {
         const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000; // 2 min
         const isOnline = d.socketId !== null || isPollingRecent;
         return { deviceId: id, ...d, online: isOnline };
       });
-    
+
+    // Filtrar dispositivos por empresa
+    if (role === 'empresa' && empresaId) {
+      list = list.filter(d => d.empresaId === empresaId);
+    }
+
     console.log(`📊 [DEBUG] Dispositivos conectados: ${list.length}`);
     console.log(`📊 [DEBUG] DeviceIds:`, list.map(d => d.deviceId));
-    
+
     socket.emit('devices_list', list);
-    
-    // Enviar vendas recentes (últimas 50)
-    const recentVendas = (db.vendas || []).slice(-50).reverse();
+
+    // Enviar vendas recentes (últimas 50) - filtradas por empresa
+    let recentVendas = (db.vendas || []).slice(-50).reverse();
+    if (role === 'empresa' && empresaId) {
+      recentVendas = recentVendas.filter(v => v.empresaId === empresaId);
+    }
     socket.emit('vendas_history', recentVendas);
 
-    // Enviar operações de caixa para sincronização
-    socket.emit('operacoes_sync', {
-      operacoes: db.operacoes || []
-    });
+    // Enviar operações de caixa para sincronização - filtradas por empresa
+    let operacoes = db.operacoes || [];
+    if (role === 'empresa' && empresaId) {
+      operacoes = operacoes.filter(o => o.empresaId === empresaId);
+    }
+    socket.emit('operacoes_sync', { operacoes });
   });
 
   socket.on('lock_device', async (data) => {
@@ -2605,7 +2727,7 @@ io.on('connection', (socket) => {
       device.usageStartTime = null;
       enqueueDeviceCommand(deviceId, 'device_locked', { reason, lockPassword: device.lockPassword });
       if (device.socketId) io.to(device.socketId).emit('device_locked', { reason, lockPassword: device.lockPassword });
-      io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, lockPassword: device.lockPassword, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, lockPassword: device.lockPassword, usageTimeLimit: null, usageStartTime: null });
       
       // Auditoria: Bloqueio via dashboard
       addAuditoria('bloqueio', deviceId, `Bloqueado: ${reason}`, dashboardInfo?.usuario);
@@ -2617,7 +2739,7 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].lockReason = reason;
         db.dispositivos[deviceIndex].lockedAt = new Date();
         debouncedSaveData();
-        io.emit('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
+        emitDeviceEvent('device_status_update', { deviceId, status: 'locked', lockReason: reason, lockedAt: device.lockedAt, usageTimeLimit: null, usageStartTime: null });
         addAuditoria('bloqueio', deviceId, `Bloqueado (offline): ${reason}`, dashboardInfo?.usuario);
       }
     }
@@ -2637,7 +2759,7 @@ io.on('connection', (socket) => {
       delete device.lockedAt;
       enqueueDeviceCommand(deviceId, 'device_unlocked', {});
       if (device.socketId) io.to(device.socketId).emit('device_unlocked', {});
-      io.emit('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
+      emitDeviceEvent('device_status_update', { deviceId, status: 'online', lockReason: null, lockedAt: null, usageTimeLimit: null, usageStartTime: null });
       
       // Auditoria: Desbloqueio via dashboard
       addAuditoria('desbloqueio', deviceId, 'Desbloqueado via dashboard', dashboardInfo?.usuario);
@@ -2649,7 +2771,7 @@ io.on('connection', (socket) => {
         db.dispositivos[deviceIndex].lockReason = null;
         db.dispositivos[deviceIndex].lockedAt = null;
         debouncedSaveData();
-        io.emit('device_status_update', { deviceId, status: 'online' });
+        emitDeviceEvent('device_status_update', { deviceId, status: 'online' });
         addAuditoria('desbloqueio', deviceId, 'Desbloqueado (offline)', dashboardInfo?.usuario);
       }
     }
@@ -2670,7 +2792,7 @@ io.on('connection', (socket) => {
         
         // Remover completamente do mapa para limpar dashboard
         connectedDevices.delete(id);
-        io.emit('device_disconnected', { deviceId: id });
+        emitDeviceEvent('device_disconnected', { deviceId: id });
         console.log(`📱 Dispositivo ${id} removido do mapa de conectados`);
         break;
       }

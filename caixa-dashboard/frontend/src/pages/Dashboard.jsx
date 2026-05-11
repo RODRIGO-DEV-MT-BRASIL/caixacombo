@@ -37,8 +37,21 @@ const navItems = [
 
 export default function Dashboard() {
   const { user, logout, token, hasPermission, hasPageAccess } = useAuth()
-  const { devices, connected, socket } = useSocket()
+  const { devices, connected, socket, vendas } = useSocket()
   const [page, setPage] = useState('dashboard')
+  const [stats, setStats] = useState({ vendasHoje: 0, qtdVendas: 0 })
+
+  // Calcular stats reais das vendas
+  useEffect(() => {
+    const hoje = new Date().toDateString()
+    const vendasHoje = vendas.filter(v => {
+      if (v.cancelada) return false
+      const d = new Date(v.createdAt || v.dataHora)
+      return d.toDateString() === hoje
+    })
+    const total = vendasHoje.reduce((s, v) => s + (v.total || 0), 0)
+    setStats({ vendasHoje: total, qtdVendas: vendasHoje.length })
+  }, [vendas])
 
   // Redirecionar se página atual não está permitida
   useEffect(() => {
@@ -196,7 +209,7 @@ export default function Dashboard() {
                     <Dollar size={24} className="text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">R$ 0,00</p>
+                    <p className="text-2xl font-bold text-white">R$ {stats.vendasHoje.toFixed(2).replace('.', ',')}</p>
                     <p className="text-xs text-gray-400">Vendas Hoje</p>
                   </div>
                 </div>
@@ -205,7 +218,7 @@ export default function Dashboard() {
                     <Trending size={24} className="text-emerald-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">0</p>
+                    <p className="text-2xl font-bold text-white">{stats.qtdVendas}</p>
                     <p className="text-xs text-gray-400">Vendas no Dia</p>
                   </div>
                 </div>
