@@ -18,7 +18,7 @@ const STEPS = [
 ]
 
 export default function Empresas() {
-  const { token, user } = useAuth()
+  const { token } = useAuth()
   const { success } = useToast()
   const [activeTab, setActiveTab] = useState('empresas')
   const [empresas, setEmpresas] = useState([])
@@ -65,15 +65,6 @@ export default function Empresas() {
     fetchEmpresas()
     fetchClientes()
   }, [token])
-
-  useEffect(() => {
-    if (user?.role === 'empresa') {
-      setView('list')
-      setActiveTab('clientes')
-      setEditando(null)
-      setCurrentStep(0)
-    }
-  }, [user?.role])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -240,280 +231,7 @@ export default function Empresas() {
     return c.nome.toLowerCase().includes(s) || (c.cpfCnpj || '').toLowerCase().includes(s) || (c.telefone || '').toLowerCase().includes(s)
   })
 
-  const canGoNext = () => {
-    const stepId = STEPS[currentStep]?.id
-    if (stepId === 'info') return !!formData.nome
-    if (stepId === 'access') return !!formData.login && (editando ? true : !!formData.senha)
-    if (stepId === 'branding') return true
-    if (stepId === 'pages') return (formData.paginasPermitidas || []).length > 0
-    return true
-  }
-
-  const goNext = () => {
-    if (!canGoNext()) return
-    setCurrentStep(s => Math.min(s + 1, STEPS.length - 1))
-  }
-
-  const goBack = () => setCurrentStep(s => Math.max(s - 1, 0))
-
-  const renderEmpresaStep = () => {
-    const stepId = STEPS[currentStep]?.id
-    if (stepId === 'info') {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold text-white">Informações</h2>
-            <p className="text-sm text-gray-500">Dados básicos da empresa</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="md:col-span-2">
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Nome *</label>
-              <input type="text" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="input-field text-base" required />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">CNPJ</label>
-              <input type="text" value={formData.cnpj} onChange={e => setFormData({ ...formData, cnpj: e.target.value })} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Telefone</label>
-              <input type="text" value={formData.telefone} onChange={e => setFormData({ ...formData, telefone: e.target.value })} className="input-field" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
-              <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="input-field" />
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    if (stepId === 'access') {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold text-white">Acesso</h2>
-            <p className="text-sm text-gray-500">Login, senha e permissões</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Login *</label>
-              <input type="text" value={formData.login} onChange={e => setFormData({ ...formData, login: e.target.value })} className="input-field" required />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Senha {editando ? '(vazio = manter)' : '*'}</label>
-              <input type="password" value={formData.senha} onChange={e => setFormData({ ...formData, senha: e.target.value })} className="input-field" required={!editando} />
-            </div>
-          </div>
-          <div className="border-t border-white/5 pt-5">
-            <p className="text-[11px] font-semibold text-gray-400 mb-3 uppercase tracking-wider">Permissões</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {[
-                { key: 'dashboard', label: 'Dashboard' },
-                { key: 'produtos', label: 'Produtos' },
-                { key: 'categorias', label: 'Categorias' },
-                { key: 'vendas', label: 'Vendas' },
-                { key: 'caixa', label: 'Caixa' },
-                { key: 'auditoria', label: 'Auditoria' }
-              ].map(perm => (
-                <button
-                  key={perm.key}
-                  type="button"
-                  onClick={() => togglePermissao(perm.key)}
-                  className={`px-4 py-3 rounded-xl border text-left transition-all ${formData.permissoes[perm.key] ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`text-sm font-medium ${formData.permissoes[perm.key] ? 'text-blue-400' : 'text-gray-400'}`}>{perm.label}</span>
-                    {formData.permissoes[perm.key] ? <Check size={16} className="text-blue-400" /> : <X size={16} className="text-gray-600" />}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    if (stepId === 'branding') {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold text-white">Identidade</h2>
-            <p className="text-sm text-gray-500">Whitelabel (cores e logo)</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Cor Primária</label>
-              <div className="flex items-center gap-3">
-                <input type="color" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer border-2 border-white/10 bg-transparent" />
-                <input type="text" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="input-field flex-1 font-mono" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Cor Secundária</label>
-              <div className="flex items-center gap-3">
-                <input type="color" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer border-2 border-white/10 bg-transparent" />
-                <input type="text" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="input-field flex-1 font-mono" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Destaque</label>
-              <div className="flex items-center gap-3">
-                <input type="color" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="w-12 h-12 rounded-xl cursor-pointer border-2 border-white/10 bg-transparent" />
-                <input type="text" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="input-field flex-1 font-mono" />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL do Logo</label>
-            <input type="text" value={formData.logoUrl} onChange={e => setFormData({ ...formData, logoUrl: e.target.value })} className="input-field" placeholder="https://..." />
-          </div>
-          <div className="rounded-2xl border border-white/5 p-4 bg-white/[0.02]">
-            <p className="text-[11px] font-semibold text-gray-400 mb-3 uppercase tracking-wider">Preview</p>
-            <div className="flex items-center gap-3">
-              {formData.logoUrl ? (
-                <img src={formData.logoUrl} alt="" className="w-10 h-10 rounded-lg object-contain" onError={(e) => { e.target.style.display = 'none' }} />
-              ) : (
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: formData.primaryColor + '33' }}>
-                  <Building2 size={18} style={{ color: formData.primaryColor }} />
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-semibold text-white">{formData.nome || 'Nome da Empresa'}</p>
-                <div className="flex gap-2 mt-1">
-                  <span className="w-5 h-5 rounded" style={{ backgroundColor: formData.primaryColor }} />
-                  <span className="w-5 h-5 rounded" style={{ backgroundColor: formData.secondaryColor }} />
-                  <span className="w-5 h-5 rounded" style={{ backgroundColor: formData.accentColor }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    // pages
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-white">Páginas</h2>
-          <p className="text-sm text-gray-500">Controle do que a empresa pode acessar</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { id: 'dashboard', label: 'Dashboard' },
-            { id: 'terminais', label: 'Terminais' },
-            { id: 'categorias', label: 'Categorias' },
-            { id: 'produtos', label: 'Produtos' },
-            { id: 'vendas', label: 'Vendas' },
-            { id: 'caixa', label: 'Caixa' },
-            { id: 'fechamento', label: 'Fechamento' },
-            { id: 'empresas', label: 'Clientes' }
-          ].map(pg => {
-            const active = (formData.paginasPermitidas || []).includes(pg.id)
-            return (
-              <button
-                key={pg.id}
-                type="button"
-                onClick={() => togglePagina(pg.id)}
-                className={`px-4 py-3 rounded-xl border text-left transition-all ${active ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${active ? 'text-blue-400' : 'text-gray-400'}`}>{pg.label}</span>
-                  {active ? <Check size={16} className="text-blue-400" /> : <X size={16} className="text-gray-600" />}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
   return (
-    view === 'form' && activeTab === 'empresas' ? (
-      <div className="min-h-[calc(100vh-140px)] -m-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
-          <aside className="bg-gray-950/70 border-b lg:border-b-0 lg:border-r border-white/5">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between">
-              <button
-                onClick={() => { setView('list'); setEditando(null); setCurrentStep(0) }}
-                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft size={16} /> Voltar
-              </button>
-              <span className="text-[11px] text-gray-600 uppercase tracking-widest">Cadastro</span>
-            </div>
-            <div className="p-4 space-y-2">
-              {STEPS.map((step, i) => (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => setCurrentStep(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${i === currentStep ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${i < currentStep ? 'bg-emerald-500/15' : i === currentStep ? 'bg-blue-500/15' : 'bg-white/5'}`}>
-                    {i < currentStep ? <Check size={16} className="text-emerald-400" /> : <step.icon size={16} className={i === currentStep ? 'text-blue-400' : 'text-gray-500'} />}
-                  </div>
-                  <div className="text-left">
-                    <p className={`text-sm font-medium ${i === currentStep ? 'text-blue-300' : 'text-gray-300'}`}>{step.label}</p>
-                    <p className="text-[10px] text-gray-600">Etapa {i + 1} de {STEPS.length}</p>
-                  </div>
-                  {i === currentStep && <ChevronRight size={16} className="ml-auto text-blue-400" />}
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          <main className="p-6 lg:p-10">
-            <div className="max-w-4xl">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl font-bold text-white">{editando ? 'Editar Empresa' : 'Nova Empresa'}</h1>
-                  <p className="text-sm text-gray-500">Configure acesso e whitelabel em poucos passos</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setView('list'); setEditando(null); setCurrentStep(0) }}
-                    className="btn-ghost"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => (STEPS[currentStep]?.id === 'pages' ? null : goNext())}
-                    className="btn-primary"
-                    disabled={!canGoNext() || STEPS[currentStep]?.id === 'pages'}
-                  >
-                    Próximo
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={handleSubmit} className="glass p-6 lg:p-8 border border-white/5 rounded-3xl">
-                {renderEmpresaStep()}
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-8 mt-8 border-t border-white/5">
-                  <button type="button" onClick={goBack} className="btn-ghost" disabled={currentStep === 0}>Voltar</button>
-                  <div className="flex-1" />
-                  {STEPS[currentStep]?.id !== 'pages' ? (
-                    <button type="button" onClick={goNext} className="btn-primary" disabled={!canGoNext()}>Continuar</button>
-                  ) : (
-                    <button type="submit" className="btn-primary" disabled={!canGoNext() || saving}>
-                      {saving ? (
-                        <span className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Salvando...</span>
-                      ) : (
-                        <span className="flex items-center gap-2"><Save size={16} /> {editando ? 'Atualizar' : 'Cadastrar'}</span>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          </main>
-        </div>
-      </div>
-    ) : (
     <div className="space-y-6">
       {/* Header com abas */}
       <div className="flex items-center justify-between">
@@ -526,28 +244,25 @@ export default function Empresas() {
             <p className="text-xs text-gray-400">Gerencie empresas, acessos e clientes</p>
           </div>
         </div>
-        {user?.role !== 'empresa' && (
-          <button
-            onClick={() => {
-              if (activeTab === 'empresas') {
-                setEditando(null); setFormData({ ...defaultFormData }); setCurrentStep(0); setView('form')
-              } else {
-                setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' }); setView('form')
-              }
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus size={16} />
-            {activeTab === 'empresas' ? 'Nova Empresa' : 'Novo Cliente'}
-          </button>
-        )}
+        <button
+          onClick={() => {
+            if (activeTab === 'empresas') {
+              setEditando(null); setFormData({ ...defaultFormData }); setCurrentStep(0); setView('form')
+            } else {
+              setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' }); setView('form')
+            }
+          }}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus size={16} />
+          {activeTab === 'empresas' ? 'Nova Empresa' : 'Novo Cliente'}
+        </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2">
         <button
           onClick={() => setActiveTab('empresas')}
-          disabled={user?.role === 'empresa'}
           className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${activeTab === 'empresas' ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}
         >
           <Building2 size={16} /> Empresas
@@ -686,7 +401,189 @@ export default function Empresas() {
           )}
         </>
       )}
+
+      {/* Modal de Cadastro/Edição - Empresas */}
+      {modalOpen && activeTab === 'empresas' && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setModalOpen(false)}>
+          <div className="glass p-6 w-full max-w-2xl glow-blue" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <Building2 size={20} className="text-blue-400" />
+              {editando ? 'Editar Empresa' : 'Nova Empresa'}
+            </h3>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Nome da Empresa *</label>
+                  <input type="text" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="input-field" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">CNPJ</label>
+                  <input type="text" value={formData.cnpj} onChange={e => setFormData({ ...formData, cnpj: e.target.value })} className="input-field" placeholder="00.000.000/0000-00" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Email</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="input-field" placeholder="email@empresa.com" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+                  <input type="text" value={formData.telefone} onChange={e => setFormData({ ...formData, telefone: e.target.value })} className="input-field" placeholder="(00) 00000-0000" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Login de Acesso *</label>
+                  <input type="text" value={formData.login} onChange={e => setFormData({ ...formData, login: e.target.value })} className="input-field" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Senha de Acesso {editando ? '(deixe vazio para manter)' : '*'}</label>
+                  <input type="password" value={formData.senha} onChange={e => setFormData({ ...formData, senha: e.target.value })} className="input-field" required={!editando} />
+                </div>
+              </div>
+
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <p className="text-sm text-gray-400 mb-3 flex items-center gap-2"><Shield size={16} /> Permissões de Acesso:</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { key: 'dashboard', label: 'Dashboard', color: 'blue' },
+                    { key: 'produtos', label: 'Produtos', color: 'green' },
+                    { key: 'categorias', label: 'Categorias', color: 'purple' },
+                    { key: 'vendas', label: 'Vendas', color: 'orange' },
+                    { key: 'caixa', label: 'Caixa', color: 'cyan' },
+                    { key: 'auditoria', label: 'Auditoria', color: 'pink' }
+                  ].map(perm => (
+                    <button key={perm.key} type="button" onClick={() => togglePermissao(perm.key)} className={`p-3 rounded-lg border transition-all flex items-center gap-2 ${formData.permissoes[perm.key] ? `bg-${perm.color}-500/20 border-${perm.color}-500/30 text-${perm.color}-400` : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>
+                      {formData.permissoes[perm.key] ? <Check size={16} /> : <X size={16} />}
+                      <span className="text-sm">{perm.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Whitelabel */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <p className="text-sm text-gray-400 mb-3 flex items-center gap-2"><Building2 size={16} /> Identidade Visual (Whitelabel):</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor Primária</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor Secundária</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.secondaryColor} onChange={e => setFormData({ ...formData, secondaryColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cor de Destaque</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+                      <input type="text" value={formData.accentColor} onChange={e => setFormData({ ...formData, accentColor: e.target.value })} className="input-field flex-1 text-xs" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-xs text-gray-500 mb-1">URL do Logo</label>
+                  <input type="text" value={formData.logoUrl} onChange={e => setFormData({ ...formData, logoUrl: e.target.value })} className="input-field text-xs" placeholder="https://..." />
+                </div>
+                {/* Preview */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-black/20 mb-4">
+                  {formData.logoUrl && <img src={formData.logoUrl} alt="Logo" className="w-10 h-10 rounded object-contain" onError={(e) => { e.target.style.display = 'none' }} />}
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.primaryColor }}>P</div>
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.secondaryColor }}>S</div>
+                    <div className="w-8 h-8 rounded flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: formData.accentColor }}>A</div>
+                  </div>
+                  <span className="text-xs text-gray-400">{formData.nome || 'Nome da Empresa'}</span>
+                </div>
+              </div>
+
+              {/* Páginas Permitidas */}
+              <div className="border-t border-white/5 pt-4 mt-4">
+                <p className="text-sm text-gray-400 mb-3 flex items-center gap-2"><Shield size={16} /> Páginas Acessíveis:</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { id: 'dashboard', label: 'Dashboard' },
+                    { id: 'terminais', label: 'Terminais' },
+                    { id: 'categorias', label: 'Categorias' },
+                    { id: 'produtos', label: 'Produtos' },
+                    { id: 'vendas', label: 'Vendas' },
+                    { id: 'caixa', label: 'Caixa' },
+                    { id: 'fechamento', label: 'Fechamento' },
+                    { id: 'empresas', label: 'Clientes' }
+                  ].map(pg => (
+                    <button key={pg.id} type="button" onClick={() => togglePagina(pg.id)} className={`px-3 py-2 rounded-lg border text-xs transition-all flex items-center gap-1.5 ${(formData.paginasPermitidas || []).includes(pg.id) ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'}`}>
+                      {(formData.paginasPermitidas || []).includes(pg.id) ? <Check size={12} /> : <X size={12} />}
+                      {pg.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost flex-1">Cancelar</button>
+                <button type="submit" className="btn-primary flex-1">{editando ? 'Atualizar' : 'Cadastrar'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro/Edição - Clientes */}
+      {modalOpen && activeTab === 'clientes' && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setModalOpen(false)}>
+          <div className="glass p-6 w-full max-w-2xl glow-blue" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <Users size={20} className="text-emerald-400" />
+              {editando ? 'Editar Cliente' : 'Novo Cliente'}
+            </h3>
+
+            <form onSubmit={handleClienteSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Nome *</label>
+                  <input type="text" value={clienteForm.nome} onChange={e => setClienteForm({ ...clienteForm, nome: e.target.value })} className="input-field" required />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">CPF/CNPJ</label>
+                  <input type="text" value={clienteForm.cpfCnpj} onChange={e => setClienteForm({ ...clienteForm, cpfCnpj: e.target.value })} className="input-field" placeholder="000.000.000-00" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Telefone</label>
+                  <input type="text" value={clienteForm.telefone} onChange={e => setClienteForm({ ...clienteForm, telefone: e.target.value })} className="input-field" placeholder="(00) 00000-0000" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Email</label>
+                  <input type="email" value={clienteForm.email} onChange={e => setClienteForm({ ...clienteForm, email: e.target.value })} className="input-field" placeholder="email@exemplo.com" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Endereço</label>
+                  <input type="text" value={clienteForm.endereco} onChange={e => setClienteForm({ ...clienteForm, endereco: e.target.value })} className="input-field" placeholder="Rua, número, complemento" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Cidade</label>
+                  <input type="text" value={clienteForm.cidade} onChange={e => setClienteForm({ ...clienteForm, cidade: e.target.value })} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">CEP</label>
+                  <input type="text" value={clienteForm.cep} onChange={e => setClienteForm({ ...clienteForm, cep: e.target.value })} className="input-field" placeholder="00000-000" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Observação</label>
+                  <textarea value={clienteForm.observacao} onChange={e => setClienteForm({ ...clienteForm, observacao: e.target.value })} className="input-field min-h-[80px]" placeholder="Observações sobre o cliente..." />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost flex-1">Cancelar</button>
+                <button type="submit" className="btn-primary flex-1">{editando ? 'Atualizar' : 'Cadastrar'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
-    )
   )
 }
