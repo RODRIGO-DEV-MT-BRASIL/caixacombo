@@ -1264,6 +1264,189 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
   res.json({ success: true, status: 'pending' });
 });
 
+// ==================== ROTAS DE FUNCIONÁRIOS ====================
+
+// Listar funcionários (admin vê todos, empresa vê só os seus)
+app.get('/api/funcionarios', authenticateToken, (req, res) => {
+  let funcionarios = db.funcionarios || [];
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    funcionarios = funcionarios.filter(f => f.empresaId === req.user.empresaId);
+  }
+  // Não expor dados sensíveis
+  res.json(funcionarios.map(f => ({
+    id: f.id,
+    nome: f.nome,
+    codigo: f.codigo,
+    cargo: f.cargo,
+    permissoes: f.permissoes,
+    empresaId: f.empresaId,
+    ativo: f.ativo,
+    createdAt: f.createdAt
+  })));
+});
+
+// Criar funcionário
+app.post('/api/funcionarios', authenticateToken, async (req, res) => {
+  const { nome, codigo, cargo, permissoes, empresaId, ativo } = req.body;
+  const targetEmpresaId = req.user.role === 'admin' ? (empresaId || req.user.empresaId) : req.user.empresaId;
+
+  if (!nome || !codigo || !targetEmpresaId) {
+    return res.status(400).json({ error: 'Nome, código e empresaId são obrigatórios' });
+  }
+
+  // Verificar código único dentro da empresa
+  const existing = (db.funcionarios || []).find(f => f.codigo === codigo && f.empresaId === targetEmpresaId);
+  if (existing) {
+    return res.status(400).json({ error: 'Código já existe nesta empresa' });
+  }
+
+  const funcionario = {
+    id: generateId(),
+    nome,
+    codigo,
+    cargo: cargo || 'caixa',
+    permissoes: permissoes || {
+      vendas: true,
+      caixa: true,
+      produtos: cargo === 'admin' || cargo === 'gerente',
+      categorias: cargo === 'admin' || cargo === 'gerente',
+      relatorios: cargo === 'admin' || cargo === 'gerente',
+      desconto: cargo === 'admin' || cargo === 'gerente',
+      cancelar_venda: cargo === 'admin' || cargo === 'gerente',
+      operacoes_caixa: true
+    },
+    empresaId: targetEmpresaId,
+    ativo: ativo !== undefined ? ativo : true,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!db.funcionarios) db.funcionarios = [];
+  db.funcionarios.push(funcionario);
+  await debouncedSaveData();
+
+  addAuditoria('criacao_funcionario', null, `Funcionário "${nome}" (${cargo}) criado com código ${codigo}`, req.user?.username);
+  res.json(funcionario);
+});
+
+// Atualizar funcionário
+app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { nome, codigo, cargo, permissoes, ativo } = req.body;
+
+  const index = (db.funcionarios || []).findIndex(f => f.id == id);
+  if (index === -1) return res.status(404).json({ error: 'Funcionário não encontrado' });
+
+  const func = db.funcionarios[index];
+
+  // Empresa só pode editar seus funcionários
+  if (req.user.role === 'empresa' && func.empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Sem permissão' });
+  }
+
+  // Verificar código único se mudou
+  if (codigo && codigo !== func.codigo) {
+    const existing = db.funcionarios.find(f => f.codigo === codigo && f.empresaId === func.empresaId && f.id != id);
+    if (existing) {
+      return res.status(400).json({ error: 'Código já existe nesta empresa' });
+    }
+  }
+
+  db.funcionarios[index] = {
+    ...func,
+    nome: nome || func.nome,
+    codigo: codigo || func.codigo,
+    cargo: cargo || func.cargo,
+    permissoes: permissoes || func.permissoes,
+    ativo: ativo !== undefined ? ativo : func.ativo
+  };
+
+  await debouncedSaveData();
+  addAuditoria('edicao_funcionario', null, `Funcionário "${func.nome}" atualizado`, req.user?.username);
+  res.json(db.funcionarios[index]);
+});
+
+// Deletar funcionário
+app.delete('/api/funcionarios/:id', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const index = (db.funcionarios || []).findIndex(f => f.id == id);
+  if (index === -1) return res.status(404).json({ error: 'Funcionário não encontrado' });
+
+  const func = db.funcionarios[index];
+  if (req.user.role === 'empresa' && func.empresaId !== req.user.empresaId) {
+    return res.status(403).json({ error: 'Sem permissão' });
+  }
+
+  const deleted = db.funcionarios.splice(index, 1)[0];
+  await debouncedSaveData();
+  addAuditoria('remocao_funcionario', null, `Funcionário "${func.nome}" removido`, req.user?.username);
+  res.json(deleted);
+});
+
+// Login de funcionário no terminal (via código)
+app.post('/api/auth/funcionario', async (req, res) => {
+  const { codigo, deviceId } = req.body;
+
+  if (!codigo) {
+    return res.status(400).json({ error: 'Código é obrigatório' });
+  }
+
+  // Descobrir empresaId do terminal
+  let empresaId = null;
+  if (deviceId) {
+    const device = connectedDevices.get(deviceId);
+    const deviceDb = (db.dispositivos || []).find(d => d.deviceId === deviceId);
+    empresaId = device?.empresaId || deviceDb?.empresaId;
+  }
+
+  if (!empresaId) {
+    return res.status(400).json({ error: 'Terminal não associado a nenhuma empresa' });
+  }
+
+  const funcionario = (db.funcionarios || []).find(f => f.codigo === codigo && f.empresaId === empresaId && f.ativo);
+  if (!funcionario) {
+    return res.status(401).json({ error: 'Código inválido ou funcionário inativo' });
+  }
+
+  const token = jwt.sign(
+    { id: funcionario.id, nome: funcionario.nome, cargo: funcionario.cargo, permissoes: funcionario.permissoes, empresaId: funcionario.empresaId, role: 'funcionario' },
+    JWT_SECRET,
+    { expiresIn: '12h' }
+  );
+
+  res.json({
+    token,
+    funcionario: {
+      id: funcionario.id,
+      nome: funcionario.nome,
+      cargo: funcionario.cargo,
+      permissoes: funcionario.permissoes,
+      empresaId: funcionario.empresaId
+    }
+  });
+});
+
+// Sincronizar funcionários para terminais (via poll)
+function broadcastFuncionariosSync(empresaId) {
+  const funcionarios = (db.funcionarios || [])
+    .filter(f => f.empresaId === empresaId && f.ativo)
+    .map(f => ({
+      id: f.id,
+      nome: f.nome,
+      codigo: f.codigo,
+      cargo: f.cargo,
+      permissoes: f.permissoes,
+      empresaId: f.empresaId
+    }));
+
+  // Via polling para terminais da empresa
+  connectedDevices.forEach((deviceInfo, deviceId) => {
+    if (deviceInfo.empresaId === empresaId) {
+      enqueueDeviceCommand(deviceId, 'funcionarios_sync', { funcionarios });
+    }
+  });
+  console.log(`📤 [FUNCIONARIOS-SYNC] ${funcionarios.length} funcionários para empresa ${empresaId}`);
+}
+
 // ==================== ROTAS DE DISPOSITIVOS ====================
 app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, res) => {
   const { deviceId } = req.params;

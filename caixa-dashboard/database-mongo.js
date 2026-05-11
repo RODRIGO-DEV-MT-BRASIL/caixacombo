@@ -124,6 +124,27 @@ const EmpresaSchema = new mongoose.Schema({
 }, { versionKey: false });
 EmpresaSchema.index({ slug: 1 }, { background: true });
 
+const FuncionarioSchema = new mongoose.Schema({
+  id: { type: Number, required: true },
+  nome: { type: String, required: true },
+  codigo: { type: String, required: true },
+  cargo: { type: String, default: 'caixa', enum: ['admin', 'gerente', 'caixa'] },
+  permissoes: {
+    vendas: { type: Boolean, default: true },
+    caixa: { type: Boolean, default: true },
+    produtos: { type: Boolean, default: false },
+    categorias: { type: Boolean, default: false },
+    relatorios: { type: Boolean, default: false },
+    desconto: { type: Boolean, default: false },
+    cancelar_venda: { type: Boolean, default: false },
+    operacoes_caixa: { type: Boolean, default: true }
+  },
+  empresaId: { type: String, required: true },
+  ativo: { type: Boolean, default: true },
+  createdAt: { type: String, default: null }
+}, { versionKey: false });
+FuncionarioSchema.index({ codigo: 1, empresaId: 1 }, { unique: true, background: true });
+
 const ClienteSchema = new mongoose.Schema({
   id: { type: Number, required: true },
   nome: { type: String, default: '' },
@@ -183,6 +204,7 @@ const Usuario = mongoose.models.Usuario || mongoose.model('Usuario', UsuarioSche
 const Dispositivo = mongoose.models.Dispositivo || mongoose.model('Dispositivo', DispositivoSchema);
 const Empresa = mongoose.models.Empresa || mongoose.model('Empresa', EmpresaSchema);
 const Cliente = mongoose.models.Cliente || mongoose.model('Cliente', ClienteSchema);
+const Funcionario = mongoose.models.Funcionario || mongoose.model('Funcionario', FuncionarioSchema);
 const CaixaSessao = mongoose.models.CaixaSessao || mongoose.model('CaixaSessao', CaixaSessaoSchema);
 const AuditoriaDoc = mongoose.models.AuditoriaDoc || mongoose.model('AuditoriaDoc', AuditoriaSchema);
 const ConfigDoc = mongoose.models.ConfigDoc || mongoose.model('ConfigDoc', ConfigSchema);
@@ -199,6 +221,7 @@ const db = {
   dispositivos: [],
   empresas: [],
   clientes: [],
+  funcionarios: [],
   caixaSessoes: [],
   auditoria: [],
   config: {}
@@ -258,6 +281,7 @@ async function loadFromMongo() {
     db.dispositivos = (await Dispositivo.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.empresas = (await Empresa.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.clientes = (await Cliente.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
+    db.funcionarios = (await Funcionario.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.caixaSessoes = (await CaixaSessao.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     db.auditoria = (await AuditoriaDoc.find().lean()).map(p => { const o = p.toObject ? p.toObject() : p; delete o._id; delete o.__v; return o; });
     const configDoc = await ConfigDoc.findOne({ key: 'app' }).lean();
@@ -361,6 +385,7 @@ async function saveData() {
     await bulkSync(Dispositivo, db.dispositivos, 'deviceId');
     await bulkSync(Empresa, db.empresas, 'id');
     await bulkSync(Cliente, db.clientes, 'id');
+    await bulkSync(Funcionario, db.funcionarios, 'id');
 
     // Operações e auditoria: upsert-only para preservar registros antigos
     await bulkSyncUpsert(Operacao, db.operacoes, 'id');
