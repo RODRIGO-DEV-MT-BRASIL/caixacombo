@@ -500,7 +500,7 @@ export default function Empresas() {
             { id: 'vendas', label: 'Vendas' },
             { id: 'caixa', label: 'Caixa' },
             { id: 'fechamento', label: 'Fechamento' },
-            { id: 'empresas', label: 'Funcionários/Clientes' }
+            { id: 'empresas', label: 'Funcionarios Clientes' }
           ].map(pg => {
             const active = (formData.paginasPermitidas || []).includes(pg.id)
             return (
