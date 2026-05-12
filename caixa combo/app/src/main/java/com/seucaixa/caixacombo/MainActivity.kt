@@ -71,6 +71,7 @@ import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
 
@@ -258,6 +259,12 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "Empresa config recebida: $config")
                     applyWhitelabelConfig(config)
+                }
+            },
+            onFuncionariosReceived = { funcionariosJson ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Recebidos ${funcionariosJson.length()} funcionários do servidor")
+                    syncFuncionariosFromServer(funcionariosJson)
                 }
             }
         )
@@ -1445,6 +1452,95 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao sincronizar empresas do servidor", e)
+        }
+    }
+
+    /**
+     * Sincroniza funcionários recebidos do servidor para SharedPreferences
+     */
+    private fun syncFuncionariosFromServer(funcionariosJson: org.json.JSONArray) {
+        try {
+            val prefs = getSharedPreferences("funcionarios_data", Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+            editor.putString("funcionarios_json", funcionariosJson.toString())
+            editor.apply()
+            android.util.Log.d("MainActivity", "✅ ${funcionariosJson.length()} funcionários sincronizados do servidor")
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao sincronizar funcionários", e)
+        }
+    }
+
+    /**
+     * Login de funcionário via código de acesso
+     */
+    private fun loginFuncionario(codigo: String, callback: ((Boolean, String?, String?, org.json.JSONObject?) -> Unit)?) {
+        val deviceId = PollingService.getDeviceId() ?: run {
+            callback?.invoke(false, "Dispositivo não configurado", null, null)
+            return
+        }
+        val serverUrl = PollingService.getServerUrl()
+
+        thread {
+            try {
+                val url = java.net.URL("$serverUrl/api/auth/funcionario")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+
+                val data = org.json.JSONObject().apply {
+                    put("codigo", codigo)
+                    put("deviceId", deviceId)
+                }
+                conn.outputStream.use { it.write(data.toString().toByteArray()) }
+
+                val responseCode = conn.responseCode
+                if (responseCode == 200) {
+                    val response = conn.inputStream.bufferedReader().readText()
+                    val json = org.json.JSONObject(response)
+                    val funcionario = json.getJSONObject("funcionario")
+                    val nome = funcionario.optString("nome", "")
+                    val cargo = funcionario.optString("cargo", "caixa")
+                    val permissoes = funcionario.optJSONObject("permissoes")
+                    val empresaId = funcionario.optString("empresaId", "")
+
+                    // Salvar operador logado
+                    val funcId = funcionario.optLong("id", -1)
+                    com.seucaixa.caixacombo.data.SecurePrefs.saveOperator(this@MainActivity, nome, cargo, funcId)
+
+                    // Salvar permissões
+                    val permPrefs = getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)
+                    permPrefs.edit()
+                        .putString("cargo", cargo)
+                        .putString("empresaId", empresaId)
+                        .putBoolean("vendas", permissoes?.optBoolean("vendas", true) ?: true)
+                        .putBoolean("caixa", permissoes?.optBoolean("caixa", true) ?: true)
+                        .putBoolean("produtos", permissoes?.optBoolean("produtos", false) ?: false)
+                        .putBoolean("categorias", permissoes?.optBoolean("categorias", false) ?: false)
+                        .putBoolean("relatorios", permissoes?.optBoolean("relatorios", false) ?: false)
+                        .putBoolean("desconto", permissoes?.optBoolean("desconto", false) ?: false)
+                        .putBoolean("cancelar_venda", permissoes?.optBoolean("cancelar_venda", false) ?: false)
+                        .putBoolean("operacoes_caixa", permissoes?.optBoolean("operacoes_caixa", true) ?: true)
+                        .apply()
+
+                    runOnUiThread {
+                        callback?.invoke(true, nome, cargo, permissoes)
+                    }
+                } else {
+                    val error = conn.errorStream?.bufferedReader()?.readText() ?: "Erro desconhecido"
+                    val errorMsg = try { org.json.JSONObject(error).optString("error", "Erro") } catch (_: Exception) { "Código inválido" }
+                    runOnUiThread {
+                        callback?.invoke(false, errorMsg, null, null)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Erro no login funcionário", e)
+                runOnUiThread {
+                    callback?.invoke(false, "Erro de conexão", null, null)
+                }
+            }
         }
     }
 
