@@ -25,7 +25,8 @@ import DashboardCharts from './DashboardCharts'
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'terminais', label: 'Terminais', icon: Monitor, permission: 'dashboard' },
-  { id: 'empresas', label: 'Clientes/Empresas', icon: Building2, permission: 'empresas' },
+  { id: 'empresas-admin', label: 'Empresas', icon: Building2, permission: 'empresas', adminOnly: true },
+  { id: 'clientes-funcionarios', label: 'Clientes/Funcionários', icon: Users, permission: 'empresas', empresaOnly: true },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
@@ -71,7 +72,8 @@ export default function Dashboard() {
   // Filtrar itens do menu baseado em permissões e páginas permitidas
   const filteredNavItems = navItems.filter(item => {
     if (!hasPageAccess(item.id)) return false
-    if (item.adminOnly) return user?.role === 'admin'
+    if (item.adminOnly && user?.role !== 'admin') return false
+    if (item.empresaOnly && user?.role !== 'empresa') return false
     if (item.permission) return hasPermission(item.permission)
     return true
   })
@@ -248,7 +250,8 @@ export default function Dashboard() {
           )}
 
           {page === 'terminais' && <Terminais />}
-          {page === 'empresas' && <Empresas />}
+          {(page === 'empresas' || page === 'empresas-admin') && <Empresas />}
+          {(page === 'clientes-funcionarios') && <Empresas />}
           {page === 'produtos' && <Produtos />}
           {page === 'categorias' && <Categorias />}
           {page === 'vendas' && <Vendas />}
