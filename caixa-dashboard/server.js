@@ -831,13 +831,14 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
       categorias: false,
       vendas: false,
       caixa: false,
-      auditoria: false
+      auditoria: false,
+      empresas: true
     },
     primaryColor: primaryColor || '#3b82f6',
     secondaryColor: secondaryColor || '#06b6d4',
     accentColor: accentColor || '#10b981',
     logoUrl: logoUrl || '',
-    paginasPermitidas: paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+    paginasPermitidas: paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
     ativo: true,
     createdAt: new Date()
   };
