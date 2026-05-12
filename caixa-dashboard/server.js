@@ -3164,6 +3164,16 @@ io.on('connection', (socket) => {
   });
 });
 
+// ==================== SPA CATCH-ALL ====================
+// Serve o index.html para todas as rotas que não são de API (para React Router)
+app.get('*', (req, res) => {
+  // Ignorar rotas de API e uploads
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
+});
+
 const PORT = 3001;
 initializeApp().then(() => {
   server.listen(PORT, '0.0.0.0', () => {

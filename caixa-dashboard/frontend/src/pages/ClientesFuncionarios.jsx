@@ -97,9 +97,9 @@ export default function ClientesFuncionarios() {
     if (activeTab === 'funcionarios') {
       setFormData({
         nome: item.nome,
-        cpfCnpj: '',
-        telefone: '',
-        email: '',
+        cpfCnpj: item.cpfCnpj || '',
+        telefone: item.telefone || '',
+        email: item.email || '',
         endereco: '',
         cidade: '',
         cep: '',
