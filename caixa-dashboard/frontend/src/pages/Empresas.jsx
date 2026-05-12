@@ -514,7 +514,7 @@ export default function Empresas() {
   }
 
   return (
-    view === 'form' && activeTab === 'empresas' ? (
+    view === 'form' ? (
       <div className="min-h-[calc(100vh-140px)] -m-6">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
           <aside className="bg-gray-950/70 border-b lg:border-b-0 lg:border-r border-white/5">
@@ -598,63 +598,33 @@ export default function Empresas() {
         </div>
       </div>
     ) : (
-    <div className="space-y-6">
-      {/* Header com abas */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-            <Building2 size={24} className="text-blue-400" />
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+              <Building2 size={24} className="text-blue-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Cadastro White-label</h3>
+              <p className="text-xs text-gray-400">Gerencie empresas white-label</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">Empresas & Clientes</h3>
-            <p className="text-xs text-gray-400">Gerencie empresas, acessos e clientes</p>
-          </div>
-        </div>
-        {user?.role !== 'empresa' && (
-          <button
-            onClick={() => {
-              if (activeTab === 'empresas') {
+          {user?.role !== 'empresa' && (
+            <button
+              onClick={() => {
                 setEditando(null); setFormData({ ...defaultFormData }); setCurrentStep(0); setView('form')
-              } else if (activeTab === 'clientes') {
-                setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: '' })
-              } else {
-                setEditando(null); setFuncForm({ nome: '', codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }, empresaId: '' })
-              }
-            }}
-            className="btn-primary flex items-center gap-2"
-          >
-            <Plus size={16} />
-            {activeTab === 'empresas' ? 'Nova Empresa' : activeTab === 'clientes' ? 'Novo Cliente' : 'Novo Funcionário'}
-          </button>
-        )}
-      </div>
+              }}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus size={16} />
+              Nova Empresa
+            </button>
+          )}
+        </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setActiveTab('empresas')}
-          disabled={user?.role === 'empresa'}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${activeTab === 'empresas' ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}
-        >
-          <Building2 size={16} /> Empresas
-        </button>
-        <button
-          onClick={() => setActiveTab('clientes')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${activeTab === 'clientes' ? 'bg-emerald-600 text-white' : 'bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/20'}`}
-        >
-          <Users size={16} /> Clientes
-        </button>
-        <button
-          onClick={() => setActiveTab('funcionarios')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${activeTab === 'funcionarios' ? 'bg-amber-600 text-white' : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/20'}`}
-        >
-          <UserCog size={16} /> Funcionários
-        </button>
-      </div>
-
-      {/* Conteúdo da aba Empresas */}
-      {activeTab === 'empresas' && (
-        empresas.length === 0 ? (
+        {/* Conteúdo da aba Empresas */}
+        {empresas.length === 0 ? (
           <div className="glass p-12 text-center">
             <Building2 size={48} className="mx-auto text-gray-600 mb-3" />
             <p className="text-gray-400">Nenhuma empresa cadastrada</p>
@@ -734,241 +704,8 @@ export default function Empresas() {
               </div>
             ))}
           </div>
-        )
-      )}
-
-      {/* Conteúdo da aba Funcionários */}
-      {activeTab === 'funcionarios' && (
-        <>
-          {/* Formulário de funcionário */}
-          <div className="glass p-5 border border-white/5 rounded-2xl mb-4">
-            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <UserCog size={16} className="text-amber-400" />
-              {editingFunc ? 'Editar Funcionário' : 'Novo Funcionário'}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              <input type="text" placeholder="Nome" value={funcForm.nome} onChange={e => setFuncForm(f => ({ ...f, nome: e.target.value }))} className="input-field" />
-              <input type="text" placeholder="Código de acesso" value={funcForm.codigo} onChange={e => setFuncForm(f => ({ ...f, codigo: e.target.value }))} className="input-field" />
-              <select value={funcForm.cargo} onChange={e => setFuncForm(f => ({ ...f, cargo: e.target.value }))} className="input-field">
-                <option value="caixa">Caixa</option>
-                <option value="gerente">Gerente</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            {user?.role === 'admin' && (
-              <div className="mb-3">
-                <select value={funcForm.empresaId} onChange={e => setFuncForm(f => ({ ...f, empresaId: e.target.value }))} className="input-field bg-gray-900 text-white">
-                  <option value="" className="text-gray-400">Selecione a empresa...</option>
-                  {empresas.filter(e => e.ativo !== false).map(e => (
-                    <option key={e.id} value={e.id} className="text-white">{e.nome}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {/* Permissões */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-              {Object.entries(funcForm.permissoes).map(([key, val]) => (
-                <label key={key} className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-                  <input type="checkbox" checked={val} onChange={e => setFuncForm(f => ({ ...f, permissoes: { ...f.permissoes, [key]: e.target.checked } }))} className="rounded" />
-                  {key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}
-                </label>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={async () => {
-                const targetEmpresaId = user?.role === 'empresa' ? user.empresaId : funcForm.empresaId
-                if (!funcForm.nome || !funcForm.codigo || !targetEmpresaId) return success('Preencha nome, código e empresa', 3000)
-                const url = editingFunc ? `/api/funcionarios/${editingFunc.id}` : '/api/funcionarios'
-                const method = editingFunc ? 'PUT' : 'POST'
-                const res = await fetch(url, {
-                  method,
-                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                  body: JSON.stringify({ ...funcForm, empresaId: targetEmpresaId })
-                })
-                if (res.ok) {
-                  success(editingFunc ? 'Funcionário atualizado' : 'Funcionário criado', 3000)
-                  setFuncForm({ nome: '', codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }, empresaId: '' })
-                  setEditingFunc(null)
-                  fetchFuncionarios()
-                } else {
-                  const data = await res.json()
-                  success(data.error || 'Erro', 4000)
-                }
-              }} className="btn-primary flex items-center gap-2 text-sm">
-                <Save size={14} /> {editingFunc ? 'Salvar' : 'Criar'}
-              </button>
-              {editingFunc && (
-                <button onClick={() => { setEditingFunc(null); setFuncForm({ nome: '', codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }, empresaId: '' }) }} className="btn-ghost text-sm">Cancelar</button>
-              )}
-            </div>
-          </div>
-
-          {/* Lista de funcionários */}
-          {funcionarios.length === 0 ? (
-            <div className="glass p-12 text-center">
-              <UserCog size={48} className="mx-auto text-gray-600 mb-3" />
-              <p className="text-gray-400">Nenhum funcionário cadastrado</p>
-              <p className="text-gray-600 text-sm mt-1">Crie funcionários com código de acesso para usar no terminal</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {funcionarios.map(func => {
-                const empresa = empresas.find(e => e.id === func.empresaId)
-                const cargoColors = { admin: 'bg-red-500/20 text-red-400', gerente: 'bg-amber-500/20 text-amber-400', caixa: 'bg-blue-500/20 text-blue-400' }
-                return (
-                  <div key={func.id} className={`glass p-5 border transition-all ${func.ativo ? 'border-white/5 hover:border-amber-500/20' : 'border-white/5 opacity-50'}`}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${func.ativo ? 'bg-amber-500/20' : 'bg-gray-500/20'}`}>
-                          <UserCog size={20} className={func.ativo ? 'text-amber-400' : 'text-gray-400'} />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-white">{func.nome}</p>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${cargoColors[func.cargo] || cargoColors.caixa}`}>{func.cargo}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${func.ativo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>{func.ativo ? 'Ativo' : 'Inativo'}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => { setEditingFunc(func); setFuncForm({ nome: func.nome, codigo: func.codigo, cargo: func.cargo, permissoes: func.permissoes, empresaId: func.empresaId }) }} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-amber-400 transition-colors" title="Editar">
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={async () => {
-                          await fetch(`/api/funcionarios/${func.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...func, ativo: !func.ativo }) })
-                          fetchFuncionarios()
-                        }} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-amber-400 transition-colors" title={func.ativo ? 'Desativar' : 'Ativar'}>
-                          {func.ativo ? <X size={14} /> : <Check size={14} />}
-                        </button>
-                        <button onClick={async () => {
-                          if (!confirm('Excluir funcionário?')) return
-                          await fetch(`/api/funcionarios/${func.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-                          success('Funcionário excluído', 3000)
-                          fetchFuncionarios()
-                        }} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-red-400 transition-colors" title="Excluir">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <BadgeCheck size={12} className="text-amber-400" />
-                      <span className="text-xs text-gray-400 font-mono">Código: {func.codigo}</span>
-                    </div>
-                    {empresa && <div className="text-xs text-gray-400 mb-2"><span className="font-medium">Empresa:</span> {empresa.nome}</div>}
-                    <div className="border-t border-white/5 pt-2">
-                      <p className="text-[10px] text-gray-500 mb-1">Permissões:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(func.permissoes || {}).filter(([,v]) => v).map(([k]) => (
-                          <span key={k} className="px-1.5 py-0.5 bg-amber-500/10 text-amber-400 text-[9px] rounded">{k.replace(/_/g, ' ')}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Conteúdo da aba Clientes */}
-      {activeTab === 'clientes' && (
-        <>
-          {/* Formulário de cliente */}
-          <div className="glass p-5 border border-white/5 rounded-2xl mb-4">
-            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Users size={16} className="text-emerald-400" />
-              {editando ? 'Editar Cliente' : 'Novo Cliente'}
-            </h4>
-            <form onSubmit={handleClienteSubmit} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input type="text" placeholder="Nome *" value={clienteForm.nome} onChange={e => setClienteForm(f => ({ ...f, nome: e.target.value }))} className="input-field" required />
-                <input type="text" placeholder="CPF/CNPJ" value={clienteForm.cpfCnpj} onChange={e => setClienteForm(f => ({ ...f, cpfCnpj: e.target.value }))} className="input-field" />
-                <input type="text" placeholder="Telefone" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: e.target.value }))} className="input-field" />
-                <input type="email" placeholder="Email" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} className="input-field" />
-                <input type="text" placeholder="Endereço" value={clienteForm.endereco} onChange={e => setClienteForm(f => ({ ...f, endereco: e.target.value }))} className="input-field" />
-                <input type="text" placeholder="Cidade" value={clienteForm.cidade} onChange={e => setClienteForm(f => ({ ...f, cidade: e.target.value }))} className="input-field" />
-                <input type="text" placeholder="CEP" value={clienteForm.cep} onChange={e => setClienteForm(f => ({ ...f, cep: e.target.value }))} className="input-field" />
-              </div>
-              <textarea placeholder="Observação" value={clienteForm.observacao} onChange={e => setClienteForm(f => ({ ...f, observacao: e.target.value }))} className="input-field" rows="2" />
-              {user?.role === 'admin' && (
-                <div>
-                  <select value={clienteForm.empresaId} onChange={e => setClienteForm(f => ({ ...f, empresaId: e.target.value }))} className="input-field bg-gray-900 text-white">
-                    <option value="" className="text-gray-400">Selecione a empresa...</option>
-                    {empresas.filter(e => e.ativo !== false).map(e => (
-                      <option key={e.id} value={e.id} className="text-white">{e.nome}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <button type="submit" className="btn-primary flex items-center gap-2 text-sm">
-                  <Save size={14} /> {editando ? 'Salvar' : 'Criar'}
-                </button>
-                {editando && (
-                  <button type="button" onClick={() => { setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: '' }) }} className="btn-ghost text-sm">Cancelar</button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          {/* Busca */}
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, CPF/CNPJ ou telefone..."
-              value={clienteSearch}
-              onChange={e => setClienteSearch(e.target.value)}
-              className="input-field pl-10"
-            />
-          </div>
-
-          {filteredClientes.length === 0 ? (
-            <div className="glass p-12 text-center">
-              <Users size={48} className="mx-auto text-gray-600 mb-3" />
-              <p className="text-gray-400">Nenhum cliente cadastrado</p>
-              <p className="text-gray-600 text-sm mt-1">Cadastre clientes para sincronizar com os terminais</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredClientes.map(cliente => (
-                <div key={cliente.id} className={`glass p-5 border transition-all ${cliente.ativo ? 'border-white/5 hover:border-emerald-500/20' : 'border-white/5 opacity-60'}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${cliente.ativo ? 'bg-emerald-500/20' : 'bg-gray-500/20'}`}>
-                        <Users size={20} className={cliente.ativo ? 'text-emerald-400' : 'text-gray-400'} />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-white">{cliente.nome}</p>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${cliente.ativo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                          {cliente.ativo ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => handleClienteEdit(cliente)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-emerald-400 transition-colors" title="Editar">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => handleClienteToggleAtivo(cliente)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-amber-400 transition-colors" title={cliente.ativo ? 'Desativar' : 'Ativar'}>
-                        {cliente.ativo ? <X size={14} /> : <Check size={14} />}
-                      </button>
-                      <button onClick={() => handleClienteDelete(cliente.id)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-red-400 transition-colors" title="Excluir">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                  {cliente.cpfCnpj && <div className="text-xs text-gray-400 mb-1"><span className="font-medium">CPF/CNPJ:</span> {cliente.cpfCnpj}</div>}
-                  {cliente.telefone && <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><Phone size={10} /> {cliente.telefone}</div>}
-                  {cliente.email && <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><Mail size={10} /> {cliente.email}</div>}
-                  {(cliente.cidade || cliente.endereco) && <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin size={10} /> {[cliente.endereco, cliente.cidade].filter(Boolean).join(', ')}</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+        )}
+      </div>
     )
   )
 }
