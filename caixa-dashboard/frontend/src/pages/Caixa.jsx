@@ -5,12 +5,15 @@ import { apiUrl } from '../utils/api'
 import { DollarSign, Search, Loader2, TrendingUp, Monitor, ChevronDown, ChevronUp, Plus, ArrowUpCircle, ArrowDownCircle, Lock, LockOpen, Wallet, CreditCard, Smartphone, PiggyBank } from 'lucide-react'
 
 export default function Caixa({ onNavigateToFechamento }) {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const { socket } = useSocket()
   const [operacoes, setOperacoes] = useState([])
   const [vendas, setVendas] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [filterEmpresa, setFilterEmpresa] = useState('')
+  const [filterTerminal, setFilterTerminal] = useState('')
   const [expandedDevice, setExpandedDevice] = useState(null)
   const [expandedVenda, setExpandedVenda] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -44,6 +47,13 @@ export default function Caixa({ onNavigateToFechamento }) {
       .then(res => res.json())
       .then(data => setSessoes(data))
       .catch(() => setSessoes([]))
+
+    if (user?.role === 'admin') {
+      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(setEmpresas)
+        .catch(() => {})
+    }
   }, [])
 
   useEffect(() => {
@@ -102,6 +112,19 @@ export default function Caixa({ onNavigateToFechamento }) {
   // DeviceIds de teste para ignorar
   const TEST_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check']
 
+  // Aplicar filtros de empresa e terminal
+  const operacoesFiltradas = operacoes.filter(op => {
+    if (filterEmpresa && op.empresaId !== filterEmpresa) return false
+    if (filterTerminal && op.deviceId !== filterTerminal) return false
+    return true
+  })
+
+  const vendasFiltradas = vendas.filter(v => {
+    if (filterEmpresa && v.empresaId !== filterEmpresa) return false
+    if (filterTerminal && v.deviceId !== filterTerminal) return false
+    return true
+  })
+
   // Agrupar operações e vendas por dispositivo, com sessão atual
   const { dispositivos, caixaAtual } = useMemo(() => {
     const ensureDevice = (acc, deviceId) => {
@@ -115,7 +138,7 @@ export default function Caixa({ onNavigateToFechamento }) {
     }
 
     // 1. Agrupar operações por deviceId (ignorar testes)
-    const porDispositivo = operacoes.reduce((acc, operacao) => {
+    const porDispositivo = operacoesFiltradas.reduce((acc, operacao) => {
       const deviceId = operacao.deviceId || 'geral'
       if (TEST_DEVICE_IDS.includes(deviceId)) return acc
       ensureDevice(acc, deviceId)
@@ -124,7 +147,7 @@ export default function Caixa({ onNavigateToFechamento }) {
     }, {})
 
     // 2. Incluir dispositivos que têm vendas mas não têm operações (ignorar testes)
-    vendas.forEach(v => {
+    vendasFiltradas.forEach(v => {
       const deviceId = v.deviceId || 'geral'
       if (TEST_DEVICE_IDS.includes(deviceId)) return
       ensureDevice(porDispositivo, deviceId)
@@ -545,10 +568,36 @@ export default function Caixa({ onNavigateToFechamento }) {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-full sm:max-w-xs">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          {user?.role === 'admin' && (
+            <>
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Todas as Empresas</option>
+                {empresas.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                ))}
+              </select>
+              <select
+                value={filterTerminal}
+                onChange={(e) => setFilterTerminal(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Todos os Terminais</option>
+                {dispositivosConectados.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
+                ))}
+              </select>
+            </>
+          )}
+          <div className="relative w-full sm:max-w-xs">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setShowFaturamento(!showFaturamento); setShowHistorico(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showFaturamento ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}>
