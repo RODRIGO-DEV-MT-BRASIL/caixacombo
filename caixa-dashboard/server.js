@@ -545,6 +545,10 @@ app.get('/api/categorias', authenticateToken, (req, res) => {
   if (req.user.role === 'empresa' && req.user.empresaId) {
     return res.json(db.categorias.filter(c => c.empresaId === req.user.empresaId));
   }
+  // Admin só vê categorias sem empresaId (categorias globais), não vê categorias de empresas white-label
+  if (req.user.role === 'admin') {
+    return res.json(db.categorias.filter(c => !c.empresaId));
+  }
   res.json(db.categorias);
 });
 
@@ -646,6 +650,10 @@ app.get('/api/produtos', authenticateToken, (req, res) => {
   // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
     result = result.filter(p => p.empresaId === req.user.empresaId);
+  }
+  // Admin só vê produtos sem empresaId (produtos globais), não vê produtos de empresas white-label
+  if (req.user.role === 'admin') {
+    result = result.filter(p => !p.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -993,6 +1001,10 @@ app.get('/api/clientes', authenticateToken, (req, res) => {
   // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
     result = result.filter(c => c.empresaId === req.user.empresaId);
+  }
+  // Admin só vê clientes sem empresaId (clientes globais), não vê clientes de empresas white-label
+  if (req.user.role === 'admin') {
+    result = result.filter(c => !c.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
