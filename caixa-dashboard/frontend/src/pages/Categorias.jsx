@@ -5,14 +5,16 @@ import { apiUrl } from '../utils/api'
 import { Tags, Plus, Pencil, Trash2, Search, X, Loader2 } from 'lucide-react'
 
 export default function Categorias() {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const { socket } = useSocket()
   const [categorias, setCategorias] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ nome: '', descricao: '' })
+  const [form, setForm] = useState({ nome: '', descricao: '', empresaId: '' })
+  const [filterEmpresa, setFilterEmpresa] = useState('')
 
   const fetchCategorias = async () => {
     try {
@@ -28,7 +30,24 @@ export default function Categorias() {
     }
   }
 
-  useEffect(() => { fetchCategorias() }, [])
+  const fetchEmpresas = async () => {
+    if (user?.role === 'admin') {
+      try {
+        const res = await fetch('/api/empresas', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        setEmpresas(data)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchCategorias()
+    fetchEmpresas()
+  }, [])
 
   useEffect(() => {
     if (!socket) return
@@ -45,6 +64,9 @@ export default function Categorias() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const body = { nome: form.nome, descricao: form.descricao }
+    if (user?.role === 'admin' && form.empresaId) {
+      body.empresaId = form.empresaId
+    }
 
     if (editing) {
       await fetch(apiUrl(`/api/categorias/${editing.id}`), {
@@ -61,7 +83,7 @@ export default function Categorias() {
     }
     setShowModal(false)
     setEditing(null)
-    setForm({ nome: '', descricao: '' })
+    setForm({ nome: '', descricao: '', empresaId: '' })
     fetchCategorias()
   }
 
@@ -76,11 +98,12 @@ export default function Categorias() {
 
   const openEdit = (cat) => {
     setEditing(cat)
-    setForm({ nome: cat.nome || '', descricao: cat.descricao || '' })
+    setForm({ nome: cat.nome || '', descricao: cat.descricao || '', empresaId: cat.empresaId || '' })
     setShowModal(true)
   }
 
-  const filtered = categorias.filter(c =>
+  const filteredByEmpresa = filterEmpresa ? categorias.filter(c => c.empresaId === filterEmpresa) : categorias
+  const filtered = filteredByEmpresa.filter(c =>
     (c.nome || '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -89,11 +112,25 @@ export default function Categorias() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 w-full sm:max-w-xs">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar categoria..." />
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar categoria..." />
+          </div>
+          {user?.role === 'admin' && (
+            <select
+              value={filterEmpresa}
+              onChange={(e) => setFilterEmpresa(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Todas as Empresas</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.nome}</option>
+              ))}
+            </select>
+          )}
         </div>
-        <button onClick={() => { setEditing(null); setForm({ nome: '', descricao: '' }); setShowModal(true) }} className="btn-primary flex items-center gap-2 text-sm">
+        <button onClick={() => { setEditing(null); setForm({ nome: '', descricao: '', empresaId: '' }); setShowModal(true) }} className="btn-primary flex items-center gap-2 text-sm">
           <Plus size={16} /> Nova Categoria
         </button>
       </div>
@@ -144,6 +181,21 @@ export default function Categorias() {
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {user?.role === 'admin' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Empresa</label>
+                  <select
+                    value={form.empresaId}
+                    onChange={e => setForm({ ...form, empresaId: e.target.value })}
+                    className="input-field"
+                  >
+                    <option value="">Selecione uma empresa</option>
+                    {empresas.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
                 <input type="text" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} className="input-field" required />
