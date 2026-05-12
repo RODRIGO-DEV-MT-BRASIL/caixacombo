@@ -23,13 +23,15 @@ const tipoColors = {
 }
 
 export default function Auditoria() {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const [logs, setLogs] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({
     tipo: '',
     deviceId: '',
+    empresaId: '',
     limit: 50
   })
   const [showFilters, setShowFilters] = useState(false)
@@ -60,6 +62,13 @@ export default function Auditoria() {
   useEffect(() => {
     if (token) {
       fetchLogs()
+    }
+
+    if (user?.role === 'admin') {
+      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(setEmpresas)
+        .catch(() => {})
     }
   }, [token, filters])
 
@@ -132,7 +141,22 @@ export default function Auditoria() {
         </button>
 
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            {user?.role === 'admin' && (
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Empresa</label>
+                <select
+                  value={filters.empresaId}
+                  onChange={(e) => setFilters({ ...filters, empresaId: e.target.value })}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Todas as Empresas</option>
+                  {empresas.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="text-xs text-gray-500 block mb-1">Tipo de Evento</label>
               <select
