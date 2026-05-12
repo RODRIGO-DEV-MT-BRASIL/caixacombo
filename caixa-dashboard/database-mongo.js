@@ -122,7 +122,6 @@ const EmpresaSchema = new mongoose.Schema({
   createdAt: { type: String, default: null },
   updatedAt: { type: String, default: null }
 }, { versionKey: false });
-EmpresaSchema.index({ slug: 1 }, { background: true });
 
 const FuncionarioSchema = new mongoose.Schema({
   id: { type: Number, required: true },
