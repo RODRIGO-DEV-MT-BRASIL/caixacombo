@@ -4,7 +4,7 @@ import { useToast } from '../components/Toast'
 import { Building2, Plus, Edit2, Trash2, Check, X, Key, Shield, Users, Phone, Mail, MapPin, Search, ArrowLeft, Palette, Globe, Eye, Layout, Save, Loader2, Upload, ChevronRight, UserCog, BadgeCheck } from 'lucide-react'
 
 const defaultFormData = {
-  nome: '', cnpj: '', email: '', telefone: '', login: '', senha: '',
+  nome: '', tipoPessoa: 'juridica', cnpj: '', email: '', telefone: '', login: '', senha: '',
   permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
   primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '',
   paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
@@ -147,6 +147,7 @@ export default function Empresas() {
     setEditando(empresa)
     setFormData({
       nome: empresa.nome,
+      tipoPessoa: empresa.tipoPessoa || 'juridica',
       slug: empresa.slug || '',
       cnpj: empresa.cnpj,
       email: empresa.email,
@@ -285,6 +286,13 @@ export default function Empresas() {
               <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Nome *</label>
               <input type="text" value={formData.nome} onChange={e => setFormData({ ...formData, nome: e.target.value })} className="input-field text-base" required />
             </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Tipo de Pessoa</label>
+              <select value={formData.tipoPessoa} onChange={e => setFormData({ ...formData, tipoPessoa: e.target.value })} className="input-field">
+                <option value="juridica">Pessoa Jurídica</option>
+                <option value="fisica">Pessoa Física</option>
+              </select>
+            </div>
             {editando && (
               <div className="md:col-span-2">
                 <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">URL da Empresa</label>
@@ -308,7 +316,7 @@ export default function Empresas() {
               </div>
             )}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">CNPJ</label>
+              <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">{formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}</label>
               <input type="text" value={formData.cnpj} onChange={e => setFormData({ ...formData, cnpj: e.target.value })} className="input-field" />
             </div>
             <div>
