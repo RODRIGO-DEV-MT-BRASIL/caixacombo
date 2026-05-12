@@ -27,8 +27,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    flavorDimensions += "device"
+    flavorDimensions += listOf("device", "empresa")
     productFlavors {
+        // Device flavors
         create("p2b") {
             dimension = "device"
             applicationIdSuffix = ".p2b"
@@ -38,6 +39,23 @@ android {
             dimension = "device"
             applicationIdSuffix = ".checkoutpos"
             versionNameSuffix = "-checkoutpos"
+        }
+
+        // Empresa flavors (white-label)
+        create("caixacombo") {
+            dimension = "empresa"
+            applicationId = "com.seucaixa.caixacombo"
+            versionNameSuffix = ""
+        }
+        create("empresa1") {
+            dimension = "empresa"
+            applicationId = "com.empresa1.caixa"
+            versionNameSuffix = "-empresa1"
+        }
+        create("empresa2") {
+            dimension = "empresa"
+            applicationId = "com.empresa2.caixa"
+            versionNameSuffix = "-empresa2"
         }
     }
 
