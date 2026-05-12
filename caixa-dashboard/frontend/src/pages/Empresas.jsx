@@ -288,9 +288,9 @@ export default function Empresas() {
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Tipo de Pessoa</label>
-              <select value={formData.tipoPessoa} onChange={e => setFormData({ ...formData, tipoPessoa: e.target.value })} className="input-field">
-                <option value="juridica">Pessoa Jurídica</option>
-                <option value="fisica">Pessoa Física</option>
+              <select value={formData.tipoPessoa} onChange={e => setFormData({ ...formData, tipoPessoa: e.target.value })} className="input-field bg-gray-900 text-white">
+                <option value="juridica" className="text-gray-900">Pessoa Jurídica</option>
+                <option value="fisica" className="text-gray-900">Pessoa Física</option>
               </select>
             </div>
             {editando && (
