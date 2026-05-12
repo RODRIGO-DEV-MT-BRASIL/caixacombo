@@ -11,7 +11,7 @@ export default function ClientesFuncionarios() {
   const [editingItem, setEditingItem] = useState(null)
   const [formData, setFormData] = useState({
     nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '',
-    codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
+    codigo: '', pin: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
   })
 
   const token = localStorage.getItem('token')
@@ -60,6 +60,7 @@ export default function ClientesFuncionarios() {
           telefone: formData.telefone,
           email: formData.email,
           codigo: formData.codigo,
+          pin: formData.pin,
           cargo: formData.cargo,
           permissoes: formData.permissoes,
           ativo: true
@@ -297,6 +298,18 @@ export default function ClientesFuncionarios() {
                           value={formData.codigo}
                           onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">PIN de Acesso *</label>
+                        <input
+                          type="password"
+                          value={formData.pin}
+                          onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                          placeholder="4-6 dígitos"
+                          maxLength={6}
                           required
                         />
                       </div>
