@@ -51,6 +51,7 @@ export default function Terminais() {
   const [empresas, setEmpresas] = useState([])
   const [approveModal, setApproveModal] = useState(null) // deviceId
   const [selectedEmpresa, setSelectedEmpresa] = useState('')
+  const [filterEmpresa, setFilterEmpresa] = useState('') // Filtro de empresa para admin
 
   // Buscar empresas para o modal de aprovação
   useEffect(() => {
@@ -82,7 +83,8 @@ export default function Terminais() {
   }
 
   const empresaId = user?.role === 'empresa' ? user?.empresaId : null
-  const filtered = empresaId ? devices.filter(d => d.empresaId === empresaId) : devices
+  const filteredByEmpresa = filterEmpresa ? devices.filter(d => d.empresaId === filterEmpresa) : devices
+  const filtered = empresaId ? filteredByEmpresa.filter(d => d.empresaId === empresaId) : filteredByEmpresa
   const pending = filtered.filter(d => d.status === 'pending')
   const online = filtered.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
 
@@ -130,6 +132,18 @@ export default function Terminais() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {user?.role === 'admin' && (
+            <select
+              value={filterEmpresa}
+              onChange={(e) => setFilterEmpresa(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Todas as Empresas</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.nome}</option>
+              ))}
+            </select>
+          )}
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar terminal..."
