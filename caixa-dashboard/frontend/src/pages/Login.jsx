@@ -14,8 +14,11 @@ const features = [
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [loginType, setLoginType] = useState('admin')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -24,7 +27,11 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      const data = await login(username, password)
+      if (loginType === 'funcionario') {
+        await login(null, null, email, pin)
+      } else {
+        await login(username, password)
+      }
       navigate('/')
     } catch (err) {
       setError(err.message)
@@ -120,7 +127,25 @@ export default function Login() {
             }}>
 
             <h2 className="text-2xl font-bold text-white mb-2">Bem-vindo de volta</h2>
-            <p className="text-sm text-gray-400 mb-8">Entre na sua conta para continuar</p>
+            <p className="text-sm text-gray-400 mb-6">Entre na sua conta para continuar</p>
+
+            {/* Login Type Toggle */}
+            <div className="flex gap-2 mb-6">
+              <button
+                type="button"
+                onClick={() => setLoginType('admin')}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${loginType === 'admin' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginType('funcionario')}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${loginType === 'funcionario' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+              >
+                Funcionário
+              </button>
+            </div>
 
             {error && (
               <div className="flex items-center gap-2 p-3 mb-5 rounded-xl text-red-400 text-sm"
@@ -131,43 +156,88 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Usuário</label>
-                <div className="relative group">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
-                    style={{
-                      background: 'rgba(15,23,42,0.5)',
-                      border: '1px solid rgba(59,130,246,0.15)',
-                    }}
-                    placeholder="Digite seu usuário"
-                    required
-                  />
-                </div>
-              </div>
+              {loginType === 'admin' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Usuário</label>
+                    <div className="relative group">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        style={{
+                          background: 'rgba(15,23,42,0.5)',
+                          border: '1px solid rgba(59,130,246,0.15)',
+                        }}
+                        placeholder="Digite seu usuário"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Senha</label>
-                <div className="relative group">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
-                    style={{
-                      background: 'rgba(15,23,42,0.5)',
-                      border: '1px solid rgba(59,130,246,0.15)',
-                    }}
-                    placeholder="Digite sua senha"
-                    required
-                  />
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Senha</label>
+                    <div className="relative group">
+                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        style={{
+                          background: 'rgba(15,23,42,0.5)',
+                          border: '1px solid rgba(59,130,246,0.15)',
+                        }}
+                        placeholder="Digite sua senha"
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <div className="relative group">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        style={{
+                          background: 'rgba(15,23,42,0.5)',
+                          border: '1px solid rgba(59,130,246,0.15)',
+                        }}
+                        placeholder="Digite seu email"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">PIN</label>
+                    <div className="relative group">
+                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <input
+                        type="password"
+                        value={pin}
+                        onChange={e => setPin(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        style={{
+                          background: 'rgba(15,23,42,0.5)',
+                          border: '1px solid rgba(59,130,246,0.15)',
+                        }}
+                        placeholder="Digite seu PIN"
+                        maxLength={6}
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <button
                 type="submit"
