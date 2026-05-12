@@ -491,7 +491,8 @@ export default function Empresas() {
             { id: 'produtos', label: 'Produtos' },
             { id: 'vendas', label: 'Vendas' },
             { id: 'caixa', label: 'Caixa' },
-            { id: 'fechamento', label: 'Fechamento' }
+            { id: 'fechamento', label: 'Fechamento' },
+            { id: 'empresas', label: 'Funcionários/Clientes' }
           ].map(pg => {
             const active = (formData.paginasPermitidas || []).includes(pg.id)
             return (
