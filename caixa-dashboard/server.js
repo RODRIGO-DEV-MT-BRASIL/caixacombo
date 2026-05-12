@@ -364,7 +364,7 @@ app.post('/api/auth/login', async (req, res) => {
           empresaId: empresa.id,
           slug: empresa.slug,
           permissoes: empresa.permissoes,
-          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
           branding: {
             primaryColor: empresa.primaryColor || '#3b82f6',
             secondaryColor: empresa.secondaryColor || '#06b6d4',
@@ -394,7 +394,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
   if (req.user.role === 'empresa' && req.user.empresaId) {
     const empresa = (db.empresas || []).find(e => e.id === req.user.empresaId);
     if (empresa) {
-      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'];
+      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'];
       userData.branding = {
         primaryColor: empresa.primaryColor || '#3b82f6',
         secondaryColor: empresa.secondaryColor || '#06b6d4',
@@ -903,7 +903,7 @@ app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
       secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
       accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
       logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
-      paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'],
+      paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
       ativo: ativo !== undefined ? ativo : (db.empresas[index].ativo !== undefined ? db.empresas[index].ativo : true),
       updatedAt: new Date()
     }

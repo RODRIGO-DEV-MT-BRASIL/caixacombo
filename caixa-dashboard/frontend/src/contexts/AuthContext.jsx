@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
   const hasPageAccess = (pageId) => {
     if (user?.role === 'admin') return true
     if (user?.role === 'empresa') {
-      const allowed = user?.paginasPermitidas || ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa']
+      const allowed = user?.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa']
       return allowed.includes(pageId)
     }
     return false

@@ -117,7 +117,7 @@ const EmpresaSchema = new mongoose.Schema({
   secondaryColor: { type: String, default: '#06b6d4' },
   accentColor: { type: String, default: '#10b981' },
   logoUrl: { type: String, default: '' },
-  paginasPermitidas: { type: [String], default: ['dashboard', 'categorias', 'produtos', 'vendas', 'caixa'] },
+  paginasPermitidas: { type: [String], default: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'] },
   ativo: { type: Boolean, default: true },
   createdAt: { type: String, default: null },
   updatedAt: { type: String, default: null }
