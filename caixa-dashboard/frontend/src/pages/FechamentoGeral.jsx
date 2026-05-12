@@ -11,16 +11,19 @@ import {
 } from 'lucide-react'
 
 export default function FechamentoGeral({ onBack }) {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const { socket } = useSocket()
   const toast = useToastContext()
   const [operacoes, setOperacoes] = useState([])
   const [vendas, setVendas] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [dispositivosConectados, setDispositivosConectados] = useState([])
   const [loading, setLoading] = useState(true)
   const [confirming, setConfirming] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [expandedTerminal, setExpandedTerminal] = useState(null)
+  const [filterEmpresa, setFilterEmpresa] = useState('')
+  const [filterTerminal, setFilterTerminal] = useState('')
 
   useEffect(() => {
     fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
@@ -37,6 +40,13 @@ export default function FechamentoGeral({ onBack }) {
       .then(res => res.json())
       .then(data => setDispositivosConectados(data))
       .catch(() => setDispositivosConectados([]))
+
+    if (user?.role === 'admin') {
+      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(setEmpresas)
+        .catch(() => {})
+    }
   }, [])
 
   useEffect(() => {
@@ -53,21 +63,34 @@ export default function FechamentoGeral({ onBack }) {
 
   const TEST_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check']
 
+  // Aplicar filtros de empresa e terminal
+  const operacoesFiltradas = operacoes.filter(op => {
+    if (filterEmpresa && op.empresaId !== filterEmpresa) return false
+    if (filterTerminal && op.deviceId !== filterTerminal) return false
+    return true
+  })
+
+  const vendasFiltradas = vendas.filter(v => {
+    if (filterEmpresa && v.empresaId !== filterEmpresa) return false
+    if (filterTerminal && v.deviceId !== filterTerminal) return false
+    return true
+  })
+
   const dispositivos = useMemo(() => {
-    const porDispositivo = operacoes.reduce((acc, op) => {
+    const porDispositivo = operacoesFiltradas.reduce((acc, op) => {
       const deviceId = op.deviceId || 'geral'
       if (TEST_DEVICE_IDS.includes(deviceId)) return acc
       if (!acc[deviceId]) acc[deviceId] = { deviceId, operacoes: [], deviceName: dispositivosConectados.find(d => d.deviceId === deviceId)?.deviceName || null }
       acc[deviceId].operacoes.push(op)
       return acc
     }, {})
-    vendas.forEach(v => {
+    vendasFiltradas.forEach(v => {
       const deviceId = v.deviceId || 'geral'
       if (TEST_DEVICE_IDS.includes(deviceId)) return
       if (!porDispositivo[deviceId]) porDispositivo[deviceId] = { deviceId, operacoes: [], deviceName: dispositivosConectados.find(d => d.deviceId === deviceId)?.deviceName || null }
     })
     return Object.values(porDispositivo)
-  }, [operacoes, vendas, dispositivosConectados])
+  }, [operacoesFiltradas, vendasFiltradas, dispositivosConectados])
 
   const caixaAtual = useMemo(() => {
     const sessoes = {}
@@ -194,7 +217,7 @@ export default function FechamentoGeral({ onBack }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
             <ArrowLeft size={20} className="text-gray-400" />
@@ -209,7 +232,31 @@ export default function FechamentoGeral({ onBack }) {
             <p className="text-sm text-gray-500 mt-1">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {user?.role === 'admin' && (
+            <>
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Todas as Empresas</option>
+                {empresas.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                ))}
+              </select>
+              <select
+                value={filterTerminal}
+                onChange={(e) => setFilterTerminal(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Todos os Terminais</option>
+                {dispositivosConectados.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
+                ))}
+              </select>
+            </>
+          )}
           {caixasAbertos.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <AlertTriangle size={16} className="text-amber-400" />
