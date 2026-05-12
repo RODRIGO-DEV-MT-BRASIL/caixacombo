@@ -142,7 +142,7 @@ fun CheckoutScreenPOS(
     var currentTime by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         while (true) {
-            currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+            currentTime = SimpleDateFormat("EEE dd/MM/yyyy HH:mm:ss", Locale("pt", "BR")).format(Date())
             delay(1000)
         }
     }
