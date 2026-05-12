@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Package, ImageIcon, Loader2, Upload } from 'lucide-react'
 
-export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, token }) {
+export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, empresas, user, token }) {
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
@@ -9,7 +9,8 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
     estoque: '',
     unidade: 'un',
     categoriaId: '',
-    codigoBarras: ''
+    codigoBarras: '',
+    empresaId: ''
   })
   const [imagemFile, setImagemFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
@@ -26,7 +27,8 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
           estoque: produto.estoque || '',
           unidade: produto.unidade || 'un',
           categoriaId: produto.categoriaId || '',
-          codigoBarras: produto.codigoBarras || ''
+          codigoBarras: produto.codigoBarras || '',
+          empresaId: produto.empresaId || ''
         })
         setPreviewUrl(produto.imagem || '')
       } else {
@@ -37,7 +39,8 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
           estoque: '',
           unidade: 'un',
           categoriaId: '',
-          codigoBarras: ''
+          codigoBarras: '',
+          empresaId: ''
         })
         setPreviewUrl('')
       }
@@ -92,10 +95,14 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         descricao: form.descricao,
         preco: parseFloat(form.preco.replace(',', '.')) || 0,
         estoque: parseInt(form.estoque) || 0,
-        unidade: form.unidade || 'un',
-        categoriaId: form.categoriaId ? Number(form.categoriaId) : null,
+        unidade: form.unidade,
+        categoriaId: form.categoriaId || null,
         codigoBarras: form.codigoBarras || undefined,
         imagem: imagemData || null
+      }
+
+      if (user?.role === 'admin' && form.empresaId) {
+        produtoData.empresaId = form.empresaId
       }
 
       await onSave(produtoData)
@@ -125,6 +132,21 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {user?.role === 'admin' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Empresa</label>
+              <select
+                value={form.empresaId}
+                onChange={(e) => setForm({ ...form, empresaId: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Selecione uma empresa</option>
+                {empresas?.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
             <input

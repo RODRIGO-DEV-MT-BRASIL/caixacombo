@@ -10,14 +10,16 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 export default function Produtos() {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const { socket, vendas } = useSocket()
   const toast = useToastContext()
   const [produtos, setProdutos] = useState([])
   const [categorias, setCategorias] = useState([])
+  const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [categoriaFiltro, setCategoriaFiltro] = useState(null)
+  const [filterEmpresa, setFilterEmpresa] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
   const [vendasLocais, setVendasLocais] = useState([])
@@ -53,6 +55,20 @@ export default function Produtos() {
     }
   }
 
+  const fetchEmpresas = async () => {
+    if (user?.role === 'admin') {
+      try {
+        const res = await fetch('/api/empresas', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const data = await res.json()
+        setEmpresas(data)
+      } catch (err) {
+        console.error('Erro ao buscar empresas:', err)
+      }
+    }
+  }
+
   const fetchVendas = async () => {
     try {
       const res = await fetch(apiUrl('/api/vendas'), {
@@ -70,6 +86,7 @@ export default function Produtos() {
   useEffect(() => {
     fetchProdutos()
     fetchCategorias()
+    fetchEmpresas()
     fetchVendas()
   }, [])
 
@@ -166,7 +183,8 @@ export default function Produtos() {
     setEditingProduto(null)
   }
 
-  const filtered = produtos.filter(p => {
+  const filteredByEmpresa = filterEmpresa ? produtos.filter(p => p.empresaId === filterEmpresa) : produtos
+  const filtered = filteredByEmpresa.filter(p => {
     const matchSearch = (p.nome || '').toLowerCase().includes(search.toLowerCase()) ||
       getCategoriaNome(p.categoriaId).toLowerCase().includes(search.toLowerCase())
     const matchCategoria = !categoriaFiltro || p.categoriaId == categoriaFiltro
@@ -319,15 +337,29 @@ export default function Produtos() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="relative flex-1 w-full sm:max-w-xs">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field pl-9 py-2.5 text-sm"
-            placeholder="Buscar produto..."
-          />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input-field pl-9 py-2.5 text-sm"
+              placeholder="Buscar produto..."
+            />
+          </div>
+          {user?.role === 'admin' && (
+            <select
+              value={filterEmpresa}
+              onChange={(e) => setFilterEmpresa(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Todas as Empresas</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.nome}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm">
@@ -466,14 +498,18 @@ export default function Produtos() {
         </div>
       )}
 
-      <ProdutoModal
-        isOpen={showModal}
-        onClose={closeModal}
-        onSave={handleSave}
-        produto={editingProduto}
-        categorias={categorias}
-        token={token}
-      />
+      {showModal && (
+        <ProdutoModal
+          isOpen={showModal}
+          onClose={closeModal}
+          onSave={handleSave}
+          produto={editingProduto}
+          categorias={categorias}
+          empresas={empresas}
+          user={user}
+          token={token}
+        />
+      )}
     </div>
   )
 }
