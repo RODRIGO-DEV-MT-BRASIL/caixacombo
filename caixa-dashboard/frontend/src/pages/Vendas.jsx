@@ -6,10 +6,15 @@ import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monito
 import SenhaConfirmModal from '../components/SenhaConfirmModal'
 
 export default function Vendas() {
-  const { token } = useAuth()
+  const { user, token } = useAuth()
   const { vendas, setVendas, devices } = useSocket()
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [filterEmpresa, setFilterEmpresa] = useState('')
+  const [filterTerminal, setFilterTerminal] = useState('')
+  const [filterDataInicio, setFilterDataInicio] = useState('')
+  const [filterDataFim, setFilterDataFim] = useState('')
+  const [empresas, setEmpresas] = useState([])
   const [expandedDevice, setExpandedDevice] = useState(null)
   const [expandedVenda, setExpandedVenda] = useState(null)
   const [senhaModal, setSenhaModal] = useState(null) // { action: 'reimprimir'|'cancelar', vendaId, venda }
@@ -20,10 +25,33 @@ export default function Vendas() {
       .then(res => res.json())
       .then(data => { setVendas(data); setLoading(false) })
       .catch(() => setLoading(false))
+
+    if (user?.role === 'admin') {
+      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(setEmpresas)
+        .catch(() => {})
+    }
   }, [])
 
   // Agrupar vendas por dispositivo
-  const vendasPorDispositivo = vendas.reduce((acc, venda) => {
+  const vendasFiltradas = vendas.filter(v => {
+    if (filterEmpresa && v.empresaId !== filterEmpresa) return false
+    if (filterTerminal && v.deviceId !== filterTerminal) return false
+    if (filterDataInicio) {
+      const vendaData = new Date(v.createdAt).setHours(0, 0, 0, 0)
+      const dataInicio = new Date(filterDataInicio).setHours(0, 0, 0, 0)
+      if (vendaData < dataInicio) return false
+    }
+    if (filterDataFim) {
+      const vendaData = new Date(v.createdAt).setHours(23, 59, 59, 999)
+      const dataFim = new Date(filterDataFim).setHours(23, 59, 59, 999)
+      if (vendaData > dataFim) return false
+    }
+    return true
+  })
+
+  const vendasPorDispositivo = vendasFiltradas.reduce((acc, venda) => {
     const deviceId = venda.deviceId || 'sem_dispositivo'
     // Resolver nome do dispositivo a partir da lista de conectados
     const connectedDevice = devices.find(d => d.deviceId === deviceId)
@@ -135,9 +163,47 @@ export default function Vendas() {
       </div>
 
       {/* Search */}
-      <div className="relative w-full sm:max-w-xs">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
+      <div className="flex items-center gap-3 flex-wrap">
+        {user?.role === 'admin' && (
+          <>
+            <select
+              value={filterEmpresa}
+              onChange={(e) => setFilterEmpresa(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Todas as Empresas</option>
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.nome}</option>
+              ))}
+            </select>
+            <select
+              value={filterTerminal}
+              onChange={(e) => setFilterTerminal(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Todos os Terminais</option>
+              {devices.map(d => (
+                <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={filterDataInicio}
+              onChange={(e) => setFilterDataInicio(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            />
+            <input
+              type="date"
+              value={filterDataFim}
+              onChange={(e) => setFilterDataFim(e.target.value)}
+              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+            />
+          </>
+        )}
+        <div className="relative w-full sm:max-w-xs">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
+        </div>
       </div>
 
       {/* Dispositivos */}
