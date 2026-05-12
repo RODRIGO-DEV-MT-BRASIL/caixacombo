@@ -34,7 +34,7 @@ export default function Empresas() {
   const [editingFunc, setEditingFunc] = useState(null)
   const [formData, setFormData] = useState({ ...defaultFormData })
   const [clienteForm, setClienteForm] = useState({
-    nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: ''
+    nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: ''
   })
 
   const fetchEmpresas = async () => {
@@ -184,18 +184,20 @@ export default function Empresas() {
   const handleClienteSubmit = async (e) => {
     e.preventDefault()
     try {
+      const targetEmpresaId = user?.role === 'empresa' ? user.empresaId : clienteForm.empresaId
+      if (!targetEmpresaId && user?.role === 'admin') return success('Selecione a empresa', 3000)
+      
       const url = editando ? `/api/clientes/${editando.id}` : '/api/clientes'
       const method = editando ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(clienteForm)
+        body: JSON.stringify({ ...clienteForm, empresaId: targetEmpresaId })
       })
       if (res.ok) {
         success(editando ? 'Cliente atualizado com sucesso' : 'Cliente cadastrado com sucesso', 3000)
-        setView('list')
         setEditando(null)
-        setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' })
+        setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: '' })
         fetchClientes()
       } else {
         const data = await res.json()
@@ -230,9 +232,9 @@ export default function Empresas() {
       endereco: cliente.endereco || '',
       cidade: cliente.cidade || '',
       cep: cliente.cep || '',
-      observacao: cliente.observacao || ''
+      observacao: cliente.observacao || '',
+      empresaId: cliente.empresaId || ''
     })
-    setView('form')
   }
 
   const handleClienteToggleAtivo = async (cliente) => {
@@ -614,14 +616,16 @@ export default function Empresas() {
             onClick={() => {
               if (activeTab === 'empresas') {
                 setEditando(null); setFormData({ ...defaultFormData }); setCurrentStep(0); setView('form')
+              } else if (activeTab === 'clientes') {
+                setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: '' })
               } else {
-                setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' }); setView('form')
+                setEditando(null); setFuncForm({ nome: '', codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }, empresaId: '' })
               }
             }}
             className="btn-primary flex items-center gap-2"
           >
             <Plus size={16} />
-            {activeTab === 'empresas' ? 'Nova Empresa' : 'Novo Cliente'}
+            {activeTab === 'empresas' ? 'Nova Empresa' : activeTab === 'clientes' ? 'Novo Cliente' : 'Novo Funcionário'}
           </button>
         )}
       </div>
@@ -754,10 +758,10 @@ export default function Empresas() {
             </div>
             {user?.role === 'admin' && (
               <div className="mb-3">
-                <select value={funcForm.empresaId} onChange={e => setFuncForm(f => ({ ...f, empresaId: e.target.value }))} className="input-field">
-                  <option value="">Selecione a empresa...</option>
+                <select value={funcForm.empresaId} onChange={e => setFuncForm(f => ({ ...f, empresaId: e.target.value }))} className="input-field bg-gray-900 text-white">
+                  <option value="" className="text-gray-400">Selecione a empresa...</option>
                   {empresas.filter(e => e.ativo !== false).map(e => (
-                    <option key={e.id} value={e.id}>{e.nome}</option>
+                    <option key={e.id} value={e.id} className="text-white">{e.nome}</option>
                   ))}
                 </select>
               </div>
@@ -871,6 +875,44 @@ export default function Empresas() {
       {/* Conteúdo da aba Clientes */}
       {activeTab === 'clientes' && (
         <>
+          {/* Formulário de cliente */}
+          <div className="glass p-5 border border-white/5 rounded-2xl mb-4">
+            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Users size={16} className="text-emerald-400" />
+              {editando ? 'Editar Cliente' : 'Novo Cliente'}
+            </h4>
+            <form onSubmit={handleClienteSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input type="text" placeholder="Nome *" value={clienteForm.nome} onChange={e => setClienteForm(f => ({ ...f, nome: e.target.value }))} className="input-field" required />
+                <input type="text" placeholder="CPF/CNPJ" value={clienteForm.cpfCnpj} onChange={e => setClienteForm(f => ({ ...f, cpfCnpj: e.target.value }))} className="input-field" />
+                <input type="text" placeholder="Telefone" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: e.target.value }))} className="input-field" />
+                <input type="email" placeholder="Email" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} className="input-field" />
+                <input type="text" placeholder="Endereço" value={clienteForm.endereco} onChange={e => setClienteForm(f => ({ ...f, endereco: e.target.value }))} className="input-field" />
+                <input type="text" placeholder="Cidade" value={clienteForm.cidade} onChange={e => setClienteForm(f => ({ ...f, cidade: e.target.value }))} className="input-field" />
+                <input type="text" placeholder="CEP" value={clienteForm.cep} onChange={e => setClienteForm(f => ({ ...f, cep: e.target.value }))} className="input-field" />
+              </div>
+              <textarea placeholder="Observação" value={clienteForm.observacao} onChange={e => setClienteForm(f => ({ ...f, observacao: e.target.value }))} className="input-field" rows="2" />
+              {user?.role === 'admin' && (
+                <div>
+                  <select value={clienteForm.empresaId} onChange={e => setClienteForm(f => ({ ...f, empresaId: e.target.value }))} className="input-field bg-gray-900 text-white">
+                    <option value="" className="text-gray-400">Selecione a empresa...</option>
+                    {empresas.filter(e => e.ativo !== false).map(e => (
+                      <option key={e.id} value={e.id} className="text-white">{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button type="submit" className="btn-primary flex items-center gap-2 text-sm">
+                  <Save size={14} /> {editando ? 'Salvar' : 'Criar'}
+                </button>
+                {editando && (
+                  <button type="button" onClick={() => { setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '', empresaId: '' }) }} className="btn-ghost text-sm">Cancelar</button>
+                )}
+              </div>
+            </form>
+          </div>
+
           {/* Busca */}
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
