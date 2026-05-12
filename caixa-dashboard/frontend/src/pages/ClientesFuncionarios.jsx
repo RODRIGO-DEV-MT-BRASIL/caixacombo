@@ -56,6 +56,9 @@ export default function ClientesFuncionarios() {
       if (activeTab === 'funcionarios') {
         body = {
           nome: formData.nome,
+          cpfCnpj: formData.cpfCnpj,
+          telefone: formData.telefone,
+          email: formData.email,
           codigo: formData.codigo,
           cargo: formData.cargo,
           permissoes: formData.permissoes,
@@ -334,6 +337,34 @@ export default function ClientesFuncionarios() {
                           }}
                           className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                           placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Telefone</label>
+                        <input
+                          type="text"
+                          value={formData.telefone}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/\D/g, '')
+                            if (value.length > 11) value = value.slice(0, 11)
+                            if (value.length > 0) {
+                              if (value.length <= 2) value = `(${value}`
+                              else if (value.length <= 7) value = `(${value.slice(0, 2)}) ${value.slice(2)}`
+                              else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`
+                            }
+                            setFormData({ ...formData, telefone: value })
+                          }}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                          placeholder="(11) 99999-9999"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                         />
                       </div>
                     </>
