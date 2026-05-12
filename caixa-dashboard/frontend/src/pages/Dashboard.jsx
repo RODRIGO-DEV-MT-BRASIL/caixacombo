@@ -18,6 +18,7 @@ import Caixa from './Caixa'
 import FechamentoGeral from './FechamentoGeral'
 import Auditoria from './Auditoria'
 import Empresas from './Empresas'
+import ClientesFuncionarios from './ClientesFuncionarios'
 import Terminais from './Terminais'
 import Configuracoes from './Configuracoes'
 import DashboardCharts from './DashboardCharts'
@@ -25,8 +26,8 @@ import DashboardCharts from './DashboardCharts'
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'terminais', label: 'Terminais', icon: Monitor, permission: 'dashboard' },
-  { id: 'empresas-admin', label: 'Empresas', icon: Building2, permission: 'empresas', adminOnly: true },
-  { id: 'clientes-funcionarios', label: 'Clientes/Funcionários', icon: Users, permission: 'empresas', empresaOnly: true },
+  { id: 'empresas-admin', label: 'Cadastro White-label', icon: Building2, permission: 'empresas', adminOnly: true },
+  { id: 'clientes-funcionarios', label: 'Funcionários/Clientes', icon: Users, permission: 'empresas', empresaOnly: true },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
@@ -251,7 +252,7 @@ export default function Dashboard() {
 
           {page === 'terminais' && <Terminais />}
           {(page === 'empresas' || page === 'empresas-admin') && <Empresas />}
-          {(page === 'clientes-funcionarios') && <Empresas />}
+          {page === 'clientes-funcionarios' && <ClientesFuncionarios />}
           {page === 'produtos' && <Produtos />}
           {page === 'categorias' && <Categorias />}
           {page === 'vendas' && <Vendas />}
