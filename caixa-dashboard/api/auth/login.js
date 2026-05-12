@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -24,8 +24,24 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
 
+      // Buscar configurações da empresa do funcionário
+      let empresaConfig = {};
+      if (funcionario.empresaId) {
+        const empresa = await db.collection('empresas').findOne({ _id: new ObjectId(funcionario.empresaId) });
+        if (empresa) {
+          empresaConfig = {
+            primaryColor: empresa.primaryColor || '#3b82f6',
+            secondaryColor: empresa.secondaryColor || '#06b6d4',
+            accentColor: empresa.accentColor || '#10b981',
+            logoUrl: empresa.logoUrl || '',
+            nome: empresa.nome || '',
+            empresaId: empresa._id.toString()
+          };
+        }
+      }
+
       const token = jwt.sign(
-        { id: funcionario._id.toString(), email: funcionario.email, role: 'funcionario', funcionarioId: funcionario._id.toString() },
+        { id: funcionario._id.toString(), email: funcionario.email, role: 'funcionario', funcionarioId: funcionario._id.toString(), empresaId: funcionario.empresaId },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -40,7 +56,9 @@ export default async function handler(req, res) {
           nome: funcionario.nome,
           role: 'funcionario',
           permissoes: funcionario.permissoes,
-          codigo: funcionario.codigo
+          codigo: funcionario.codigo,
+          empresaId: funcionario.empresaId,
+          branding: empresaConfig
         }
       });
     } catch (error) {
