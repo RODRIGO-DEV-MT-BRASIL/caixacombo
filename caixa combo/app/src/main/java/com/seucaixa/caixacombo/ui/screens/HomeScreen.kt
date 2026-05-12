@@ -98,7 +98,10 @@ fun HomeScreen(
     }
 
     // Login
+    var loginType by remember { mutableStateOf("codigo") } // "codigo" ou "email"
     var codigo by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var pin by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -171,28 +174,103 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
-            // Campo PIN
-            val focusRequester = remember { FocusRequester() }
-            OutlinedTextField(
-                value = codigo,
-                onValueChange = { codigo = it; erro = "" },
-                label = { Text("Código de Acesso") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusEvent { focusState ->
-                        isKeyboardOpen.value = focusState.isFocused
+            // Login Type Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { loginType = "codigo"; erro = "" },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (loginType == "codigo") primaryColor else primaryColor.copy(alpha = 0.3f)
+                    ),
+                    enabled = !isLoading
+                ) {
+                    Text("Código", fontSize = if (isSmallScreen) 12.sp else 14.sp, fontWeight = FontWeight.Medium)
+                }
+                Button(
+                    onClick = { loginType = "email"; erro = "" },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (loginType == "email") primaryColor else primaryColor.copy(alpha = 0.3f)
+                    ),
+                    enabled = !isLoading
+                ) {
+                    Text("Email + PIN", fontSize = if (isSmallScreen) 12.sp else 14.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+
+            // Campo de Login (Código ou Email)
+            if (loginType == "codigo") {
+                val focusRequester = remember { FocusRequester() }
+                OutlinedTextField(
+                    value = codigo,
+                    onValueChange = { codigo = it; erro = "" },
+                    label = { Text("Código de Acesso") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusEvent { focusState ->
+                            isKeyboardOpen.value = focusState.isFocused
+                        },
+                    leadingIcon = {
+                        Icon(Icons.Default.Key, null, modifier = Modifier.size(20.dp))
                     },
-                leadingIcon = {
-                    Icon(Icons.Default.Key, null, modifier = Modifier.size(20.dp))
-                },
-                shape = RoundedCornerShape(12.dp),
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    fontSize = if (isSmallScreen) 14.sp else 18.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = if (isSmallScreen) 14.sp else 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            } else {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it; erro = "" },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusEvent { focusState ->
+                            isKeyboardOpen.value = focusState.isFocused
+                        },
+                    leadingIcon = {
+                        Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp))
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = if (isSmallScreen) 14.sp else 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                )
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it; erro = "" },
+                    label = { Text("PIN") },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusEvent { focusState ->
+                            isKeyboardOpen.value = focusState.isFocused
+                        },
+                    leadingIcon = {
+                        Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = if (isSmallScreen) 14.sp else 18.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
 
             // Erro
             if (erro.isNotEmpty()) {
@@ -210,40 +288,119 @@ fun HomeScreen(
             // Botão Entrar
             Button(
                 onClick = {
-                    if (codigo.isBlank()) {
-                        erro = "Digite o código de acesso"
-                        return@Button
-                    }
-                    isLoading = true
-                    scope.launch {
-                        val usuario = usuarioDao.getUsuarioByCodigo(codigo)
-                        isLoading = false
-                        if (usuario != null && usuario.ativo) {
-                            erro = ""
-                            // Salvar operador logado (criptografado - Stone compliance)
-                            SecurePrefs.saveOperator(context, usuario.nome, usuario.cargo.name, usuario.id)
-                            // Também salvar em SharedPreferences comum para leitura rápida no PDV
-                            sharedPreferences.edit()
-                                .putString("operador_nome", usuario.nome)
-                                .putString("operador_cargo", usuario.cargo.name)
-                                .putLong("operador_id", usuario.id)
-                                .apply()
-                            if (caixaAberto) {
-                                onNavigateToCheckout()
+                    if (loginType == "codigo") {
+                        if (codigo.isBlank()) {
+                            erro = "Digite o código de acesso"
+                            return@Button
+                        }
+                        isLoading = true
+                        scope.launch {
+                            val usuario = usuarioDao.getUsuarioByCodigo(codigo)
+                            isLoading = false
+                            if (usuario != null && usuario.ativo) {
+                                erro = ""
+                                // Salvar operador logado (criptografado - Stone compliance)
+                                SecurePrefs.saveOperator(context, usuario.nome, usuario.cargo.name, usuario.id)
+                                // Também salvar em SharedPreferences comum para leitura rápida no PDV
+                                sharedPreferences.edit()
+                                    .putString("operador_nome", usuario.nome)
+                                    .putString("operador_cargo", usuario.cargo.name)
+                                    .putLong("operador_id", usuario.id)
+                                    .apply()
+                                if (caixaAberto) {
+                                    onNavigateToCheckout()
+                                } else {
+                                    onNavigateToCaixa()
+                                }
+                            } else if (usuario != null && !usuario.ativo) {
+                                erro = "Usuário inativo"
                             } else {
-                                onNavigateToCaixa()
+                                // Tentar login no servidor (funcionário cadastrado no dashboard)
+                                isLoading = true
+                                try {
+                                    val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId()
+                                    val serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
+                                    if (deviceId != null) {
+                                        withContext(Dispatchers.IO) {
+                                            val url = java.net.URL("$serverUrl/api/auth/funcionario")
+                                            val conn = url.openConnection() as java.net.HttpURLConnection
+                                            conn.requestMethod = "POST"
+                                            conn.setRequestProperty("Content-Type", "application/json")
+                                            conn.doOutput = true
+                                            conn.connectTimeout = 8000
+                                            conn.readTimeout = 8000
+                                            val data = org.json.JSONObject().apply {
+                                                put("codigo", codigo)
+                                                put("deviceId", deviceId)
+                                            }
+                                            conn.outputStream.use { it.write(data.toString().toByteArray()) }
+                                            val responseCode = conn.responseCode
+                                            if (responseCode == 200) {
+                                                val response = conn.inputStream.bufferedReader().readText()
+                                                val json = org.json.JSONObject(response)
+                                                val func = json.getJSONObject("funcionario")
+                                                val nome = func.optString("nome", "")
+                                                val cargo = func.optString("cargo", "caixa")
+                                                val permissoes = func.optJSONObject("permissoes")
+                                                val funcId = func.optLong("id", -1)
+                                                withContext(Dispatchers.Main) {
+                                                    isLoading = false
+                                                    SecurePrefs.saveOperator(context, nome, cargo, funcId)
+                                                    sharedPreferences.edit()
+                                                        .putString("operador_nome", nome)
+                                                        .putString("operador_cargo", cargo)
+                                                        .putLong("operador_id", funcId)
+                                                        .apply()
+                                                    // Salvar permissões
+                                                    val permPrefs = context.getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)
+                                                    permPrefs.edit()
+                                                        .putString("cargo", cargo)
+                                                        .putBoolean("vendas", permissoes?.optBoolean("vendas", true) ?: true)
+                                                        .putBoolean("caixa", permissoes?.optBoolean("caixa", true) ?: true)
+                                                        .putBoolean("produtos", permissoes?.optBoolean("produtos", false) ?: false)
+                                                        .putBoolean("categorias", permissoes?.optBoolean("categorias", false) ?: false)
+                                                        .putBoolean("relatorios", permissoes?.optBoolean("relatorios", false) ?: false)
+                                                        .putBoolean("desconto", permissoes?.optBoolean("desconto", false) ?: false)
+                                                        .putBoolean("cancelar_venda", permissoes?.optBoolean("cancelar_venda", false) ?: false)
+                                                        .putBoolean("operacoes_caixa", permissoes?.optBoolean("operacoes_caixa", true) ?: true)
+                                                        .apply()
+                                                    erro = ""
+                                                    if (caixaAberto) {
+                                                        onNavigateToCheckout()
+                                                    } else {
+                                                        onNavigateToCaixa()
+                                                    }
+                                                }
+                                            } else {
+                                                withContext(Dispatchers.Main) {
+                                                    isLoading = false
+                                                    erro = "Código inválido"
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        isLoading = false
+                                        erro = "Código inválido"
+                                    }
+                                } catch (e: Exception) {
+                                    isLoading = false
+                                    erro = "Código inválido"
+                                }
                             }
-                        } else if (usuario != null && !usuario.ativo) {
-                            erro = "Usuário inativo"
-                        } else {
-                            // Tentar login no servidor (funcionário cadastrado no dashboard)
-                            isLoading = true
+                        }
+                    } else {
+                        // Login com email + PIN
+                        if (email.isBlank() || pin.isBlank()) {
+                            erro = "Digite email e PIN"
+                            return@Button
+                        }
+                        isLoading = true
+                        scope.launch {
                             try {
-                                val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId()
                                 val serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
-                                if (deviceId != null) {
+                                if (serverUrl != null) {
                                     withContext(Dispatchers.IO) {
-                                        val url = java.net.URL("$serverUrl/api/auth/funcionario")
+                                        val url = java.net.URL("$serverUrl/api/auth/login")
                                         val conn = url.openConnection() as java.net.HttpURLConnection
                                         conn.requestMethod = "POST"
                                         conn.setRequestProperty("Content-Type", "application/json")
@@ -251,19 +408,19 @@ fun HomeScreen(
                                         conn.connectTimeout = 8000
                                         conn.readTimeout = 8000
                                         val data = org.json.JSONObject().apply {
-                                            put("codigo", codigo)
-                                            put("deviceId", deviceId)
+                                            put("email", email)
+                                            put("pin", pin)
                                         }
                                         conn.outputStream.use { it.write(data.toString().toByteArray()) }
                                         val responseCode = conn.responseCode
                                         if (responseCode == 200) {
                                             val response = conn.inputStream.bufferedReader().readText()
                                             val json = org.json.JSONObject(response)
-                                            val func = json.getJSONObject("funcionario")
-                                            val nome = func.optString("nome", "")
-                                            val cargo = func.optString("cargo", "caixa")
-                                            val permissoes = func.optJSONObject("permissoes")
-                                            val funcId = func.optLong("id", -1)
+                                            val user = json.getJSONObject("user")
+                                            val nome = user.optString("nome", "")
+                                            val cargo = user.optString("cargo", "caixa")
+                                            val permissoes = user.optJSONObject("permissoes")
+                                            val funcId = user.optLong("id", -1)
                                             withContext(Dispatchers.Main) {
                                                 isLoading = false
                                                 SecurePrefs.saveOperator(context, nome, cargo, funcId)
@@ -293,19 +450,25 @@ fun HomeScreen(
                                                 }
                                             }
                                         } else {
+                                            val errorResponse = conn.errorStream?.bufferedReader()?.readText()
+                                            val errorMsg = try {
+                                                org.json.JSONObject(errorResponse ?: "").optString("error", "Credenciais inválidas")
+                                            } catch (e: Exception) {
+                                                "Credenciais inválidas"
+                                            }
                                             withContext(Dispatchers.Main) {
                                                 isLoading = false
-                                                erro = "Código inválido"
+                                                erro = errorMsg
                                             }
                                         }
                                     }
                                 } else {
                                     isLoading = false
-                                    erro = "Código inválido"
+                                    erro = "Erro de conexão"
                                 }
                             } catch (e: Exception) {
                                 isLoading = false
-                                erro = "Código inválido"
+                                erro = "Erro ao fazer login"
                             }
                         }
                     }
