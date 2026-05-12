@@ -33,6 +33,8 @@ import com.seucaixa.caixacombo.data.database.AppDatabase
 import com.seucaixa.caixacombo.data.model.LogoConfig
 import com.seucaixa.caixacombo.data.SecurePrefs
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -160,8 +162,9 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = primaryColor,
                     textAlign = TextAlign.Center,
-                    maxLines = 1,
+                    maxLines = if (isSmallScreen) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
+                    lineHeight = if (isSmallScreen) (tituloTamanho * 1.15f).sp else tituloTamanho.sp,
                     modifier = Modifier.clickable { editandoTitulo = true }
                 )
             }
@@ -233,7 +236,77 @@ fun HomeScreen(
                         } else if (usuario != null && !usuario.ativo) {
                             erro = "Usuário inativo"
                         } else {
-                            erro = "Código inválido"
+                            // Tentar login no servidor (funcionário cadastrado no dashboard)
+                            isLoading = true
+                            try {
+                                val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId()
+                                val serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
+                                if (deviceId != null) {
+                                    withContext(Dispatchers.IO) {
+                                        val url = java.net.URL("$serverUrl/api/auth/funcionario")
+                                        val conn = url.openConnection() as java.net.HttpURLConnection
+                                        conn.requestMethod = "POST"
+                                        conn.setRequestProperty("Content-Type", "application/json")
+                                        conn.doOutput = true
+                                        conn.connectTimeout = 8000
+                                        conn.readTimeout = 8000
+                                        val data = org.json.JSONObject().apply {
+                                            put("codigo", codigo)
+                                            put("deviceId", deviceId)
+                                        }
+                                        conn.outputStream.use { it.write(data.toString().toByteArray()) }
+                                        val responseCode = conn.responseCode
+                                        if (responseCode == 200) {
+                                            val response = conn.inputStream.bufferedReader().readText()
+                                            val json = org.json.JSONObject(response)
+                                            val func = json.getJSONObject("funcionario")
+                                            val nome = func.optString("nome", "")
+                                            val cargo = func.optString("cargo", "caixa")
+                                            val permissoes = func.optJSONObject("permissoes")
+                                            val funcId = func.optLong("id", -1)
+                                            withContext(Dispatchers.Main) {
+                                                isLoading = false
+                                                SecurePrefs.saveOperator(context, nome, cargo, funcId)
+                                                sharedPreferences.edit()
+                                                    .putString("operador_nome", nome)
+                                                    .putString("operador_cargo", cargo)
+                                                    .putLong("operador_id", funcId)
+                                                    .apply()
+                                                // Salvar permissões
+                                                val permPrefs = context.getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)
+                                                permPrefs.edit()
+                                                    .putString("cargo", cargo)
+                                                    .putBoolean("vendas", permissoes?.optBoolean("vendas", true) ?: true)
+                                                    .putBoolean("caixa", permissoes?.optBoolean("caixa", true) ?: true)
+                                                    .putBoolean("produtos", permissoes?.optBoolean("produtos", false) ?: false)
+                                                    .putBoolean("categorias", permissoes?.optBoolean("categorias", false) ?: false)
+                                                    .putBoolean("relatorios", permissoes?.optBoolean("relatorios", false) ?: false)
+                                                    .putBoolean("desconto", permissoes?.optBoolean("desconto", false) ?: false)
+                                                    .putBoolean("cancelar_venda", permissoes?.optBoolean("cancelar_venda", false) ?: false)
+                                                    .putBoolean("operacoes_caixa", permissoes?.optBoolean("operacoes_caixa", true) ?: true)
+                                                    .apply()
+                                                erro = ""
+                                                if (caixaAberto) {
+                                                    onNavigateToCheckout()
+                                                } else {
+                                                    onNavigateToCaixa()
+                                                }
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                isLoading = false
+                                                erro = "Código inválido"
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    isLoading = false
+                                    erro = "Código inválido"
+                                }
+                            } catch (e: Exception) {
+                                isLoading = false
+                                erro = "Código inválido"
+                            }
                         }
                     }
                 },
