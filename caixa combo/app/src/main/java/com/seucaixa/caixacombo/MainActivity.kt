@@ -142,6 +142,9 @@ class MainActivity : ComponentActivity() {
         PollingService.setDeviceInfo(deviceId, deviceName, serialNumber)
         PollingService.loadServerUrl(this)
         
+        // Aplicar configuração de whitelabel estática baseada no flavor
+        applyFlavorWhitelabelConfig()
+        
         // Configurar Admin para reboot sem root
         val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
         val cn = android.content.ComponentName(this, AdminReceiver::class.java)
@@ -908,7 +911,7 @@ class MainActivity : ComponentActivity() {
             val logoUrl = config.optString("logoUrl", "")
             val nome = config.optString("nome", "")
             val empresaId = config.optString("empresaId", "")
-            
+
             val prefs = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
             prefs.edit()
                 .putString("primary_color_hex", primaryColor)
@@ -922,10 +925,53 @@ class MainActivity : ComponentActivity() {
                 .putInt("secondary_color", parseColor(secondaryColor))
                 .putInt("tertiary_color", parseColor(accentColor))
                 .apply()
-            
+
             android.util.Log.d("MainActivity", "Whitelabel aplicado: nome=$nome, primary=$primaryColor, logo=$logoUrl")
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel", e)
+        }
+    }
+
+    /**
+     * Aplica configuração de whitelabel estática baseada no flavor
+     */
+    private fun applyFlavorWhitelabelConfig() {
+        try {
+            val flavor = BuildConfig.FLAVOR_empresa
+            val prefs = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
+            
+            when (flavor) {
+                "empresa1" -> {
+                    // Configurações estáticas para empresa1
+                    prefs.edit()
+                        .putString("primary_color_hex", "#FF5722")
+                        .putString("secondary_color_hex", "#FF9800")
+                        .putString("accent_color_hex", "#4CAF50")
+                        .putInt("primary_color", 0xFFFF5722.toInt())
+                        .putInt("secondary_color", 0xFFFF9800.toInt())
+                        .putInt("tertiary_color", 0xFF4CAF50.toInt())
+                        .apply()
+                    android.util.Log.d("MainActivity", "Whitelabel estático aplicado: empresa1")
+                }
+                "empresa2" -> {
+                    // Configurações estáticas para empresa2
+                    prefs.edit()
+                        .putString("primary_color_hex", "#9C27B0")
+                        .putString("secondary_color_hex", "#E91E63")
+                        .putString("accent_color_hex", "#00BCD4")
+                        .putInt("primary_color", 0xFF9C27B0.toInt())
+                        .putInt("secondary_color", 0xFFE91E63.toInt())
+                        .putInt("tertiary_color", 0xFF00BCD4.toInt())
+                        .apply()
+                    android.util.Log.d("MainActivity", "Whitelabel estático aplicado: empresa2")
+                }
+                else -> {
+                    // CaixaCombo padrão
+                    android.util.Log.d("MainActivity", "Usando whitelabel padrão: caixacombo")
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel estático", e)
         }
     }
     
