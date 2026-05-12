@@ -27,7 +27,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'terminais', label: 'Terminais', icon: Monitor, permission: 'dashboard' },
   { id: 'empresas-admin', label: 'Cadastro White-label', icon: Building2, permission: 'empresas', adminOnly: true },
-  { id: 'empresas', label: 'Funcionários/Clientes', icon: Users, permission: 'empresas', empresaOnly: true },
+  { id: 'empresas', label: 'Funcionários/Clientes', icon: Users, empresaOnly: true },
   { id: 'categorias', label: 'Categorias', icon: Tags, permission: 'categorias' },
   { id: 'produtos', label: 'Produtos', icon: Package, permission: 'produtos' },
   { id: 'vendas', label: 'Vendas', icon: ShoppingCart, permission: 'vendas' },
