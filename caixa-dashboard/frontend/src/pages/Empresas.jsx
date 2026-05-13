@@ -1,43 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../components/Toast'
-import { Building2, Plus, Edit2, Trash2, Check, X, Key, Shield, Users, UserPlus, Phone, Mail, MapPin, Search } from 'lucide-react'
+import { useToastContext } from '../contexts/ToastContext'
+import { Building2, Plus, Edit2, Trash2, Check, X, Shield, Users, Phone, Mail, MapPin, Search } from 'lucide-react'
+import { createClientForm, createCompanyForm } from '../constants/forms'
 
 export default function Empresas() {
   const { token } = useAuth()
-  const { success } = useToast()
+  const { success } = useToastContext()
   const [activeTab, setActiveTab] = useState('empresas')
   const [empresas, setEmpresas] = useState([])
   const [clientes, setClientes] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [editando, setEditando] = useState(null)
   const [clienteSearch, setClienteSearch] = useState('')
-  const [formData, setFormData] = useState({
-    nome: '',
-    cnpj: '',
-    email: '',
-    telefone: '',
-    login: '',
-    senha: '',
-    permissoes: {
-      dashboard: false,
-      produtos: false,
-      categorias: false,
-      vendas: false,
-      caixa: false,
-      auditoria: false
-    }
-  })
-  const [clienteForm, setClienteForm] = useState({
-    nome: '',
-    cpfCnpj: '',
-    telefone: '',
-    email: '',
-    endereco: '',
-    cidade: '',
-    cep: '',
-    observacao: ''
-  })
+  /** @type {[import('../types/entities').EmpresaForm, Function]} */
+  const [formData, setFormData] = useState(() => createCompanyForm())
+  /** @type {[import('../types/entities').ClienteForm, Function]} */
+  const [clienteForm, setClienteForm] = useState(() => createClientForm())
 
   const fetchEmpresas = async () => {
     try {
@@ -77,7 +56,7 @@ export default function Empresas() {
     try {
       const url = editando ? `/api/empresas/${editando.id}` : '/api/empresas'
       const method = editando ? 'PUT' : 'POST'
-      
+
       const res = await fetch(url, {
         method,
         headers: {
@@ -86,27 +65,12 @@ export default function Empresas() {
         },
         body: JSON.stringify(formData)
       })
-      
+
       if (res.ok) {
         success(editando ? 'Empresa atualizada com sucesso' : 'Empresa cadastrada com sucesso', 3000)
         setModalOpen(false)
         setEditando(null)
-        setFormData({
-          nome: '',
-          cnpj: '',
-          email: '',
-          telefone: '',
-          login: '',
-          senha: '',
-          permissoes: {
-            dashboard: false,
-            produtos: false,
-            categorias: false,
-            vendas: false,
-            caixa: false,
-            auditoria: false
-          }
-        })
+        setFormData(createCompanyForm())
         fetchEmpresas()
       } else {
         const data = await res.json()
@@ -120,13 +84,13 @@ export default function Empresas() {
 
   const handleDelete = async (id) => {
     if (!confirm('Tem certeza que deseja excluir esta empresa?')) return
-    
+
     try {
       const res = await fetch(`/api/empresas/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
-      
+
       if (res.ok) {
         success('Empresa excluída com sucesso', 3000)
         fetchEmpresas()
@@ -142,22 +106,15 @@ export default function Empresas() {
 
   const handleEdit = (empresa) => {
     setEditando(empresa)
-    setFormData({
+    setFormData(createCompanyForm({
       nome: empresa.nome,
       cnpj: empresa.cnpj || '',
       email: empresa.email || '',
       telefone: empresa.telefone || '',
       login: empresa.login,
       senha: '',
-      permissoes: empresa.permissoes || {
-        dashboard: false,
-        produtos: false,
-        categorias: false,
-        vendas: false,
-        caixa: false,
-        auditoria: false
-      }
-    })
+      permissoes: empresa.permissoes
+    }))
     setModalOpen(true)
   }
 
@@ -186,7 +143,7 @@ export default function Empresas() {
         success(editando ? 'Cliente atualizado com sucesso' : 'Cliente cadastrado com sucesso', 3000)
         setModalOpen(false)
         setEditando(null)
-        setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' })
+        setClienteForm(createClientForm())
         fetchClientes()
       } else {
         const data = await res.json()
@@ -213,7 +170,7 @@ export default function Empresas() {
 
   const handleClienteEdit = (cliente) => {
     setEditando(cliente)
-    setClienteForm({
+    setClienteForm(createClientForm({
       nome: cliente.nome,
       cpfCnpj: cliente.cpfCnpj || '',
       telefone: cliente.telefone || '',
@@ -222,7 +179,7 @@ export default function Empresas() {
       cidade: cliente.cidade || '',
       cep: cliente.cep || '',
       observacao: cliente.observacao || ''
-    })
+    }))
     setModalOpen(true)
   }
 
@@ -260,9 +217,9 @@ export default function Empresas() {
         <button
           onClick={() => {
             if (activeTab === 'empresas') {
-              setModalOpen(true); setEditando(null); setFormData({ nome: '', cnpj: '', email: '', telefone: '', login: '', senha: '', permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false } })
+              setModalOpen(true); setEditando(null); setFormData(createCompanyForm())
             } else {
-              setModalOpen(true); setEditando(null); setClienteForm({ nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '' })
+              setModalOpen(true); setEditando(null); setClienteForm(createClientForm())
             }
           }}
           className="btn-primary flex items-center gap-2"

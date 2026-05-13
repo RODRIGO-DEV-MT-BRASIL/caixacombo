@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Package, ImageIcon, Loader2, Upload } from 'lucide-react'
+import { X, Package, Loader2, Upload } from 'lucide-react'
 import { apiUrl } from '../utils/api'
 
 export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, token }) {
@@ -89,7 +89,7 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
 
         const res = await fetch(apiUrl('/api/upload-base64'), {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },

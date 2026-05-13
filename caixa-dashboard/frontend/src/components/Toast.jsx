@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react'
 
 export default function Toast({ message, type = 'info', duration = 3000, onClose }) {
@@ -64,28 +64,28 @@ export default function Toast({ message, type = 'info', duration = 3000, onClose
 export function useToast() {
   const [toasts, setToasts] = useState([])
 
-  const addToast = (message, type = 'info', duration = 3000) => {
-    const id = Date.now()
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }, [])
+
+  const addToast = useCallback((message, type = 'info', duration = 3000) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     const toast = { id, message, type, duration }
-    
+
     setToasts(prev => [...prev, toast])
-    
+
     // Remover automaticamente após o tempo
     setTimeout(() => {
       removeToast(id)
     }, duration)
-  }
+  }, [removeToast])
 
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
+  const success = useCallback((message, duration) => addToast(message, 'success', duration), [addToast])
+  const error = useCallback((message, duration) => addToast(message, 'error', duration), [addToast])
+  const warning = useCallback((message, duration) => addToast(message, 'warning', duration), [addToast])
+  const info = useCallback((message, duration) => addToast(message, 'info', duration), [addToast])
 
-  const success = (message, duration) => addToast(message, 'success', duration)
-  const error = (message, duration) => addToast(message, 'error', duration)
-  const warning = (message, duration) => addToast(message, 'warning', duration)
-  const info = (message, duration) => addToast(message, 'info', duration)
-
-  return {
+  return useMemo(() => ({
     toasts,
     addToast,
     removeToast,
@@ -93,5 +93,5 @@ export function useToast() {
     error,
     warning,
     info
-  }
+  }), [toasts, addToast, removeToast, success, error, warning, info])
 }

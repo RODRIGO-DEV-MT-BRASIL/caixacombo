@@ -3,18 +3,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
 import { Palette, Save, Loader2, RotateCw, Shield } from 'lucide-react'
 import SenhaConfirmModal from '../components/SenhaConfirmModal'
-
-const defaultConfig = {
-  primaryColor: '#3b82f6',
-  secondaryColor: '#06b6d4',
-  accentColor: '#10b981',
-  companyName: 'CaixaCombo',
-  logoUrl: ''
-}
+import { LoadingState } from '../components/ui'
+import { DEFAULT_APP_CONFIG } from '../constants/forms'
 
 export default function Configuracoes() {
   const { token, user } = useAuth()
-  const [config, setConfig] = useState(defaultConfig)
+  /** @type {[import('../types/entities').AppConfig, Function]} */
+  const [config, setConfig] = useState(DEFAULT_APP_CONFIG)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showSenhaModal, setShowSenhaModal] = useState(false)
@@ -23,7 +18,7 @@ export default function Configuracoes() {
   useEffect(() => {
     fetch(apiUrl('/api/config'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => { setConfig({ ...defaultConfig, ...data }); setLoading(false) })
+      .then(data => { setConfig({ ...DEFAULT_APP_CONFIG, ...data }); setLoading(false) })
       .catch(() => setLoading(false))
   }, [token])
 
@@ -57,17 +52,12 @@ export default function Configuracoes() {
   }
 
   const handleReset = () => {
-    setConfig(defaultConfig)
-    applyColors(defaultConfig)
+    setConfig(DEFAULT_APP_CONFIG)
+    applyColors(DEFAULT_APP_CONFIG)
   }
 
   if (loading) {
-    return (
-      <div className="glass p-12 text-center">
-        <Loader2 size={32} className="animate-spin mx-auto text-blue-400 mb-3" />
-        <p className="text-gray-400">Carregando configurações...</p>
-      </div>
-    )
+    return <LoadingState message="Carregando configurações..." className="glass p-12 text-center" />
   }
 
   if (!isAdmin) {
@@ -123,7 +113,7 @@ export default function Configuracoes() {
       {/* Cores */}
       <div className="glass p-4 space-y-4">
         <h3 className="text-sm font-semibold text-gray-300">Cores do Sistema</h3>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Cor Primária</label>
