@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
-import { useToast } from '../components/Toast'
-import { 
+import { useToastContext } from '../contexts/ToastContext'
+import {
   LayoutDashboard, Package, Tags, ShoppingCart, Wifi, WifiOff,
-  LogOut, Menu, X, Monitor, Lock, Unlock, Clock, Play, 
-  ChevronRight, Activity, TrendingUp, AlertTriangle, CheckCircle2,
-  Search, RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
+  LogOut, Menu, X, Monitor, Lock, Unlock, Clock,
+  Activity, AlertTriangle, CheckCircle2,
+  RefreshCw, Eye, EyeOff, RefreshCw as RotateCw, Cpu, DollarSign,
   Settings,
-  Play as PlayIcon, X as CloseIcon, Power, History, Building2, Users
+  Play as PlayIcon, X as CloseIcon, Power, History, Building2
 } from 'lucide-react'
 import Produtos from './Produtos'
 import Categorias from './Categorias'
@@ -36,7 +36,7 @@ const navItems = [
 export default function Dashboard() {
   const { user, logout, token, hasPermission } = useAuth()
   const { devices, connected, lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, controlApp, timeUpdates, socket } = useSocket()
-  const { success } = useToast()
+  const { success } = useToastContext()
   const [page, setPage] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -147,7 +147,7 @@ export default function Dashboard() {
     const minutes = Math.floor(diff / 60000)
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
-    
+
     if (days > 0) return `${days}d ${hours % 24}h`
     if (hours > 0) return `${hours}h ${minutes % 60}m`
     return `${minutes}m`
@@ -157,9 +157,9 @@ export default function Dashboard() {
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/password`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         }
       })
       const data = await res.json()
@@ -253,8 +253,8 @@ export default function Dashboard() {
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
-                  page === item.id 
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' 
+                  page === item.id
+                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20'
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
                 title={sidebarCollapsed ? item.label : ''}

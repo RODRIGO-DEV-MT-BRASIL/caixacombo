@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { 
-  History, Filter, Clock, Monitor, 
+import {
+  History, Filter, Monitor,
   Lock, Unlock, Wifi, WifiOff, Activity, AlertCircle,
   ChevronDown, RefreshCw
 } from 'lucide-react'
@@ -42,11 +42,11 @@ export default function Auditoria() {
       const res = await fetch(`/api/auditoria?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      
+
       if (!res.ok) {
         throw new Error(`Erro ${res.status}: ${res.statusText}`)
       }
-      
+
       const data = await res.json()
       setLogs(data)
     } catch (err) {
@@ -199,14 +199,14 @@ export default function Auditoria() {
           logs.map((log) => {
             const Icon = tipoIcons[log.tipo] || AlertCircle
             const colorClass = tipoColors[log.tipo] || 'text-gray-400 bg-gray-400/10 border-gray-400/20'
-            
+
             return (
               <div key={log.id} className="glass p-4 border border-white/5 hover:border-white/10 transition-all">
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-lg ${colorClass} flex items-center justify-center flex-shrink-0`}>
                     <Icon size={18} />
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
@@ -218,7 +218,7 @@ export default function Auditoria() {
                         <p className="text-xs text-gray-600 mt-1">por {log.usuario || 'Sistema'}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
                         <Monitor size={12} />

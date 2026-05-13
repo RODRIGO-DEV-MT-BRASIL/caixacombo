@@ -3,10 +3,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { useToastContext } from '../contexts/ToastContext'
 import { apiUrl } from '../utils/api'
-import { 
-  ArrowLeft, Lock, ArrowUpCircle, ArrowDownCircle, Wallet, CreditCard, 
-  Smartphone, DollarSign, Monitor, TrendingUp, TrendingDown, AlertTriangle,
-  CheckCircle2, Loader2, FileText, Printer, Shield, BarChart3, Receipt,
+import {
+  ArrowLeft, Lock, ArrowUpCircle, ArrowDownCircle, Wallet, CreditCard,
+  Smartphone, DollarSign, Monitor, TrendingDown, AlertTriangle,
+  CheckCircle2, Loader2, Shield, BarChart3, Receipt,
   PiggyBank, CircleDot, Activity
 } from 'lucide-react'
 

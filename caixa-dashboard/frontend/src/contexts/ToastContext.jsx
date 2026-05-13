@@ -13,5 +13,11 @@ export function ToastProvider({ children }) {
   )
 }
 
-export const useToastContext = () => useContext(ToastContext)
+export const useToastContext = () => {
+  const context = useContext(ToastContext)
+  if (!context) {
+    throw new Error('useToastContext deve ser usado dentro de ToastProvider')
+  }
+  return context
+}
 export { useToast } from '../components/Toast'

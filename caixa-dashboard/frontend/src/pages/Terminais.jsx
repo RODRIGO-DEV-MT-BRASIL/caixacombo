@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
-import { Monitor, Wifi, WifiOff, Lock, Unlock, Smartphone, Search, RefreshCw, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Monitor, Wifi, WifiOff, Smartphone, RefreshCw, Loader2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
 import { useToastContext } from '../contexts/ToastContext'
+import { SearchField } from '../components/ui'
 
 export default function Terminais() {
   const { user } = useAuth()
@@ -25,17 +26,17 @@ export default function Terminais() {
 
     const matchesSearch = device.deviceName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          device.deviceId?.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     // Se for empresa, mostrar apenas dispositivos da empresa
     if (userEmpresaId) {
       return matchesSearch && device.empresaId === userEmpresaId
     }
-    
+
     // Se for admin e selecionou uma empresa, mostrar dispositivos da empresa
     if (isAdmin && selectedEmpresa) {
       return matchesSearch && device.empresaId === selectedEmpresa
     }
-    
+
     // Se for admin e não selecionou empresa, mostrar todos
     return matchesSearch
   })
@@ -78,17 +79,14 @@ export default function Terminais() {
         <button onClick={handleSyncTerminais} disabled={syncing} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors disabled:opacity-50 shrink-0">
           {syncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} Sincronizar
         </button>
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar terminal..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar terminal..."
+          className="flex-1"
+          inputClassName="w-full pl-10 pr-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+        />
+
         {isAdmin && empresasDisponiveis.length > 0 && (
           <select
             value={selectedEmpresa || ''}
@@ -123,7 +121,7 @@ export default function Terminais() {
                   }`}>
                     {device.online ? <Wifi size={24} /> : <WifiOff size={24} />}
                   </div>
-                  
+
                   <div>
                     <h3 className="font-semibold text-white">{device.deviceName}</h3>
                     <p className="text-sm text-gray-400">{device.deviceId}</p>
