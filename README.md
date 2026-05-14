@@ -2,6 +2,18 @@
 
 Sistema de PDV Android para controle de vendas, checkout, login de funcionários e operação de caixa com suporte a white-label por empresa.
 
+## Regra principal de pagamento
+
+**O Caixa Combo deve aceitar somente Stone como sistema de pagamento.**
+
+Não devem ser implementados outros provedores de pagamento como PagSeguro, Mercado Pago, Cielo, Rede, InfinitePay, Ton ou gateways genéricos.
+
+Toda integração de pagamento deve seguir este padrão:
+
+```txt
+PDV Caixa Combo -> Módulo Stone -> Terminal Stone / API Stone -> Confirmação da venda
+```
+
 ## Objetivo do projeto
 
 O Caixa Combo tem como objetivo ser um sistema de caixa moderno para uso em restaurantes, bares, lanchonetes, lojas, eventos e operações que precisam de venda rápida em terminal Android.
@@ -17,6 +29,7 @@ O Caixa Combo tem como objetivo ser um sistema de caixa moderno para uso em rest
 - Cores personalizadas por empresa
 - Configuração white-label via Android flavors
 - Data e hora no terminal em formato brasileiro
+- Pagamento exclusivo via Stone
 
 ## Tecnologias identificadas
 
@@ -26,6 +39,7 @@ O Caixa Combo tem como objetivo ser um sistema de caixa moderno para uso em rest
 - Gradle Kotlin DSL
 - API REST
 - White-label com product flavors
+- Integração Stone como única solução de pagamento
 
 ## Organização recomendada
 
@@ -42,6 +56,7 @@ caixacombo/
 │   └── package.json
 ├── docs/
 │   ├── ARQUITETURA.md
+│   ├── STONE.md
 │   ├── ROADMAP.md
 │   └── CHECKLIST.md
 └── README.md
@@ -58,6 +73,7 @@ caixacombo/
 5. Melhorar segurança do login e permissões
 6. Adicionar modo offline com sincronização
 7. Criar documentação de deploy e instalação
+8. Implementar integração Stone como única forma de pagamento
 
 ## Status
 
@@ -71,3 +87,4 @@ Projeto em organização técnica inicial.
 - Criar roadmap de evolução
 - Padronizar estrutura de pastas
 - Criar pipeline de build e release
+- Criar módulo de pagamento exclusivo Stone
