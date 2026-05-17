@@ -329,7 +329,67 @@ function authenticateToken(req, res, next) {
 
 // ==================== ROTAS API ====================
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email, pin } = req.body;
+  
+  // Login de funcionário (email + PIN)
+  if (email && pin) {
+    console.log(`[LOGIN] Tentativa funcionário: email="${email}", pin="${pin}"`);
+    
+    // Buscar funcionário pelo email (usando código como PIN)
+    const funcionario = (db.funcionarios || []).find(f => f.email === email && f.codigo === pin);
+    console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}` : 'NENHUM'}`);
+    
+    if (!funcionario) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+    
+    if (!funcionario.ativo) {
+      return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
+    }
+    
+    // Buscar empresa do funcionário
+    const empresa = (db.empresas || []).find(e => e.id === funcionario.empresaId);
+    if (!empresa || !empresa.ativo) {
+      return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
+    }
+    
+    const token = jwt.sign(
+      { 
+        id: funcionario.id, 
+        username: funcionario.nome, 
+        role: 'funcionario', 
+        empresaId: funcionario.empresaId,
+        funcionarioId: funcionario.id,
+        permissoes: funcionario.permissoes,
+        paginasPermitidas: ['dashboard', 'vendas', 'caixa']
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    return res.json({
+      token,
+      user: {
+        id: funcionario.id,
+        username: funcionario.nome,
+        role: 'funcionario',
+        empresaNome: empresa.nome,
+        empresaId: funcionario.empresaId,
+        funcionarioId: funcionario.id,
+        permissoes: funcionario.permissoes,
+        paginasPermitidas: ['dashboard', 'vendas', 'caixa'],
+        branding: {
+          primaryColor: empresa.primaryColor || '#3b82f6',
+          secondaryColor: empresa.secondaryColor || '#06b6d4',
+          accentColor: empresa.accentColor || '#10b981',
+          logoUrl: empresa.logoUrl || '',
+          companyName: empresa.nome
+        }
+      }
+    });
+  }
+  
+  // Login de admin/empresa (username + password)
   console.log(`[LOGIN] Tentativa: username="${username}", usuarios no db=${db.usuarios.length}, empresas no db=${(db.empresas || []).length}`);
   
   // Verificar se é usuário do sistema
@@ -1288,7 +1348,7 @@ app.get('/api/funcionarios', authenticateToken, (req, res) => {
 
 // Criar funcionário
 app.post('/api/funcionarios', authenticateToken, async (req, res) => {
-  const { nome, codigo, cargo, permissoes, empresaId, ativo } = req.body;
+  const { nome, codigo, email, cargo, permissoes, empresaId, ativo } = req.body;
   const targetEmpresaId = req.user.role === 'admin' ? (empresaId || req.user.empresaId) : req.user.empresaId;
 
   if (!nome || !codigo || !targetEmpresaId) {
@@ -1305,6 +1365,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
     id: generateId(),
     nome,
     codigo,
+    email: email || '',
     cargo: cargo || 'caixa',
     permissoes: permissoes || {
       vendas: true,
