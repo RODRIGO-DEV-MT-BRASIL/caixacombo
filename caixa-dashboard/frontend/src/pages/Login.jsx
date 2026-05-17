@@ -41,10 +41,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden" style={{ fontFamily: "'Inter', 'Poppins', system-ui, sans-serif" }}>
+    <div className="h-screen flex flex-col lg:flex-row relative overflow-hidden" style={{ fontFamily: "'Inter', 'Poppins', system-ui, sans-serif" }}>
 
       {/* ===== LADO ESQUERDO - BRANDING ===== */}
-      <div className="hidden lg:flex flex-[1.8] relative flex-col items-center justify-center overflow-hidden"
+      <div className="hidden lg:flex flex-1 relative flex-col items-center justify-center overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #020617 0%, #0c1a3e 40%, #0a1628 100%)' }}>
 
         {/* Grid tecnológico de fundo */}
@@ -79,94 +79,75 @@ export default function Login() {
         {/* Glow atrás da logo */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[400px] h-[400px] rounded-full bg-blue-500/10 blur-[80px]" />
 
-        {/* Conteúdo central */}
+        {/* Conteúdo central - Apenas Logo */}
         <div className="relative z-10 flex flex-col items-center px-12 max-w-xl">
           {/* Logo */}
-          <img src="/controle.png" alt="CaixaCombo" className="w-[420px] max-w-full object-contain" />
-
-          {/* Slogan */}
-          <p className="mt-6 text-lg text-blue-200/70 text-center font-light tracking-wide leading-relaxed">
-            Mais controle, mais agilidade, mais vendas para o seu evento!
-          </p>
-
-          {/* Separador neon */}
-          <div className="mt-8 w-24 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
-
-          {/* Feature cards */}
-          <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-md">
-            {features.map((f, i) => (
-              <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-xl backdrop-blur-md transition-all duration-300 hover:scale-105 ${i === 4 ? 'col-span-2 justify-center' : ''}`}
-                style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.1)' }}>
-                <f.icon size={18} className="text-cyan-400 shrink-0" />
-                <span className="text-sm text-blue-100/80 font-medium">{f.label}</span>
-              </div>
-            ))}
-          </div>
+          <img src="/controle.png" alt="CaixaCombo" className="w-[380px] max-w-full object-contain" />
         </div>
       </div>
 
       {/* ===== LADO DIREITO - LOGIN ===== */}
-      <div className="flex-1 flex items-center justify-center relative min-h-screen lg:min-h-0"
+      <div className="flex-1 flex items-center justify-center relative"
         style={{ background: 'linear-gradient(160deg, #030712 0%, #0a1628 50%, #020617 100%)' }}>
 
         {/* Glow sutil */}
         <div className="absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-blue-600/5 blur-[80px]" />
 
         {/* Mobile logo */}
-        <div className="lg:hidden absolute top-8 left-1/2 -translate-x-1/2">
-          <img src="/controle.png" alt="CaixaCombo" className="w-48 object-contain" />
+        <div className="lg:hidden absolute top-4 left-1/2 -translate-x-1/2">
+          <img src="/controle.png" alt="CaixaCombo" className="w-28 object-contain" />
         </div>
 
-        <div className="relative z-10 w-full max-w-md px-6 lg:px-8 lg:pt-0 pt-28">
+        <div className="relative z-10 w-full max-w-md px-3 lg:px-6 lg:pt-0 pt-14 pb-2">
           {/* Card glassmorphism */}
-          <div className="rounded-3xl p-8 lg:p-10 backdrop-blur-xl"
+          <div className="rounded-3xl p-3 lg:p-6 backdrop-blur-xl"
             style={{
               background: 'rgba(15,23,42,0.6)',
               border: '1px solid rgba(59,130,246,0.12)',
               boxShadow: '0 0 60px rgba(59,130,246,0.06), 0 25px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03)',
             }}>
 
-            <h2 className="text-2xl font-bold text-white mb-2">Bem-vindo de volta</h2>
-            <p className="text-sm text-gray-400 mb-6">Entre na sua conta para continuar</p>
+            <h2 className="text-lg font-bold text-white mb-1">Bem-vindo de volta</h2>
+            <p className="text-[10px] text-gray-400 mb-3">Entre na sua conta para continuar</p>
 
             {/* Login Type Toggle */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-2">
               <button
                 type="button"
                 onClick={() => setLoginType('admin')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${loginType === 'admin' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition-all ${loginType === 'admin' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => setLoginType('funcionario')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${loginType === 'funcionario' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium transition-all ${loginType === 'funcionario' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
               >
                 Funcionário
               </button>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 mb-5 rounded-xl text-red-400 text-sm"
+              <div className="flex items-center gap-2 p-1.5 mb-2 rounded-xl text-red-400 text-[10px]"
                 style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                <AlertCircle size={16} className="shrink-0" />
+                <AlertCircle size={12} className="shrink-0" />
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-2">
               {loginType === 'admin' ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Usuário</label>
+                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Usuário</label>
                     <div className="relative group">
-                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <User size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type="text"
                         value={username}
                         onChange={e => setUsername(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full pl-8 pr-2.5 py-1.5 rounded-lg text-white placeholder-gray-500 text-[10px] outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
                         style={{
                           background: 'rgba(15,23,42,0.5)',
                           border: '1px solid rgba(59,130,246,0.15)',
@@ -178,14 +159,14 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Senha</label>
+                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Senha</label>
                     <div className="relative group">
-                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <Lock size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type="password"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full pl-8 pr-2.5 py-1.5 rounded-lg text-white placeholder-gray-500 text-[10px] outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
                         style={{
                           background: 'rgba(15,23,42,0.5)',
                           border: '1px solid rgba(59,130,246,0.15)',
@@ -199,14 +180,14 @@ export default function Login() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Email</label>
                     <div className="relative group">
-                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <User size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full pl-8 pr-2.5 py-1.5 rounded-lg text-white placeholder-gray-500 text-[10px] outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
                         style={{
                           background: 'rgba(15,23,42,0.5)',
                           border: '1px solid rgba(59,130,246,0.15)',
@@ -218,14 +199,14 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">PIN</label>
+                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">PIN</label>
                     <div className="relative group">
-                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <Lock size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
                       <input
                         type="password"
                         value={pin}
                         onChange={e => setPin(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-white placeholder-gray-500 text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
+                        className="w-full pl-8 pr-2.5 py-1.5 rounded-lg text-white placeholder-gray-500 text-[10px] outline-none transition-all duration-300 focus:ring-2 focus:ring-blue-500/40"
                         style={{
                           background: 'rgba(15,23,42,0.5)',
                           border: '1px solid rgba(59,130,246,0.15)',
@@ -242,7 +223,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-semibold text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-white font-semibold text-xs transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
                 style={{
                   background: 'linear-gradient(135deg, #2563eb 0%, #0891b2 100%)',
                   boxShadow: '0 4px 20px rgba(37,99,235,0.3)',
@@ -250,7 +231,7 @@ export default function Login() {
               >
                 {loading ? (
                   <>
-                    <Loader2 size={20} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                     Entrando...
                   </>
                 ) : (
@@ -258,10 +239,6 @@ export default function Login() {
                 )}
               </button>
             </form>
-
-            <p className="text-center text-gray-600 text-xs mt-8">
-              CaixaCombo · Dashboard v1.1
-            </p>
           </div>
         </div>
       </div>
