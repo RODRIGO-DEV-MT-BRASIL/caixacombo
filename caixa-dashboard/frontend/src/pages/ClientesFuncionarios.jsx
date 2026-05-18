@@ -291,34 +291,36 @@ export default function ClientesFuncionarios() {
                   
                   {activeTab === 'funcionarios' ? (
                     <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Código *</label>
-                        <input
-                          type="text"
-                          value={formData.codigo}
-                          onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">PIN de Acesso *</label>
-                        <input
-                          type="password"
-                          value={formData.pin}
-                          onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="4-6 dígitos"
-                          maxLength={6}
-                          required
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1">Código *</label>
+                          <input
+                            type="text"
+                            value={formData.codigo}
+                            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1">PIN de Acesso *</label>
+                          <input
+                            type="password"
+                            value={formData.pin}
+                            onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                            placeholder="4-6 dígitos"
+                            maxLength={6}
+                            required
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-400 mb-1">Cargo</label>
                         <select
                           value={formData.cargo}
                           onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                          className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                         >
                           <option value="caixa">Caixa</option>
                           <option value="gerente">Gerente</option>
