@@ -141,8 +141,16 @@ async function initializeApp() {
   await connectMongo();
 
   // Seed do admin padrão após carregar dados do MongoDB
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  // REQUER variáveis de ambiente - NÃO permite valores padrão por segurança
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  
+  if (!adminUsername || !adminPassword) {
+    console.error('❌ ERRO: ADMIN_USERNAME e ADMIN_PASSWORD devem ser definidos como variáveis de ambiente');
+    console.error('   Exemplo: ADMIN_USERNAME=admin ADMIN_PASSWORD=senha_segura_aleatoria npm start');
+    process.exit(1);
+  }
+  
   const existingAdmin = (db.usuarios || []).find(u => u.username === adminUsername);
   if (!existingAdmin) {
     if (!db.usuarios) db.usuarios = [];
@@ -2076,6 +2084,10 @@ app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
 // Blocklist de deviceIds de teste
 const BLOCKED_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check'];
 
+function isValidSerial(serial) {
+  return typeof serial === 'string' && serial.trim().length > 0 && serial.trim().toUpperCase() !== 'UNKNOWN';
+}
+
 // Dispositivo faz heartbeat e recebe comandos pendentes
 app.post('/api/device/poll', async (req, res) => {
   const { deviceId, deviceName, deviceType, serialNumber, status, caixaData } = req.body;
@@ -2089,10 +2101,26 @@ app.post('/api/device/poll', async (req, res) => {
     return res.status(403).json({ error: 'Dispositivo bloqueado' });
   }
 
-  // Registrar/atualizar dispositivo no mapa
   const existing = connectedDevices.get(deviceId);
-  // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const existingDb = db.dispositivos?.find(d => d.deviceId === deviceId);
+  const existingSerial = existing?.serialNumber || existingDb?.serialNumber || null;
+  const providedSerial = isValidSerial(serialNumber) ? serialNumber : null;
+
+  if (existingSerial && providedSerial && existingSerial !== providedSerial) {
+    addAuditoria('bloqueio', deviceId, `Serial mismatch recebido: esperado=${existingSerial} recebido=${providedSerial}`, 'Sistema');
+    return res.status(403).json({ error: 'Serial number mismatch do deviceId. Contate o administrador.' });
+  }
+
+  if (!existingSerial && providedSerial && existing) {
+    addAuditoria('bloqueio', deviceId, `Serial válido registrado pela primeira vez: ${providedSerial}`, 'Sistema');
+  }
+
+  if (!existing && !existingDb && !providedSerial) {
+    addAuditoria('bloqueio', deviceId, 'Novo dispositivo conectado sem serial válido; manter em pending', 'Sistema');
+  }
+
+  // Registrar/atualizar dispositivo no mapa
+  // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
   const isApproved = !!(existing?.empresaId || existingDb?.empresaId);
   const pollEmpresaId = existing?.empresaId || existingDb?.empresaId || null;

@@ -14,7 +14,7 @@ export default function ClientesFuncionarios() {
     codigo: '', pin: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
   })
 
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
 
   const fetchClientes = async () => {
     try {
