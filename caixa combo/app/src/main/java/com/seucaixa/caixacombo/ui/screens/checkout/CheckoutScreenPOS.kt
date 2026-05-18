@@ -585,34 +585,34 @@ private fun TopBarPDV(
     clienteNome: String? = null
 ) {
     if (isSmallScreen) {
-        // P2: Tudo numa linha
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp)
-                .background(primaryColor)
-                .padding(horizontal = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Esquerda: Logo + Nome
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (logoBitmap != null) {
-                    Image(
-                        painter = BitmapPainter(logoBitmap.asImageBitmap()),
-                        contentDescription = "Logo",
-                        modifier = Modifier.height(28.dp).width(28.dp)
-                    )
-                } else {
-                    Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(24.dp))
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Caixa Combo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
-            // Centro: Cliente + Operador
+        // P2: Header em 2 linhas
+        Column(modifier = Modifier.fillMaxWidth().background(primaryColor)) {
+            // Linha 1: Logo + Nome | Hora + Sair
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (logoBitmap != null) {
+                        Image(painter = BitmapPainter(logoBitmap.asImageBitmap()), contentDescription = "Logo", modifier = Modifier.height(28.dp).width(28.dp))
+                    } else {
+                        Icon(Icons.Default.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Caixa Combo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
+                    Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                    IconButton(onClick = onLogout, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            // Linha 2: Cliente | Operador
+            Row(
+                modifier = Modifier.fillMaxWidth().height(32.dp).padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
@@ -622,19 +622,7 @@ private fun TopBarPDV(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Badge, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        if (operadorNome != null) "Op: $operadorNome" else "Op: ---",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 12.sp
-                    )
-                }
-            }
-            // Direita: Hora + Sair
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Default.Schedule, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
-                Text(currentTime, color = Color.White, fontWeight = FontWeight.Medium, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                IconButton(onClick = onLogout, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Text(if (operadorNome != null) "Op: $operadorNome" else "Op: ---", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
                 }
             }
         }
