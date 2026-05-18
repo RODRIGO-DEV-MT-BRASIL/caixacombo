@@ -337,10 +337,61 @@ app.post('/api/auth/login', async (req, res) => {
     
     // Buscar funcionário pelo email (usando código como PIN)
     const funcionario = (db.funcionarios || []).find(f => f.email === email && f.codigo === pin);
-    console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}` : 'NENHUM'}`);
+    console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}, email=${funcionario.email}` : 'NENHUM'}`);
     
     if (!funcionario) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
+      // Tentar buscar por código se email não for encontrado
+      const funcionarioByCodigo = (db.funcionarios || []).find(f => f.codigo === email && f.codigo === pin);
+      console.log(`[LOGIN] Tentativa por código: ${funcionarioByCodigo ? `id=${funcionarioByCodigo.id}, nome=${funcionarioByCodigo.nome}` : 'NENHUM'}`);
+      
+      if (!funcionarioByCodigo) {
+        return res.status(401).json({ error: 'Credenciais inválidas' });
+      }
+      
+      if (!funcionarioByCodigo.ativo) {
+        return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
+      }
+      
+      // Buscar empresa do funcionário
+      const empresa = (db.empresas || []).find(e => e.id === funcionarioByCodigo.empresaId);
+      if (!empresa || !empresa.ativo) {
+        return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
+      }
+      
+      const token = jwt.sign(
+        { 
+          id: funcionarioByCodigo.id, 
+          username: funcionarioByCodigo.nome, 
+          role: 'funcionario', 
+          empresaId: funcionarioByCodigo.empresaId,
+          funcionarioId: funcionarioByCodigo.id,
+          permissoes: funcionarioByCodigo.permissoes,
+          paginasPermitidas: ['dashboard', 'vendas', 'caixa']
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      
+      return res.json({
+        token,
+        user: {
+          id: funcionarioByCodigo.id,
+          username: funcionarioByCodigo.nome,
+          role: 'funcionario',
+          empresaNome: empresa.nome,
+          empresaId: funcionarioByCodigo.empresaId,
+          funcionarioId: funcionarioByCodigo.id,
+          permissoes: funcionarioByCodigo.permissoes,
+          paginasPermitidas: ['dashboard', 'vendas', 'caixa'],
+          branding: {
+            primaryColor: empresa.primaryColor || '#3b82f6',
+            secondaryColor: empresa.secondaryColor || '#06b6d4',
+            accentColor: empresa.accentColor || '#10b981',
+            logoUrl: empresa.logoUrl || '',
+            companyName: empresa.nome
+          }
+        }
+      });
     }
     
     if (!funcionario.ativo) {
@@ -1366,6 +1417,8 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
     nome,
     codigo,
     email: email || '',
+    cpfCnpj: req.body.cpfCnpj || '',
+    telefone: req.body.telefone || '',
     cargo: cargo || 'caixa',
     permissoes: permissoes || {
       vendas: true,
@@ -1393,7 +1446,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
 // Atualizar funcionário
 app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { nome, codigo, cargo, permissoes, ativo } = req.body;
+  const { nome, codigo, email, cpfCnpj, telefone, cargo, permissoes, ativo } = req.body;
 
   const index = (db.funcionarios || []).findIndex(f => f.id == id);
   if (index === -1) return res.status(404).json({ error: 'Funcionário não encontrado' });
@@ -1417,6 +1470,9 @@ app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
     ...func,
     nome: nome || func.nome,
     codigo: codigo || func.codigo,
+    email: email !== undefined ? email : func.email,
+    cpfCnpj: cpfCnpj !== undefined ? cpfCnpj : func.cpfCnpj,
+    telefone: telefone !== undefined ? telefone : func.telefone,
     cargo: cargo || func.cargo,
     permissoes: permissoes || func.permissoes,
     ativo: ativo !== undefined ? ativo : func.ativo
