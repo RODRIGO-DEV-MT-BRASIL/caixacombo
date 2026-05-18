@@ -63,7 +63,7 @@ export default function ClientesFuncionarios() {
           pin: formData.pin,
           cargo: formData.cargo,
           permissoes: formData.permissoes,
-          ativo: true
+          ativo: editingItem ? editingItem.ativo : true
         }
       }
 
@@ -105,6 +105,7 @@ export default function ClientesFuncionarios() {
         cep: '',
         observacao: '',
         codigo: item.codigo || '',
+        pin: '',
         cargo: item.cargo || 'caixa',
         permissoes: item.permissoes || { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
       })
@@ -311,7 +312,7 @@ export default function ClientesFuncionarios() {
                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
                             placeholder="4-6 dígitos"
                             maxLength={6}
-                            required
+                            required={!editingItem}
                           />
                         </div>
                       </div>

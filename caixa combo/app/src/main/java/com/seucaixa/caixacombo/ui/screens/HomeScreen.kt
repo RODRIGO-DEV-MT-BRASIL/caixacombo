@@ -98,7 +98,8 @@ fun HomeScreen(
     }
 
     // Login
-    var email by remember { mutableStateOf("") }
+    var loginType by remember { mutableStateOf("funcionario") }
+    var loginIdentifier by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -172,11 +173,35 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
-            // Campo de Email
+            // Tipo de login
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Button(
+                    onClick = { loginType = "funcionario" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (loginType == "funcionario") primaryColor else Color.Gray.copy(alpha = 0.2f)
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Funcionário", color = if (loginType == "funcionario") Color.White else Color.Black)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { loginType = "admin" },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (loginType == "admin") primaryColor else Color.Gray.copy(alpha = 0.2f)
+                    ),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Admin", color = if (loginType == "admin") Color.White else Color.Black)
+                }
+            }
+            Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+
+            // Campo de Identificador (Email ou Usuario)
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it; erro = "" },
-                label = { Text("Email") },
+                value = loginIdentifier,
+                onValueChange = { loginIdentifier = it; erro = "" },
+                label = { Text(if (loginType == "funcionario") "Email" else "Usuário") },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -184,14 +209,18 @@ fun HomeScreen(
                         isKeyboardOpen.value = focusState.isFocused
                     },
                 leadingIcon = {
-                    Icon(Icons.Default.Email, null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        if (loginType == "funcionario") Icons.Default.Email else Icons.Default.Person,
+                        null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
                 shape = RoundedCornerShape(12.dp),
                 textStyle = androidx.compose.ui.text.TextStyle(
                     fontSize = if (isSmallScreen) 14.sp else 18.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = if (loginType == "funcionario") KeyboardType.Email else KeyboardType.Text)
             )
             Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
             // Campo de PIN
@@ -233,8 +262,8 @@ fun HomeScreen(
             Button(
                 onClick = {
                     // Login com email + PIN
-                    if (email.isBlank() || pin.isBlank()) {
-                        erro = "Digite email e PIN"
+                    if (loginIdentifier.isBlank() || pin.isBlank()) {
+                        erro = if (loginType == "funcionario") "Digite email e PIN" else "Digite usuário e senha"
                         return@Button
                     }
                     isLoading = true
@@ -251,8 +280,13 @@ fun HomeScreen(
                                     conn.connectTimeout = 8000
                                     conn.readTimeout = 8000
                                     val data = org.json.JSONObject().apply {
-                                        put("email", email)
-                                        put("pin", pin)
+                                        if (loginType == "funcionario") {
+                                            put("email", loginIdentifier)
+                                            put("pin", pin)
+                                        } else {
+                                            put("username", loginIdentifier)
+                                            put("password", pin)
+                                        }
                                     }
                                     conn.outputStream.use { it.write(data.toString().toByteArray()) }
                                     val responseCode = conn.responseCode
@@ -260,8 +294,8 @@ fun HomeScreen(
                                         val response = conn.inputStream.bufferedReader().readText()
                                         val json = org.json.JSONObject(response)
                                         val user = json.getJSONObject("user")
-                                        val nome = user.optString("nome", "")
-                                        val cargo = user.optString("cargo", "caixa")
+                                        val nome = user.optString("nome", user.optString("username", ""))
+                                        val cargo = user.optString("cargo", user.optString("role", "caixa"))
                                         val permissoes = user.optJSONObject("permissoes")
                                         val funcId = user.optLong("id", -1)
                                         withContext(Dispatchers.Main) {
