@@ -34,7 +34,7 @@ class PollingService : Service() {
         private const val MAX_RETRIES = 5
         private const val PREFS_NAME = "server_config"
         private const val KEY_SERVER_URL = "server_url"
-        private const val DEFAULT_SERVER_URL = "https://caixa-dashboard-mt.onrender.com"
+        private const val DEFAULT_SERVER_URL = "https://caixa-dashboard-mt-novo.onrender.com"
 
         private var SERVER_URL = DEFAULT_SERVER_URL
         private var pollingDeviceId: String? = null
