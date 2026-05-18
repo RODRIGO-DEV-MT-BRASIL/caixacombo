@@ -1161,6 +1161,7 @@ function broadcastClientesSync() {
 // Função auxiliar: sincronizar produtos para todos os terminais
 function broadcastProdutosSync(action = 'sync', data = null) {
   const produtos = db.produtos || [];
+  console.log(`📤 [BROADCAST-PRODUTOS] Iniciando - ${produtos.length} produtos no banco`);
   // Via WebSocket para dashboards - cada empresa só recebe seus produtos
   connectedDashboards.forEach((info, socketId) => {
     const socket = io.sockets.sockets.get(socketId);
@@ -1181,6 +1182,7 @@ function broadcastProdutosSync(action = 'sync', data = null) {
       : produtos;
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
+    console.log(`📤 [BROADCAST] Dispositivo conectado: ${deviceId}, empresaId: ${deviceInfo.empresaId}, produtos: ${filtered.length}`);
   });
   // Também dispositivos do banco que podem não estar conectados mas farão polling
   (db.dispositivos || []).forEach(d => {
@@ -1188,10 +1190,11 @@ function broadcastProdutosSync(action = 'sync', data = null) {
       const filtered = produtos.filter(p => p.empresaId === d.empresaId);
       if (filtered.length > 0) {
         enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
+        console.log(`📤 [BROADCAST] Dispositivo banco: ${d.deviceId}, empresaId: ${d.empresaId}, produtos: ${filtered.length}`);
       }
     }
   });
-  console.log(`📤 [BROADCAST-PRODUTOS] ${produtos.length} produtos para ${connectedDevices.size} dispositivos conectados`);
+  console.log(`📤 [BROADCAST-PRODUTOS] Total dispositivos: ${deviceIds.length} conectados + ${(db.dispositivos || []).filter(d => !deviceIds.includes(d.deviceId) && d.empresaId).length} no banco`);
 }
 
 // Função auxiliar: sincronizar categorias para todos os terminais
