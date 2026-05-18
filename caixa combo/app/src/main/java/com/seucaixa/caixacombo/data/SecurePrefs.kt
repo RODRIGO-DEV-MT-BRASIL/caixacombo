@@ -16,7 +16,9 @@ object SecurePrefs {
     private const val KEY_OPERATOR_NAME = "operador_nome"
     private const val KEY_OPERATOR_CARGO = "operador_cargo"
     private const val KEY_OPERATOR_ID = "operador_id"
+    private const val KEY_OPERATOR_EMPRESA_ID = "operador_empresa_id"
     private const val KEY_ADMIN_PASSWORD = "admin_password"
+    private var cachedEmpresaId: String? = null
 
     private fun getPrefs(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
@@ -51,6 +53,14 @@ object SecurePrefs {
 
     fun getOperatorId(context: Context): Long {
         return getPrefs(context).getLong(KEY_OPERATOR_ID, -1)
+    }
+
+    fun saveOperatorEmpresaId(empresaId: String) {
+        cachedEmpresaId = empresaId
+    }
+
+    fun getOperadorEmpresaId(): String? {
+        return cachedEmpresaId
     }
 
     fun clearOperator(context: Context) {
