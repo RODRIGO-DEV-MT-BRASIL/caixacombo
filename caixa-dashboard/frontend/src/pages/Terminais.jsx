@@ -57,7 +57,7 @@ export default function Terminais() {
   useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'empresa') {
       fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json()).then(setEmpresas).catch(() => {})
+        .then(r => r.json()).then(data => setEmpresas(Array.isArray(data) ? data : data.data || [])).catch(() => {})
     }
   }, [user, token])
 

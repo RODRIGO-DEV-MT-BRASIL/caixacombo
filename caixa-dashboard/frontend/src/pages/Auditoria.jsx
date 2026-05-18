@@ -67,7 +67,7 @@ export default function Auditoria() {
     if (user?.role === 'admin') {
       fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
-        .then(setEmpresas)
+        .then(res => res.json()).then(data => setEmpresas(Array.isArray(data) ? data : data.data || [])).catch(() => {})
         .catch(() => {})
     }
   }, [token, filters])
