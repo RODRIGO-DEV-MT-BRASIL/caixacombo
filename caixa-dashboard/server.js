@@ -348,13 +348,13 @@ app.post('/api/auth/login', async (req, res) => {
   if (email && pin) {
     console.log(`[LOGIN] Tentativa funcionário: email="${email}", pin="${pin}"`);
     
-    // Buscar funcionário pelo email (usando código como PIN)
-    const funcionario = (db.funcionarios || []).find(f => f.email === email && f.codigo === pin);
+    // Buscar funcionário pelo email + PIN
+    const funcionario = (db.funcionarios || []).find(f => f.email === email && f.pin === pin);
     console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}, email=${funcionario.email}` : 'NENHUM'}`);
     
     if (!funcionario) {
-      // Tentar buscar por código se email não for encontrado
-      const funcionarioByCodigo = (db.funcionarios || []).find(f => f.codigo === email && f.codigo === pin);
+      // Tentar buscar por código + PIN se email não for encontrado
+      const funcionarioByCodigo = (db.funcionarios || []).find(f => f.codigo === email && f.pin === pin);
       console.log(`[LOGIN] Tentativa por código: ${funcionarioByCodigo ? `id=${funcionarioByCodigo.id}, nome=${funcionarioByCodigo.nome}` : 'NENHUM'}`);
       
       if (!funcionarioByCodigo) {
@@ -1397,12 +1397,15 @@ app.get('/api/funcionarios', authenticateToken, (req, res) => {
   if (req.user.role === 'empresa' && req.user.empresaId) {
     funcionarios = funcionarios.filter(f => f.empresaId === req.user.empresaId);
   }
-  // Não expor dados sensíveis
+  // Não expor dados sensíveis como PIN, mas precisamos mostrar os campos de contato
   res.json(funcionarios.map(f => ({
     id: f.id,
     nome: f.nome,
     codigo: f.codigo,
     cargo: f.cargo,
+    email: f.email || '',
+    cpfCnpj: f.cpfCnpj || '',
+    telefone: f.telefone || '',
     permissoes: f.permissoes,
     empresaId: f.empresaId,
     ativo: f.ativo,
@@ -1412,7 +1415,7 @@ app.get('/api/funcionarios', authenticateToken, (req, res) => {
 
 // Criar funcionário
 app.post('/api/funcionarios', authenticateToken, async (req, res) => {
-  const { nome, codigo, email, cargo, permissoes, empresaId, ativo } = req.body;
+  const { nome, codigo, email, pin, cargo, permissoes, empresaId, ativo } = req.body;
   const targetEmpresaId = req.user.role === 'admin' ? (empresaId || req.user.empresaId) : req.user.empresaId;
 
   if (!nome || !codigo || !targetEmpresaId) {
@@ -1430,6 +1433,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
     nome,
     codigo,
     email: email || '',
+    pin: pin || '',
     cpfCnpj: req.body.cpfCnpj || '',
     telefone: req.body.telefone || '',
     cargo: cargo || 'caixa',
@@ -1459,7 +1463,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
 // Atualizar funcionário
 app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { nome, codigo, email, cpfCnpj, telefone, cargo, permissoes, ativo } = req.body;
+  const { nome, codigo, email, pin, cpfCnpj, telefone, cargo, permissoes, ativo } = req.body;
 
   const index = (db.funcionarios || []).findIndex(f => f.id == id);
   if (index === -1) return res.status(404).json({ error: 'Funcionário não encontrado' });
@@ -1484,6 +1488,7 @@ app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
     nome: nome || func.nome,
     codigo: codigo || func.codigo,
     email: email !== undefined ? email : func.email,
+    pin: pin !== undefined && pin !== '' ? pin : func.pin,
     cpfCnpj: cpfCnpj !== undefined ? cpfCnpj : func.cpfCnpj,
     telefone: telefone !== undefined ? telefone : func.telefone,
     cargo: cargo || func.cargo,
