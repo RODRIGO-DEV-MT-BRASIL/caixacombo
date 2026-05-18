@@ -218,7 +218,7 @@ export function SocketProvider({ children }) {
 
   return (
     <SocketContext.Provider value={{
-      devices, connected, vendas, setVendas, timeUpdates,
+      devices, setDevices, connected, vendas, setVendas, timeUpdates,
       lockDevice, unlockDevice, forceUnlockDevice, setUsageTime, commandDevice, controlApp,
       socket: socketRef.current
     }}>

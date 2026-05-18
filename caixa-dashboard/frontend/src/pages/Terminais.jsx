@@ -61,6 +61,18 @@ export default function Terminais() {
     }
   }, [user, token])
 
+  // Buscar dispositivos via API para carregamento inicial
+  useEffect(() => {
+    if (!token) return
+    fetch('/api/dispositivos', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : data.data || []
+        setDevices(list)
+      })
+      .catch(() => {})
+  }, [token])
+
   const handleApprove = async (deviceId, empresaId) => {
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/aprovar`, {
