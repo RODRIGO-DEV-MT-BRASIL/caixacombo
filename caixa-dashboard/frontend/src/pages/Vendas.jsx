@@ -249,7 +249,10 @@ export default function Vendas() {
                   </div>
                   <div>
                     <p className="font-semibold text-white">{dispositivo.deviceName || `Terminal ${dispositivo.deviceId.substring(0, 8)}`}</p>
-                    <p className="text-xs text-gray-500">{dispositivo.count} vendas</p>
+                    <p className="text-xs text-gray-500">
+                      <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[10px]">{dispositivo.deviceId}</span>
+                      <span className="ml-2">{dispositivo.count} vendas</span>
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
