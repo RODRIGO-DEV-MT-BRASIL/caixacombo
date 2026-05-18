@@ -9,6 +9,7 @@ export default function ClientesFuncionarios() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const [formData, setFormData] = useState({
     nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '',
     codigo: '', pin: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
@@ -128,7 +129,12 @@ export default function ClientesFuncionarios() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return
+    // Open custom confirmation modal instead of browser confirm
+    const item = (activeTab === 'clientes' ? clientes : funcionarios).find(i => i.id === id)
+    setConfirmDelete({ id, nome: item?.nome || 'Item' })
+  }
+
+  const confirmDeleteExecute = async (id) => {
     try {
       const url = activeTab === 'clientes' ? '/api/clientes' : '/api/funcionarios'
       const res = await fetch(`${url}/${id}`, {
@@ -141,6 +147,8 @@ export default function ClientesFuncionarios() {
       }
     } catch (error) {
       console.error('Erro ao excluir:', error)
+    } finally {
+      setConfirmDelete(null)
     }
   }
 
@@ -587,6 +595,29 @@ export default function ClientesFuncionarios() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete confirmation modal (custom, not browser confirm) */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="glass rounded-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-white mb-2">Confirmar exclusão</h3>
+            <p className="text-gray-300 mb-4">Tem certeza que deseja excluir <strong className="text-white">{confirmDelete.nome}</strong>?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => confirmDeleteExecute(confirmDelete.id)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+              >
+                Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}

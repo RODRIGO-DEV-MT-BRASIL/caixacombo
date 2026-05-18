@@ -348,13 +348,24 @@ app.post('/api/auth/login', async (req, res) => {
   if (email && pin) {
     console.log(`[LOGIN] Tentativa funcionário: email="${email}", pin="${pin}"`);
     
-    // Buscar funcionário pelo email + PIN
-    const funcionario = (db.funcionarios || []).find(f => f.email === email && f.pin === pin);
+    // Buscar funcionário pelo email + PIN (comparação resiliente)
+    const normalizedEmail = (email || '').toString().trim().toLowerCase();
+    const providedPin = (pin || '').toString().trim();
+    const funcionario = (db.funcionarios || []).find(f => {
+      const fEmail = (f.email || '').toString().trim().toLowerCase();
+      const fPin = (f.pin || '').toString().trim();
+      return fEmail === normalizedEmail && fPin === providedPin;
+    });
     console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}, email=${funcionario.email}` : 'NENHUM'}`);
     
     if (!funcionario) {
       // Tentar buscar por código + PIN se email não for encontrado
-      const funcionarioByCodigo = (db.funcionarios || []).find(f => f.codigo === email && f.pin === pin);
+      // Também tentar por código (codigo pode ter sido informado no campo 'email' no terminal)
+      const funcionarioByCodigo = (db.funcionarios || []).find(f => {
+        const fCodigo = (f.codigo || '').toString().trim();
+        const fPin = (f.pin || '').toString().trim();
+        return fCodigo === normalizedEmail && fPin === providedPin;
+      });
       console.log(`[LOGIN] Tentativa por código: ${funcionarioByCodigo ? `id=${funcionarioByCodigo.id}, nome=${funcionarioByCodigo.nome}` : 'NENHUM'}`);
       
       if (!funcionarioByCodigo) {
