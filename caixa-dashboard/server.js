@@ -1137,12 +1137,23 @@ function broadcastClientesSync() {
       : clientes;
     socket.emit('clientes_sync', filtered);
   });
-  // Via polling para terminais Android - filtrar por empresa do dispositivo
+  // Via polling para terminais - filtrar por empresa do dispositivo
+  const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
       ? clientes.filter(c => c.empresaId === deviceInfo.empresaId)
       : clientes;
     enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: filtered });
+    deviceIds.push(deviceId);
+  });
+  // Também dispositivos do banco que podem não estar conectados mas farão polling
+  (db.dispositivos || []).forEach(d => {
+    if (!deviceIds.includes(d.deviceId) && d.empresaId) {
+      const filtered = clientes.filter(c => c.empresaId === d.empresaId);
+      if (filtered.length > 0) {
+        enqueueDeviceCommand(d.deviceId, 'clientes_sync', { clientes: filtered });
+      }
+    }
   });
 }
 
@@ -1160,8 +1171,9 @@ function broadcastProdutosSync(action = 'sync', data = null) {
     if (data) payload.data = data;
     socket.emit('produtos_sync', payload);
   });
-  // Via polling para terminais Android - filtrar por empresa do dispositivo
+  // Via polling para terminais - filtrar por empresa do dispositivo
   const deviceIds = [];
+  // Primeiro dispositivos conectados
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
       ? produtos.filter(p => p.empresaId === deviceInfo.empresaId)
@@ -1169,7 +1181,16 @@ function broadcastProdutosSync(action = 'sync', data = null) {
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
   });
-  console.log(`📤 [BROADCAST-PRODUTOS] ${produtos.length} produtos para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
+  // Também dispositivos do banco que podem não estar conectados mas farão polling
+  (db.dispositivos || []).forEach(d => {
+    if (!deviceIds.includes(d.deviceId) && d.empresaId) {
+      const filtered = produtos.filter(p => p.empresaId === d.empresaId);
+      if (filtered.length > 0) {
+        enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
+      }
+    }
+  });
+  console.log(`📤 [BROADCAST-PRODUTOS] ${produtos.length} produtos para ${connectedDevices.size} dispositivos conectados`);
 }
 
 // Função auxiliar: sincronizar categorias para todos os terminais
@@ -1186,8 +1207,9 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
     if (data) payload.data = data;
     socket.emit('categorias_sync', payload);
   });
-  // Via polling para terminais Android - filtrar por empresa do dispositivo
+  // Via polling para terminais - filtrar por empresa do dispositivo
   const deviceIds = [];
+  // Primeiro dispositivos conectados
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
       ? categorias.filter(c => c.empresaId === deviceInfo.empresaId)
@@ -1195,7 +1217,16 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
     enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: filtered });
     deviceIds.push(deviceId);
   });
-  console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${deviceIds.length} dispositivos: ${deviceIds.join(', ')}`);
+  // Também dispositivos do banco que podem não estar conectados mas farão polling
+  (db.dispositivos || []).forEach(d => {
+    if (!deviceIds.includes(d.deviceId) && d.empresaId) {
+      const filtered = categorias.filter(c => c.empresaId === d.empresaId);
+      if (filtered.length > 0) {
+        enqueueDeviceCommand(d.deviceId, 'categorias_sync', { categorias: filtered });
+      }
+    }
+  });
+  console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${connectedDevices.size} dispositivos conectados`);
 }
 
 // Função auxiliar: sincronizar empresas para todos os terminais
