@@ -14,6 +14,8 @@ export default function Vendas() {
   const [filterTerminal, setFilterTerminal] = useState('')
   const [filterDataInicio, setFilterDataInicio] = useState('')
   const [filterDataFim, setFilterDataFim] = useState('')
+  const [filterFuncionario, setFilterFuncionario] = useState('')
+  const [funcionarios, setFuncionarios] = useState([])
   const [empresas, setEmpresas] = useState([])
   const [expandedDevice, setExpandedDevice] = useState(null)
   const [expandedVenda, setExpandedVenda] = useState(null)
@@ -31,11 +33,20 @@ export default function Vendas() {
         .then(res => res.json())
         .then(setEmpresas)
         .catch(() => {})
+      
+      fetch('/api/funcionarios', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => res.json())
+        .then(setFuncionarios)
+        .catch(() => {})
     }
   }, [])
 
   // Agrupar vendas por dispositivo
   const vendasFiltradas = vendas.filter(v => {
+    // Se empresa logada, mostrar só vendas da própria empresa
+    if (user?.role === 'empresa' && user?.empresaId) {
+      if (v.empresaId !== user.empresaId) return false
+    }
     if (filterEmpresa && v.empresaId !== filterEmpresa) return false
     if (filterTerminal && v.deviceId !== filterTerminal) return false
     if (filterDataInicio) {
@@ -166,23 +177,25 @@ export default function Vendas() {
       <div className="flex items-center gap-3 flex-wrap">
         {user?.role !== 'funcionario' && (
           <>
-            <select
-              value={filterEmpresa}
-              onChange={(e) => setFilterEmpresa(e.target.value)}
-              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
-            >
-              <option value="">Todas as Empresas</option>
-              {empresas.map(emp => (
-                <option key={emp.id} value={emp.id}>{emp.nome}</option>
-              ))}
-            </select>
+            {user?.role === 'admin' && (
+              <select
+                value={filterEmpresa}
+                onChange={(e) => setFilterEmpresa(e.target.value)}
+                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Todas as Empresas</option>
+                {empresas.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                ))}
+              </select>
+            )}
             <select
               value={filterTerminal}
               onChange={(e) => setFilterTerminal(e.target.value)}
               className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
             >
               <option value="">Todos os Terminais</option>
-              {devices.map(d => (
+              {devices.filter(d => !user?.empresaId || d.empresaId === user?.empresaId).map(d => (
                 <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
               ))}
             </select>
