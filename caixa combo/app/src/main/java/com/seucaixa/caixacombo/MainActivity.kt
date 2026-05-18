@@ -1528,6 +1528,7 @@ class MainActivity : ComponentActivity() {
                     // Salvar operador logado
                     val funcId = funcionario.optLong("id", -1)
                     com.seucaixa.caixacombo.data.SecurePrefs.saveOperator(this@MainActivity, nome, cargo, funcId)
+                    com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(empresaId)
 
                     // Salvar permissões
                     val permPrefs = getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)

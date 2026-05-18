@@ -305,6 +305,11 @@ class CheckoutViewModel(
                     })
                 }
                 put("itens", itensArray)
+                
+                val empresaId = com.seucaixa.caixacombo.data.SecurePrefs.getOperadorEmpresaId()
+                if (empresaId != null) {
+                    put("empresaId", empresaId)
+                }
             }
             PollingService.sendSaleData(vendaJson)
 
