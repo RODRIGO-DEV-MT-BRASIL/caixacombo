@@ -263,7 +263,7 @@ fun HomeScreen(
                 onClick = {
                     // Login com email + PIN
                     if (loginIdentifier.isBlank() || pin.isBlank()) {
-                        erro = if (loginType == "funcionario") "Digite email e PIN" else "Digite usuário e senha"
+                        erro = if (loginType == "funcionario") "Digite email e senha" else "Digite usuário e senha"
                         return@Button
                     }
                     isLoading = true
@@ -282,7 +282,7 @@ fun HomeScreen(
                                     val data = org.json.JSONObject().apply {
                                         if (loginType == "funcionario") {
                                             put("email", loginIdentifier)
-                                            put("pin", pin)
+                                            put("password", pin)
                                         } else {
                                             put("username", loginIdentifier)
                                             put("password", pin)
