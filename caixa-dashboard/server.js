@@ -1363,49 +1363,25 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Nome e empresaId são obrigatórios' });
   }
 
-  // Gerar código automático se não informado
+  const senhaFinal = senha || pin;
   let finalCodigo = (codigo || '').toString().trim();
-  const generateCodigo = () => {
-    return 'F' + Math.floor(100000 + Math.random() * 900000).toString();
-  };
   if (!finalCodigo) {
-    // Garantir unicidade dentro da empresa
     const existingCodigos = (db.funcionarios || []).filter(f => f.empresaId === targetEmpresaId).map(f => f.codigo);
-    let tries = 0;
-    do {
-      finalCodigo = generateCodigo();
-      tries++;
-      if (tries > 10) break;
-    } while (existingCodigos.includes(finalCodigo));
+    do { finalCodigo = 'F' + Math.floor(100000 + Math.random() * 900000); } while (existingCodigos.includes(finalCodigo));
   }
-
-  // Verificar código único dentro da empresa
   const existing = (db.funcionarios || []).find(f => f.codigo === finalCodigo && f.empresaId === targetEmpresaId);
-  if (existing) {
-    return res.status(400).json({ error: 'Código já existe nesta empresa' });
-  }
+  if (existing) return res.status(400).json({ error: 'Código já existe nesta empresa' });
 
   const funcionario = {
     id: generateId(),
     nome,
     codigo: finalCodigo,
     email: email || '',
-    // Salvar senha hasheada se foi enviada; caso contrário salvar PIN legado
-    password: senha ? bcrypt.hashSync(senha, 10) : undefined,
-    pin: (!senha && pin) ? pin : undefined,
+    password: senhaFinal ? bcrypt.hashSync(senhaFinal, 10) : undefined,
     cpfCnpj: req.body.cpfCnpj || '',
     telefone: req.body.telefone || '',
     cargo: cargo || 'caixa',
-    permissoes: permissoes || {
-      vendas: true,
-      caixa: true,
-      produtos: cargo === 'admin' || cargo === 'gerente',
-      categorias: cargo === 'admin' || cargo === 'gerente',
-      relatorios: cargo === 'admin' || cargo === 'gerente',
-      desconto: cargo === 'admin' || cargo === 'gerente',
-      cancelar_venda: cargo === 'admin' || cargo === 'gerente',
-      operacoes_caixa: true
-    },
+    permissoes: permissoes || { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true },
     empresaId: targetEmpresaId,
     ativo: ativo !== undefined ? ativo : true,
     createdAt: new Date().toISOString()
