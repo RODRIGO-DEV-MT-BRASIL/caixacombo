@@ -28,23 +28,23 @@ export default function FechamentoGeral({ onBack }) {
   useEffect(() => {
     fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => { setOperacoes(data); setLoading(false) })
+      .then(data => { setOperacoes(Array.isArray(data) ? data : data.operacoes || []); setLoading(false) })
       .catch(() => setLoading(false))
 
     fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => setVendas(data))
+      .then(data => setVendas(Array.isArray(data) ? data : data.data || []))
       .catch(() => setVendas([]))
 
     fetch(apiUrl('/api/dispositivos'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => setDispositivosConectados(data))
+      .then(data => setDispositivosConectados(Array.isArray(data) ? data : []))
       .catch(() => setDispositivosConectados([]))
 
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'empresa') {
       fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
-        .then(setEmpresas)
+        .then(data => setEmpresas(Array.isArray(data) ? data : []))
         .catch(() => {})
     }
   }, [])
@@ -63,15 +63,19 @@ export default function FechamentoGeral({ onBack }) {
 
   const TEST_DEVICE_IDS = ['test-check', 'test-local', 'test-render', 'deploy-check']
 
-  // Aplicar filtros de empresa e terminal
+  // Aplicar filtros - empresa vê tudo, admin pode filtrar
   const operacoesFiltradas = operacoes.filter(op => {
-    if (filterEmpresa && op.empresaId !== filterEmpresa) return false
+    if (user?.role === 'admin' && filterEmpresa) {
+      if (op.empresaId !== filterEmpresa) return false
+    }
     if (filterTerminal && op.deviceId !== filterTerminal) return false
     return true
   })
 
   const vendasFiltradas = vendas.filter(v => {
-    if (filterEmpresa && v.empresaId !== filterEmpresa) return false
+    if (user?.role === 'admin' && filterEmpresa) {
+      if (v.empresaId !== filterEmpresa) return false
+    }
     if (filterTerminal && v.deviceId !== filterTerminal) return false
     return true
   })

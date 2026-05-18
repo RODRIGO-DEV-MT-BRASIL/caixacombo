@@ -25,7 +25,11 @@ export default function Vendas() {
   useEffect(() => {
     fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
-      .then(data => { setVendas(data); setLoading(false) })
+      .then(data => { 
+        const vendasData = Array.isArray(data) ? data : (data.data || [])
+        setVendas(vendasData)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
 
     if (user?.role === 'admin' || user?.role === 'empresa') {
