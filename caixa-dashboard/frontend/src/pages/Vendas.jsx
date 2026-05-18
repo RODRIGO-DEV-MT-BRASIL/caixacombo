@@ -43,11 +43,11 @@ export default function Vendas() {
 
   // Agrupar vendas por dispositivo
   const vendasFiltradas = vendas.filter(v => {
-    // Se empresa logada, mostrar só vendas da própria empresa
-    if (user?.role === 'empresa' && user?.empresaId) {
-      if (v.empresaId !== user.empresaId) return false
+    // Admin com filtro de empresa
+    if (user?.role === 'admin' && filterEmpresa) {
+      if (v.empresaId !== filterEmpresa) return false
     }
-    if (filterEmpresa && v.empresaId !== filterEmpresa) return false
+    // Empresa não filtra - vê todas as vendas dos seus funcionários
     if (filterTerminal && v.deviceId !== filterTerminal) return false
     if (filterDataInicio) {
       const vendaData = new Date(v.createdAt).setHours(0, 0, 0, 0)
@@ -195,7 +195,7 @@ export default function Vendas() {
               className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
             >
               <option value="">Todos os Terminais</option>
-              {devices.filter(d => !user?.empresaId || d.empresaId === user?.empresaId).map(d => (
+              {devices.map(d => (
                 <option key={d.deviceId} value={d.deviceId}>{d.deviceName || d.deviceId}</option>
               ))}
             </select>
