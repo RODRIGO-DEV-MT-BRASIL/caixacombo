@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
 
   const hasPermission = (permission) => {
     if (user?.role === 'admin') return true
-    if (user?.role === 'empresa') {
+    if (user?.role === 'empresa' || user?.role === 'funcionario') {
       return user?.permissoes?.[permission] === true
     }
     return false
@@ -86,8 +86,8 @@ export function AuthProvider({ children }) {
 
   const hasPageAccess = (pageId) => {
     if (user?.role === 'admin') return true
-    if (user?.role === 'empresa') {
-      const allowed = user?.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa']
+    if (user?.role === 'empresa' || user?.role === 'funcionario') {
+      const allowed = user?.paginasPermitidas || ['dashboard', 'vendas', 'caixa']
       return allowed.includes(pageId)
     }
     return false
