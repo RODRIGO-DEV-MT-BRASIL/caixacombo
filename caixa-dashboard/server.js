@@ -117,6 +117,7 @@ const serverStartTime = new Date(); // Para detectar restart e forçar sync inic
 const connectedDevices = new Map();
 const connectedDashboards = new Map(); // Guardar usuário do dashboard
 const pendingCommands = new Map(); // Fila de comandos pendentes por deviceId (para polling REST)
+const deviceLastSync = new Map(); // Rastrear último sync de cada dispositivo
 
 // Emitir evento apenas para dashboards da empresa específica (ou todos se empresaId=null)
 function emitToEmpresa(event, data, empresaId = null) {
