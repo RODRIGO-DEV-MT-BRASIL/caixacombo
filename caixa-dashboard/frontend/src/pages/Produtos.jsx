@@ -451,6 +451,7 @@ export default function Produtos() {
                           )}
                           <div>
                             <p className="text-white font-medium">{p.nome}</p>
+                            <p className="text-[10px] font-mono text-gray-600">ID: {p.id} | Emp: {p.empresaId}</p>
                             {p.descricao && <p className="text-xs text-gray-500 truncate max-w-[200px]">{p.descricao}</p>}
                           </div>
                         </div>
