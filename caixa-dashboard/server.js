@@ -343,127 +343,57 @@ function authenticateToken(req, res, next) {
 // ==================== ROTAS API ====================
 app.post('/api/auth/login', async (req, res) => {
   const { username, password, email, pin } = req.body;
-  
-  // Login de funcionário (email + PIN)
-  if (email && pin) {
-    console.log(`[LOGIN] Tentativa funcionário: email="${email}", pin="${pin}"`);
-    
-    // Buscar funcionário pelo email + PIN (comparação resiliente)
-    const normalizedEmail = (email || '').toString().trim().toLowerCase();
-    const providedPin = (pin || '').toString().trim();
-    const funcionario = (db.funcionarios || []).find(f => {
-      const fEmail = (f.email || '').toString().trim().toLowerCase();
-      const fPin = (f.pin || '').toString().trim();
-      return fEmail === normalizedEmail && fPin === providedPin;
-    });
-    console.log(`[LOGIN] Funcionário encontrado: ${funcionario ? `id=${funcionario.id}, nome=${funcionario.nome}, ativo=${funcionario.ativo}, email=${funcionario.email}` : 'NENHUM'}`);
-    
+
+  const providedEmail = (email || '').toString().trim().toLowerCase();
+  const providedPassword = (password || pin || '').toString().trim();
+
+  if (providedEmail && providedPassword) {
+    console.log(`[LOGIN] Tentativa por email: email="${providedEmail}"`);
+
+    // Buscar funcionário pelo email
+    const funcionario = (db.funcionarios || []).find(f => ((f.email || '').toString().trim().toLowerCase()) === providedEmail && f.ativo);
     if (!funcionario) {
-      // Tentar buscar por código + PIN se email não for encontrado
-      // Também tentar por código (codigo pode ter sido informado no campo 'email' no terminal)
-      const funcionarioByCodigo = (db.funcionarios || []).find(f => {
-        const fCodigo = (f.codigo || '').toString().trim();
-        const fPin = (f.pin || '').toString().trim();
-        return fCodigo === normalizedEmail && fPin === providedPin;
-      });
-      console.log(`[LOGIN] Tentativa por código: ${funcionarioByCodigo ? `id=${funcionarioByCodigo.id}, nome=${funcionarioByCodigo.nome}` : 'NENHUM'}`);
-      
+      // Tentar buscar por código (caso o frontend tenha enviado código no campo de email)
+      const funcionarioByCodigo = (db.funcionarios || []).find(f => ((f.codigo || '').toString().trim()) === providedEmail && f.ativo);
       if (!funcionarioByCodigo) {
-        return res.status(401).json({ error: 'Credenciais inválidas' });
+        // Tentar admin/usuario por email
+        const admin = (db.usuarios || []).find(u => ((u.email || '').toString().trim().toLowerCase()) === providedEmail && u.ativo);
+        if (!admin) return res.status(401).json({ error: 'Credenciais inválidas' });
+        const okAdmin = admin.password ? bcrypt.compareSync(providedPassword, admin.password) : (providedPassword === (admin.password_plain || '').toString());
+        if (!okAdmin) return res.status(401).json({ error: 'Credenciais inválidas' });
+        const token = jwt.sign({ id: admin.id, email: admin.email, role: admin.role || 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+        return res.json({ token, user: { id: admin.id, email: admin.email, username: admin.username || admin.nome, role: admin.role || 'admin' } });
       }
-      
-      if (!funcionarioByCodigo.ativo) {
-        return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
-      }
-      
-      // Buscar empresa do funcionário
+
+      // Found by codigo
+      if (!funcionarioByCodigo.ativo) return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
       const empresa = (db.empresas || []).find(e => e.id === funcionarioByCodigo.empresaId);
-      if (!empresa || !empresa.ativo) {
-        return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
-      }
-      
-      const token = jwt.sign(
-        { 
-          id: funcionarioByCodigo.id, 
-          username: funcionarioByCodigo.nome, 
-          role: 'funcionario', 
-          empresaId: funcionarioByCodigo.empresaId,
-          funcionarioId: funcionarioByCodigo.id,
-          permissoes: funcionarioByCodigo.permissoes,
-          paginasPermitidas: ['dashboard', 'vendas', 'caixa']
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      
-      return res.json({
-        token,
-        user: {
-          id: funcionarioByCodigo.id,
-          username: funcionarioByCodigo.nome,
-          role: 'funcionario',
-          empresaNome: empresa.nome,
-          empresaId: funcionarioByCodigo.empresaId,
-          funcionarioId: funcionarioByCodigo.id,
-          permissoes: funcionarioByCodigo.permissoes,
-          paginasPermitidas: ['dashboard', 'vendas', 'caixa'],
-          branding: {
-            primaryColor: empresa.primaryColor || '#3b82f6',
-            secondaryColor: empresa.secondaryColor || '#06b6d4',
-            accentColor: empresa.accentColor || '#10b981',
-            logoUrl: empresa.logoUrl || '',
-            companyName: empresa.nome
-          }
-        }
-      });
+      if (!empresa || !empresa.ativo) return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
+
+      // check password/pin
+      let ok = false;
+      if (funcionarioByCodigo.password) ok = bcrypt.compareSync(providedPassword, funcionarioByCodigo.password);
+      else if (funcionarioByCodigo.pin) ok = providedPassword === funcionarioByCodigo.pin.toString();
+      if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
+
+      const token = jwt.sign({ id: funcionarioByCodigo.id, username: funcionarioByCodigo.nome, role: 'funcionario', empresaId: funcionarioByCodigo.empresaId, funcionarioId: funcionarioByCodigo.id, permissoes: funcionarioByCodigo.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
+      return res.json({ token, user: { id: funcionarioByCodigo.id, username: funcionarioByCodigo.nome, role: 'funcionario', empresaNome: empresa.nome, empresaId: funcionarioByCodigo.empresaId, funcionarioId: funcionarioByCodigo.id, permissoes: funcionarioByCodigo.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'], branding: { primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4', accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || '', companyName: empresa.nome } } });
     }
-    
-    if (!funcionario.ativo) {
-      return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
-    }
-    
-    // Buscar empresa do funcionário
+
+    // Found by email
+    if (!funcionario.ativo) return res.status(403).json({ error: 'Funcionário desativado. Contate o administrador.' });
     const empresa = (db.empresas || []).find(e => e.id === funcionario.empresaId);
-    if (!empresa || !empresa.ativo) {
-      return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
-    }
-    
-    const token = jwt.sign(
-      { 
-        id: funcionario.id, 
-        username: funcionario.nome, 
-        role: 'funcionario', 
-        empresaId: funcionario.empresaId,
-        funcionarioId: funcionario.id,
-        permissoes: funcionario.permissoes,
-        paginasPermitidas: ['dashboard', 'vendas', 'caixa']
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-    
-    return res.json({
-      token,
-      user: {
-        id: funcionario.id,
-        username: funcionario.nome,
-        role: 'funcionario',
-        empresaNome: empresa.nome,
-        empresaId: funcionario.empresaId,
-        funcionarioId: funcionario.id,
-        permissoes: funcionario.permissoes,
-        paginasPermitidas: ['dashboard', 'vendas', 'caixa'],
-        branding: {
-          primaryColor: empresa.primaryColor || '#3b82f6',
-          secondaryColor: empresa.secondaryColor || '#06b6d4',
-          accentColor: empresa.accentColor || '#10b981',
-          logoUrl: empresa.logoUrl || '',
-          companyName: empresa.nome
-        }
-      }
-    });
+    if (!empresa || !empresa.ativo) return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
+
+    let ok = false;
+    if (funcionario.password) ok = bcrypt.compareSync(providedPassword, funcionario.password);
+    else if (funcionario.pin) ok = providedPassword === funcionario.pin.toString();
+    if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
+
+    const token = jwt.sign({ id: funcionario.id, username: funcionario.nome, role: 'funcionario', empresaId: funcionario.empresaId, funcionarioId: funcionario.id, permissoes: funcionario.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
+    return res.json({ token, user: { id: funcionario.id, username: funcionario.nome, role: 'funcionario', empresaNome: empresa.nome, empresaId: funcionario.empresaId, funcionarioId: funcionario.id, permissoes: funcionario.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'], branding: { primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4', accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || '', companyName: empresa.nome } } });
   }
-  
+
   // Login de admin/empresa (username + password)
   console.log(`[LOGIN] Tentativa: username="${username}", usuarios no db=${db.usuarios.length}, empresas no db=${(db.empresas || []).length}`);
   
@@ -1426,15 +1356,31 @@ app.get('/api/funcionarios', authenticateToken, (req, res) => {
 
 // Criar funcionário
 app.post('/api/funcionarios', authenticateToken, async (req, res) => {
-  const { nome, codigo, email, pin, cargo, permissoes, empresaId, ativo } = req.body;
+  const { nome, codigo, email, pin, senha, cargo, permissoes, empresaId, ativo } = req.body;
   const targetEmpresaId = req.user.role === 'admin' ? (empresaId || req.user.empresaId) : req.user.empresaId;
 
-  if (!nome || !codigo || !targetEmpresaId) {
-    return res.status(400).json({ error: 'Nome, código e empresaId são obrigatórios' });
+  if (!nome || !targetEmpresaId) {
+    return res.status(400).json({ error: 'Nome e empresaId são obrigatórios' });
+  }
+
+  // Gerar código automático se não informado
+  let finalCodigo = (codigo || '').toString().trim();
+  const generateCodigo = () => {
+    return 'F' + Math.floor(100000 + Math.random() * 900000).toString();
+  };
+  if (!finalCodigo) {
+    // Garantir unicidade dentro da empresa
+    const existingCodigos = (db.funcionarios || []).filter(f => f.empresaId === targetEmpresaId).map(f => f.codigo);
+    let tries = 0;
+    do {
+      finalCodigo = generateCodigo();
+      tries++;
+      if (tries > 10) break;
+    } while (existingCodigos.includes(finalCodigo));
   }
 
   // Verificar código único dentro da empresa
-  const existing = (db.funcionarios || []).find(f => f.codigo === codigo && f.empresaId === targetEmpresaId);
+  const existing = (db.funcionarios || []).find(f => f.codigo === finalCodigo && f.empresaId === targetEmpresaId);
   if (existing) {
     return res.status(400).json({ error: 'Código já existe nesta empresa' });
   }
@@ -1442,9 +1388,11 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
   const funcionario = {
     id: generateId(),
     nome,
-    codigo,
+    codigo: finalCodigo,
     email: email || '',
-    pin: pin || '',
+    // Salvar senha hasheada se foi enviada; caso contrário salvar PIN legado
+    password: senha ? bcrypt.hashSync(senha, 10) : undefined,
+    pin: (!senha && pin) ? pin : undefined,
     cpfCnpj: req.body.cpfCnpj || '',
     telefone: req.body.telefone || '',
     cargo: cargo || 'caixa',
@@ -1467,14 +1415,14 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
   db.funcionarios.push(funcionario);
   await debouncedSaveData();
 
-  addAuditoria('criacao_funcionario', null, `Funcionário "${nome}" (${cargo}) criado com código ${codigo}`, req.user?.username);
+  addAuditoria('criacao_funcionario', null, `Funcionário "${nome}" (${cargo}) criado com código ${finalCodigo}`, req.user?.username);
   res.json(funcionario);
 });
 
 // Atualizar funcionário
 app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { nome, codigo, email, pin, cpfCnpj, telefone, cargo, permissoes, ativo } = req.body;
+  const { nome, codigo, email, pin, senha, cpfCnpj, telefone, cargo, permissoes, ativo } = req.body;
 
   const index = (db.funcionarios || []).findIndex(f => f.id == id);
   if (index === -1) return res.status(404).json({ error: 'Funcionário não encontrado' });
@@ -1499,7 +1447,9 @@ app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
     nome: nome || func.nome,
     codigo: codigo || func.codigo,
     email: email !== undefined ? email : func.email,
-    pin: pin !== undefined && pin !== '' ? pin : func.pin,
+    // Atualizar senha (hash) se enviado; caso contrário manter password/pin
+    password: senha ? bcrypt.hashSync(senha, 10) : func.password,
+    pin: (!senha && pin) ? pin : func.pin,
     cpfCnpj: cpfCnpj !== undefined ? cpfCnpj : func.cpfCnpj,
     telefone: telefone !== undefined ? telefone : func.telefone,
     cargo: cargo || func.cargo,
