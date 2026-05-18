@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = async (username, password, email, pin) => {
-    const body = email && pin ? { email, pin } : { username, password }
+    const body = email && pin ? { email, password: pin } : { username, password }
     const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -199,7 +199,7 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">PIN</label>
+                    <label className="block text-[10px] font-medium text-gray-300 mb-0.5">Senha</label>
                     <div className="relative group">
                       <Lock size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
                       <input
@@ -211,8 +211,7 @@ export default function Login() {
                           background: 'rgba(15,23,42,0.5)',
                           border: '1px solid rgba(59,130,246,0.15)',
                         }}
-                        placeholder="Digite seu PIN"
-                        maxLength={6}
+                        placeholder="Digite sua senha"
                         required
                       />
                     </div>
