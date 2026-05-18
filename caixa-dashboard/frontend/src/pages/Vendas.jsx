@@ -292,6 +292,12 @@ export default function Vendas() {
                             <Calendar size={10} className="inline mr-1" />
                             {venda.createdAt ? new Date(venda.createdAt).toLocaleString('pt-BR') : venda.dataHora ? new Date(venda.dataHora).toLocaleString('pt-BR') : 'Data indisponível'}
                           </p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[10px] font-mono bg-white/5 px-1.5 py-0.5 rounded">{venda.deviceId || 'sem terminal'}</span>
+                            {venda.nomeOperador && (
+                              <span className="text-[10px] text-gray-400">Operador: {venda.nomeOperador}</span>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm font-bold text-emerald-400 shrink-0">
                           R$ {(venda.total || 0).toFixed(2)}
