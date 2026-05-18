@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
@@ -13,11 +15,20 @@ import com.seucaixa.caixacombo.service.PollingService
 /**
  * Activity fullscreen para bloqueio de tela.
  * Substitui o diálogo overlay (SYSTEM_ALERT_WINDOW - proibido pela Stone).
+ *
+ * SECURITY: Implementa rate limiting para prevenir ataques de força bruta.
  */
 class LockActivity : Activity() {
 
     private var lockPassword = ""
     private var lockReason = ""
+
+    private var failedAttempts = 0
+    private var lockoutEndTime = 0L
+    private val MAX_ATTEMPTS = 5
+    private val LOCKOUT_DURATION_MS = 300_000L // 5 minutos
+    private val handler = Handler(Looper.getMainLooper())
+    private var countdownRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,6 +121,14 @@ class LockActivity : Activity() {
             textSize = 16f
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setOnClickListener {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime < lockoutEndTime) {
+                    val remainingMinutes = ((lockoutEndTime - currentTime) / 60000) + 1
+                    errorText.text = "Tentativas esgotadas. Tente novamente em ${remainingMinutes} minutos."
+                    errorText.visibility = View.VISIBLE
+                    return@setOnClickListener
+                }
+
                 val password = input.text.toString()
                 if (password.isBlank()) {
                     errorText.text = "Digite a senha"
@@ -117,26 +136,34 @@ class LockActivity : Activity() {
                     return@setOnClickListener
                 }
 
-                // Verificar senha localmente (senha recebida do servidor)
                 if (lockPassword.isNotEmpty() && password == lockPassword) {
-                    // Salvar desbloqueio
+                    failedAttempts = 0
+                    lockoutEndTime = 0L
+
                     val prefs = getSharedPreferences("lock_prefs", MODE_PRIVATE)
                     prefs.edit()
                         .putBoolean("is_locked", false)
                         .apply()
 
-                    // Notificar servidor via PollingService
                     PollingService.sendUnlockConfirmed()
                     PollingService.sendDeviceStatus("online")
 
-                    // Fechar activity
                     finish()
                 } else {
-                    // Enviar tentativa para servidor validar
-                    PollingService.sendUnlockAttempt(password)
-                    errorText.text = "Senha incorreta"
-                    errorText.visibility = View.VISIBLE
-                    input.text.clear()
+                    failedAttempts++
+                    if (failedAttempts >= MAX_ATTEMPTS) {
+                        lockoutEndTime = System.currentTimeMillis() + LOCKOUT_DURATION_MS
+                        errorText.text = "Tentativas esgotadas. Tente novamente em 5 minutos."
+                        errorText.visibility = View.VISIBLE
+                        input.isEnabled = false
+                        isEnabled = false
+                        startCountdown(errorText, input, this)
+                    } else {
+                        PollingService.sendUnlockAttempt(password)
+                        errorText.text = "Senha incorreta (${failedAttempts}/$MAX_ATTEMPTS tentativas)"
+                        errorText.visibility = View.VISIBLE
+                        input.text.clear()
+                    }
                 }
             }
         }
@@ -145,17 +172,43 @@ class LockActivity : Activity() {
         setContentView(root)
     }
 
-    // Bloquear botão voltar
+    private fun startCountdown(errorText: TextView, input: EditText, btnUnlock: Button) {
+        countdownRunnable?.let { handler.removeCallbacks(it) }
+
+        countdownRunnable = object : Runnable {
+            override fun run() {
+                val remaining = lockoutEndTime - System.currentTimeMillis()
+                if (remaining <= 0) {
+                    failedAttempts = 0
+                    lockoutEndTime = 0L
+                    errorText.text = ""
+                    errorText.visibility = View.GONE
+                    input.isEnabled = true
+                    btnUnlock.isEnabled = true
+                } else {
+                    val minutes = (remaining / 60000) + 1
+                    errorText.text = "Bloqueado. Tente novamente em ${minutes} minutos."
+                    handler.postDelayed(this, 60000)
+                }
+            }
+        }
+        handler.post(countdownRunnable!!)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        countdownRunnable?.let { handler.removeCallbacks(it) }
+    }
+
     override fun onBackPressed() {
         // Não faz nada - não permite sair
     }
 
-    // Bloquear botões de volume e outros
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK ||
             event.keyCode == KeyEvent.KEYCODE_HOME ||
             event.keyCode == KeyEvent.KEYCODE_APP_SWITCH) {
-            return true // Consumir evento
+            return true
         }
         return super.dispatchKeyEvent(event)
     }
@@ -171,3 +224,4 @@ class LockActivity : Activity() {
         }
     }
 }
+

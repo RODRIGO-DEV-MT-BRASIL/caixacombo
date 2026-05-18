@@ -4,7 +4,12 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
+  // SECURITY: Usar sessionStorage em vez de localStorage para proteger contra XSS
+  // sessionStorage é limpo quando a aba é fechada
+  const [token, setToken] = useState(() => {
+    const saved = sessionStorage.getItem('token');
+    return saved;
+  });
   const [loading, setLoading] = useState(true)
 
   // Aplicar branding da empresa (cores, logo, nome)
@@ -35,7 +40,7 @@ export function AuthProvider({ children }) {
           setLoading(false)
         })
         .catch(() => {
-          localStorage.removeItem('token')
+          sessionStorage.removeItem('token')
           setToken(null)
           setUser(null)
           clearBranding()
@@ -55,7 +60,8 @@ export function AuthProvider({ children }) {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Erro ao fazer login')
-    localStorage.setItem('token', data.token)
+    // SECURITY: Usar sessionStorage em vez de localStorage
+    sessionStorage.setItem('token', data.token)
     setToken(data.token)
     setUser(data.user)
     if (data.user?.branding) applyBranding(data.user.branding)
@@ -63,7 +69,8 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
+    // SECURITY: Usar sessionStorage em vez de localStorage
+    sessionStorage.removeItem('token')
     setToken(null)
     setUser(null)
     clearBranding()

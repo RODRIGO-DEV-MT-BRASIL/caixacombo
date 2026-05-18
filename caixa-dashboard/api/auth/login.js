@@ -67,15 +67,10 @@ export default async function handler(req, res) {
     }
   }
 
-  // Login de admin (username + password)
-  const user = {
-    id: 1,
-    username: 'rodrigodevmt',
-    password: bcrypt.hashSync('1985', 10),
-    role: 'admin'
-  };
-
-  if (username !== user.username) {
+  // Login de admin (username + password) - consulta banco de dados
+  const user = db.usuarios.find(u => u.username === username);
+  
+  if (!user) {
     return res.status(401).json({ error: 'Credenciais inválidas' });
   }
 
