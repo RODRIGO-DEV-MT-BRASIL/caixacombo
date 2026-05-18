@@ -557,10 +557,7 @@ app.get('/api/dispositivos', authenticateToken, (req, res) => {
     .map(([id, d]) => ({
       deviceId: id, ...d, online: d.socketId !== null
     }));
-  // Filtrar dispositivos por empresa se role=empresa
-  if (req.user.role === 'empresa' && req.user.empresaId) {
-    list = list.filter(d => d.empresaId === req.user.empresaId);
-  }
+  // Empresa não filtra - vê todos os terminais
   res.json(list);
 });
 
@@ -722,10 +719,11 @@ app.get('/api/produtos', authenticateToken, (req, res) => {
 // Rota para buscar vendas
 app.get('/api/vendas', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
-  let result = db.vendas;
-  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
-  if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(v => v.empresaId === req.user.empresaId);
+  let result = db.vendas || [];
+  // Empresa não filtra - vê todas as vendas dos funcionários
+  // Admin pode filtrar por empresa via query
+  if (req.query.empresaId) {
+    result = result.filter(v => v.empresaId === req.query.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -1652,9 +1650,10 @@ app.post('/api/dispositivos/:deviceId/control', authenticateToken, async (req, r
 app.get('/api/operacoes', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.operacoes || [];
-  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
-  if (req.user.role === 'empresa' && req.user.empresaId) {
-    result = result.filter(o => o.empresaId === req.user.empresaId);
+  // Empresa não filtra - vê todas as operações dos funcionários
+  // Admin pode filtrar por empresa via query
+  if (req.query.empresaId) {
+    result = result.filter(o => o.empresaId === req.query.empresaId);
   }
   const total = result.length;
   if (!limit && !offset) return res.json(result);
@@ -3150,18 +3149,12 @@ io.on('connection', (socket) => {
 
     socket.emit('devices_list', list);
 
-    // Enviar vendas recentes (últimas 50) - filtradas por empresa
+    // Enviar vendas recentes (últimas 50) - empresa vê tudo
     let recentVendas = (db.vendas || []).slice(-50).reverse();
-    if (role === 'empresa' && empresaId) {
-      recentVendas = recentVendas.filter(v => v.empresaId === empresaId);
-    }
     socket.emit('vendas_history', recentVendas);
 
-    // Enviar operações de caixa para sincronização - filtradas por empresa
+    // Enviar operações de caixa para sincronização - empresa vê tudo
     let operacoes = db.operacoes || [];
-    if (role === 'empresa' && empresaId) {
-      operacoes = operacoes.filter(o => o.empresaId === empresaId);
-    }
     socket.emit('operacoes_sync', { operacoes });
   });
 
