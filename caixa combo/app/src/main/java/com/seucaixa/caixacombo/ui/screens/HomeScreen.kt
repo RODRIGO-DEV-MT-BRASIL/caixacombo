@@ -319,12 +319,37 @@ fun HomeScreen(
                                                 .putBoolean("cancelar_venda", permissoes?.optBoolean("cancelar_venda", false) ?: false)
                                                 .putBoolean("operacoes_caixa", permissoes?.optBoolean("operacoes_caixa", true) ?: true)
                                                 .apply()
-                                            erro = ""
-                                            if (caixaAberto) {
-                                                onNavigateToCheckout()
-                                            } else {
-                                                onNavigateToCaixa()
+
+                                            // Salvar/atualizar usuário no banco local com permissões
+                                            scope.launch(Dispatchers.IO) {
+                                                val dao = AppDatabase.getDatabase(context).usuarioDao()
+                                                // Buscar se já existe
+                                                val existente = dao.getUsuarioById(funcId)
+                                                val usuario = com.seucaixa.caixacombo.data.model.Usuario(
+                                                    id = funcId,
+                                                    nome = nome,
+                                                    codigo = existente?.codigo ?: "",
+                                                    email = loginIdentifier,
+                                                    cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO,
+                                                    ativo = true,
+                                                    permVender = permissoes?.optBoolean("vendas", true) ?: true,
+                                                    permCaixa = permissoes?.optBoolean("caixa", true) ?: true,
+                                                    permProdutos = permissoes?.optBoolean("produtos", false) ?: false,
+                                                    permVendas = permissoes?.optBoolean("vendas", true) ?: true,
+                                                    permRelatorios = permissoes?.optBoolean("relatorios", false) ?: false,
+                                                    permConfiguracoes = false,
+                                                    permAcessos = false
+                                                )
+                                                dao.insert(usuario)
+                                                withContext(Dispatchers.Main) {
+                                                    if (caixaAberto) {
+                                                        onNavigateToCheckout()
+                                                    } else {
+                                                        onNavigateToCaixa()
+                                                    }
+                                                }
                                             }
+                                            erro = ""
                                         }
                                     } else {
                                         val errorResponse = conn.errorStream?.bufferedReader()?.readText()
