@@ -55,7 +55,7 @@ export default function Terminais() {
 
   // Buscar empresas para o modal de aprovação
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'empresa') {
       fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).then(setEmpresas).catch(() => {})
     }
@@ -132,7 +132,7 @@ export default function Terminais() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {user?.role === 'admin' && (
+          {user?.role !== 'funcionario' && (
             <select
               value={filterEmpresa}
               onChange={(e) => setFilterEmpresa(e.target.value)}

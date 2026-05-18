@@ -26,7 +26,7 @@ export default function Vendas() {
       .then(data => { setVendas(data); setLoading(false) })
       .catch(() => setLoading(false))
 
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'empresa') {
       fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
         .then(setEmpresas)
@@ -164,7 +164,7 @@ export default function Vendas() {
 
       {/* Search */}
       <div className="flex items-center gap-3 flex-wrap">
-        {user?.role === 'admin' && (
+        {user?.role !== 'funcionario' && (
           <>
             <select
               value={filterEmpresa}
