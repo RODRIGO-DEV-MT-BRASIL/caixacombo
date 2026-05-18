@@ -380,7 +380,7 @@ private fun UsuarioDialog(
     val isEditing = usuario != null
 
     var nome by remember { mutableStateOf(usuario?.nome ?: "") }
-    var codigo by remember { mutableStateOf(usuario?.codigo ?: "") }
+    var codigo by remember { mutableStateOf(usuario?.codigo ?: (if (!isEditing) (1000..9999).random().toString() else "")) }
     var cpf by remember { mutableStateOf(usuario?.cpf ?: "") }
     var telefone by remember { mutableStateOf(usuario?.telefone ?: "") }
     var email by remember { mutableStateOf(usuario?.email ?: "") }
@@ -484,27 +484,29 @@ private fun UsuarioDialog(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        OutlinedTextField(
-                            value = cpf,
-                            onValueChange = { cpf = it },
-                            label = { Text("CPF") },
-                            singleLine = true,
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Badge, null, modifier = Modifier.size(18.dp)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedTextField(
-                            value = telefone,
-                            onValueChange = { telefone = it },
-                            label = { Text("Telefone") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = { Icon(Icons.Default.Phone, null, modifier = Modifier.size(18.dp)) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                        )
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = cpf,
+                                onValueChange = { cpf = it },
+                                label = { Text("CPF") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = { Icon(Icons.Default.Badge, null, modifier = Modifier.size(18.dp)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                            OutlinedTextField(
+                                value = telefone,
+                                onValueChange = { telefone = it },
+                                label = { Text("Telefone") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                leadingIcon = { Icon(Icons.Default.Phone, null, modifier = Modifier.size(18.dp)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
