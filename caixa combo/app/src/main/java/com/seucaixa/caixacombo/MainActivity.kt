@@ -937,38 +937,11 @@ class MainActivity : ComponentActivity() {
      */
     private fun applyFlavorWhitelabelConfig() {
         try {
-            val flavor = BuildConfig.FLAVOR_empresa
             val prefs = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
-            
-            when (flavor) {
-                "empresa1" -> {
-                    // Configurações estáticas para empresa1
-                    prefs.edit()
-                        .putString("primary_color_hex", "#FF5722")
-                        .putString("secondary_color_hex", "#FF9800")
-                        .putString("accent_color_hex", "#4CAF50")
-                        .putInt("primary_color", 0xFFFF5722.toInt())
-                        .putInt("secondary_color", 0xFFFF9800.toInt())
-                        .putInt("tertiary_color", 0xFF4CAF50.toInt())
-                        .apply()
-                    android.util.Log.d("MainActivity", "Whitelabel estático aplicado: empresa1")
-                }
-                "empresa2" -> {
-                    // Configurações estáticas para empresa2
-                    prefs.edit()
-                        .putString("primary_color_hex", "#9C27B0")
-                        .putString("secondary_color_hex", "#E91E63")
-                        .putString("accent_color_hex", "#00BCD4")
-                        .putInt("primary_color", 0xFF9C27B0.toInt())
-                        .putInt("secondary_color", 0xFFE91E63.toInt())
-                        .putInt("tertiary_color", 0xFF00BCD4.toInt())
-                        .apply()
-                    android.util.Log.d("MainActivity", "Whitelabel estático aplicado: empresa2")
-                }
-                else -> {
-                    // CaixaCombo padrão
-                    android.util.Log.d("MainActivity", "Usando whitelabel padrão: caixacombo")
-                }
+            if (prefs.contains("primary_color")) {
+                android.util.Log.d("MainActivity", "Whitelabel dinâmico já configurado no dispositivo")
+            } else {
+                android.util.Log.d("MainActivity", "Usando whitelabel padrão sem flavors estáticos")
             }
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel estático", e)
