@@ -144,31 +144,36 @@ async function initializeApp() {
   // REQUER variáveis de ambiente - NÃO permite valores padrão por segurança
   const adminUsername = process.env.ADMIN_USERNAME;
   const adminPassword = process.env.ADMIN_PASSWORD;
-  
+  const existingAdmin = (db.usuarios || []).find(u => u.role === 'admin');
+
   if (!adminUsername || !adminPassword) {
-    console.error('❌ ERRO: ADMIN_USERNAME e ADMIN_PASSWORD devem ser definidos como variáveis de ambiente');
-    console.error('   Exemplo: ADMIN_USERNAME=admin ADMIN_PASSWORD=senha_segura_aleatoria npm start');
-    process.exit(1);
-  }
-  
-  const existingAdmin = (db.usuarios || []).find(u => u.username === adminUsername);
-  if (!existingAdmin) {
-    if (!db.usuarios) db.usuarios = [];
-    db.usuarios.push({
-      id: generateId(),
-      username: adminUsername,
-      password: bcrypt.hashSync(adminPassword, 10),
-      role: 'admin'
-    });
-    await saveData();
-    console.log(`👤 Admin criado: ${adminUsername}`);
-  } else if (!bcrypt.compareSync(adminPassword, existingAdmin.password)) {
-    // Admin existe mas a senha não confere com a env var - atualizar
-    existingAdmin.password = bcrypt.hashSync(adminPassword, 10);
-    await saveData();
-    console.log(`👤 Admin "${adminUsername}" atualizado com nova senha`);
+    if (!existingAdmin) {
+      console.error('❌ ERRO: ADMIN_USERNAME e ADMIN_PASSWORD devem ser definidos como variáveis de ambiente ao criar o primeiro admin');
+      console.error('   Exemplo: ADMIN_USERNAME=admin ADMIN_PASSWORD=senha_segura_aleatoria npm start');
+      process.exit(1);
+    }
+
+    console.warn('⚠️ Aviso: ADMIN_USERNAME e ADMIN_PASSWORD não definidos. Usando admin existente no banco.');
   } else {
-    console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
+    if (!existingAdmin) {
+      if (!db.usuarios) db.usuarios = [];
+      db.usuarios.push({
+        id: generateId(),
+        username: adminUsername,
+        password: bcrypt.hashSync(adminPassword, 10),
+        role: 'admin'
+      });
+      await saveData();
+      console.log(`👤 Admin criado: ${adminUsername}`);
+    } else if (existingAdmin.username !== adminUsername) {
+      console.warn(`⚠️ Admin existente encontrado com username diferente: ${existingAdmin.username}. Não será criado novo admin com ${adminUsername}.`);
+    } else if (!bcrypt.compareSync(adminPassword, existingAdmin.password)) {
+      existingAdmin.password = bcrypt.hashSync(adminPassword, 10);
+      await saveData();
+      console.log(`👤 Admin "${adminUsername}" atualizado com nova senha`);
+    } else {
+      console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
+    }
   }
 
   // Limpar imagens de produtos que apontam para /uploads/ (filesystem efêmero do Render)
