@@ -552,14 +552,19 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/dispositivos', authenticateToken, (req, res) => {
+  const now = new Date()
   let list = Array.from(connectedDevices.entries())
     .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
-    .map(([id, d]) => ({
-      deviceId: id, ...d, online: d.socketId !== null
-    }));
-  // Empresa não filtra - vê todos os terminais
-  res.json(list);
-});
+    .map(([id, d]) => {
+      const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000
+      const isOnline = d.socketId !== null || isPollingRecent
+      return { deviceId: id, ...d, online: isOnline }
+    })
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    list = list.filter(d => d.empresaId === req.user.empresaId)
+  }
+  res.json(list)
+})
 
 // ==================== CONFIGURAÇÕES WHITELABEL ====================
 app.get('/api/config', authenticateToken, (req, res) => {
