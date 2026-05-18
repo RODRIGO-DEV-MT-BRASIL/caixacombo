@@ -123,18 +123,37 @@ export default function FechamentoGeral({ onBack }) {
   const caixasAbertos = dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto)
 
   const totais = useMemo(() => {
-    const ab = operacoes.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
-    const sup = operacoes.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
-    const san = operacoes.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
-    const ft = operacoes.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
-    const din = vendas.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
-    const pix = vendas.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
-    const cred = vendas.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0)
-    const deb = vendas.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+    // Calcular totais apenas da sessão ATUAL de cada terminal
+    let ab = 0, sup = 0, san = 0, ft = 0, din = 0, pix = 0, cred = 0, deb = 0
+    dispositivos.forEach(d => {
+      const sessao = caixaAtual[d.deviceId]
+      if (!sessao || sessao.aberturaTimestamp === null) return
+      
+      const ts = sessao.aberturaTimestamp
+      const tf = sessao.aberto ? Date.now() : (sessao.fechamentoTimestamp || Date.now())
+      
+      // Operações da sessão atual
+      const opsSessao = d.operacoes.filter(o => (o.timestamp || 0) >= ts && (o.timestamp || 0) <= tf)
+      ab += opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+      sup += opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+      san += opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+      ft += opsSessao.filter(o => o.tipo === 'fechamento').reduce((s, o) => s + (o.valor || 0), 0)
+      
+      // Vendas da sessão atual
+      const vendasSessao = vendasFiltradas.filter(v => {
+        if (!v.deviceId || TEST_DEVICE_IDS.includes(v.deviceId)) return false
+        const vt = new Date(v.createdAt).getTime()
+        return vt >= ts && vt <= tf
+      })
+      din += vendasSessao.filter(v => v.formaPagamento === 'DINHEIRO').reduce((s, v) => s + (v.total || 0), 0)
+      pix += vendasSessao.filter(v => v.formaPagamento === 'PIX').reduce((s, v) => s + (v.total || 0), 0)
+      cred += vendasSessao.filter(v => v.formaPagamento === 'CREDITO' || v.formaPagamento === 'CARTAO_CREDITO').reduce((s, v) => s + (v.total || 0), 0)
+      deb += vendasSessao.filter(v => v.formaPagamento === 'DEBITO' || v.formaPagamento === 'CARTAO_DEBITO').reduce((s, v) => s + (v.total || 0), 0)
+    })
     const tv = din + pix + cred + deb
     const saldo = ab + sup - san - ft
     return { abertura: ab, suprimento: sup, sangria: san, fechamento: ft, dinheiro: din, pix, credito: cred, debito: deb, vendas: tv, saldo }
-  }, [operacoes, vendas])
+  }, [operacoes, vendas, dispositivos, caixaAtual])
 
   const handleFechamentoGeral = async () => {
     setConfirming(true)
