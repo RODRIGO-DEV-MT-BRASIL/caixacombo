@@ -297,7 +297,7 @@ fun HomeScreen(
                                         val nome = user.optString("nome", user.optString("username", ""))
                                         val cargo = user.optString("cargo", user.optString("role", "caixa"))
                                         val permissoes = user.optJSONObject("permissoes")
-                                        val funcId = user.optLong("id", -1)
+                                        val funcId = user.optString("id", "-1").toLongOrNull() ?: -1L
                                         withContext(Dispatchers.Main) {
                                             isLoading = false
                                             SecurePrefs.saveOperator(context, nome, cargo, funcId)
