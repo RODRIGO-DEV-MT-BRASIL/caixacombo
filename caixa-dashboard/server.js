@@ -2182,6 +2182,7 @@ app.post('/api/device/poll', async (req, res) => {
   const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
   
   // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
+  console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}`);
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados filtrados pela empresa
     const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId === pollEmpresaId);
