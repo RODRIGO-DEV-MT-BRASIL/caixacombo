@@ -3,11 +3,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
 import { ShoppingCart, Search, Loader2, TrendingUp, DollarSign, Calendar, Monitor, ChevronDown, ChevronUp, Printer, XCircle, Ban } from 'lucide-react'
+import { useToast } from '../components/Toast'
 import SenhaConfirmModal from '../components/SenhaConfirmModal'
 
 export default function Vendas() {
   const { user, token } = useAuth()
   const { vendas, setVendas, devices } = useSocket()
+  const toast = useToast()
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterEmpresa, setFilterEmpresa] = useState('')
@@ -107,9 +109,9 @@ export default function Vendas() {
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
-      if (data.success) alert('✅ Comando de reimpressão enviado ao terminal')
-      else alert('❌ Erro: ' + data.error)
-    } catch { alert('❌ Erro ao enviar reimpressão') }
+      if (data.success) toast.success('✅ Comando de reimpressão enviado ao terminal')
+      else toast.error(data.error || '❌ Erro')
+    } catch { toast.error('❌ Erro ao enviar reimpressão') }
   }
 
   const handleCancelar = async (vendaId) => {
@@ -121,11 +123,11 @@ export default function Vendas() {
       })
       const data = await res.json()
       if (data.success) {
-        alert('✅ Cancelamento enviado ao terminal Stone')
+        toast.success('✅ Cancelamento enviado ao terminal')
         setVendas(prev => prev.map(v => v.id == vendaId ? { ...v, cancelada: true, canceladaEm: new Date().toISOString(), motivoCancelamento: cancelarMotivo } : v))
         setCancelarMotivo('')
-      } else alert('❌ Erro: ' + data.error)
-    } catch { alert('❌ Erro ao cancelar venda') }
+      } else toast.error(data.error || '❌ Erro')
+    } catch { toast.error('❌ Erro ao cancelar venda') }
   }
 
   // Verificar se venda pode ser cancelada via Stone deeplink
