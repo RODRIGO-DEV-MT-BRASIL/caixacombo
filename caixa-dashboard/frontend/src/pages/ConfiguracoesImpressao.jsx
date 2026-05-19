@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
-import { Printer, Save, Loader2, RotateCw, Image, Building2, List, Eye } from 'lucide-react'
+import { Printer, Save, Loader2, RotateCw, Image, Building2, List, Eye, ChevronDown } from 'lucide-react'
+
+const PAPER_FORMATS = {
+  '80mm': { label: '80mm (Padrão)', width: 200 },
+  '58mm': { label: '58mm (Pequeno)', width: 145 },
+  '76mm': { label: '76mm', width: 190 },
+  '57mm': { label: '57mm', width: 142 },
+}
 
 const defaultTemplate = {
   cabecalho: {
@@ -77,7 +84,7 @@ const adicionalLabels = {
   dataHora: 'Data/Hora',
 }
 
-function PreviewComprovante({ template }) {
+function PreviewComprovante({ template, paperFormat = '80mm' }) {
   const exampleVenda = {
     id: 123,
     data: '19/05/2026 15:45',
@@ -93,66 +100,91 @@ function PreviewComprovante({ template }) {
     troco: 6.00,
   }
 
-  const fontSize = { pequeno: 10, medio: 12, grande: 14 }
-  const fs = fontSize[template.estilo?.tamanhoFonte] || 12
-  const lineHeight = template.estilo?.espacoEntreLinhas || 8
+  const fontSizeMap = { pequeno: 9, medio: 11, grande: 13 }
+  const fs = fontSizeMap[template.estilo?.tamanhoFonte] || 11
+  const lineHeight = template.estilo?.espacoEntreLinhas || 6
+  const paperWidth = PAPER_FORMATS[paperFormat]?.width || 200
+
+  const alignStyle = {
+    esquerda: 'flex-start text-left',
+    direita: 'flex-end text-right',
+    centro: 'items-center text-center'
+  }[template.estilo?.alinhamento] || 'items-center text-center'
 
   return (
-    <div className="bg-white text-black p-4 rounded-lg font-mono" style={{ fontSize: fs, lineHeight: lineHeight }}>
+    <div 
+      className="bg-white text-black mx-auto rounded-lg font-mono overflow-hidden shadow-2xl" 
+      style={{ 
+        width: paperWidth, 
+        fontSize: fs, 
+        lineHeight: lineHeight,
+        padding: '12px 8px'
+      }}
+    >
       {template.logo?.enabled && (
-        <div className="text-center mb-2" style={{ marginBottom: template.logo.spacingTop }}>
-          <div className="bg-gray-200 h-12 mx-auto flex items-center justify-center rounded">
-            <span className="text-gray-500 text-xs">[LOGO]</span>
+        <div className="flex justify-center mb-2" style={{ marginBottom: template.logo.spacingTop }}>
+          <div className="bg-gray-200 flex items-center justify-center rounded" style={{ width: template.logo.width, height: template.logo.height }}>
+            <span className="text-gray-500" style={{ fontSize: fs - 2 }}>[LOGO]</span>
           </div>
         </div>
       )}
       
-      {template.cabecalho?.nomeEmpresa && <div className="text-center font-bold">Rodrigo Dev MT</div>}
-      {template.cabecalho?.cnpj && <div className="text-center">CNPJ 12.345.678/0001-90</div>}
-      {template.cabecalho?.endereco && <div className="text-center">Rua Exemplo, 123 - Centro</div>}
-      {template.cabecalho?.telefone && <div className="text-center">(45) 99999-9999</div>}
+      <div className={`flex flex-col ${alignStyle}`}>
+        {template.cabecalho?.nomeEmpresa && <span className="font-bold">Rodrigo Dev MT</span>}
+        {template.cabecalho?.cnpj && <span>CNPJ 12.345.678/0001-90</span>}
+        {template.cabecalho?.endereco && <span>Rua Exemplo, 123 - Centro</span>}
+        {template.cabecalho?.telefone && <span>(45) 99999-9999</span>}
+      </div>
       
-      <div className="text-center mt-2 border-t border-dashed border-gray-400 pt-2">
+      <div className={`flex flex-col ${alignStyle} mt-2 border-t border-dashed border-gray-400 pt-2`}>
         COMPROVANTE DE VENDA
       </div>
       
-      {template.adicionais?.numeroVenda && <div>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
-      {template.adicionais?.dataHora && <div>DATA: {exampleVenda.data}</div>}
+      <div className={`flex flex-col ${alignStyle}`}>
+        {template.adicionais?.numeroVenda && <span>Nr: {exampleVenda.id.toString().padStart(6, '0')}</span>}
+        {template.adicionais?.dataHora && <span>DATA: {exampleVenda.data}</span>}
+      </div>
       
-      <div className="mt-2 border-t border-dashed border-gray-400 pt-2">
-        <div className="font-bold">ITENS:</div>
+      <div className={`flex flex-col ${alignStyle} mt-2 border-t border-dashed border-gray-400 pt-2`}>
+        <span className="font-bold">ITENS:</span>
         {exampleVenda.itens.map((item, i) => (
           <div key={i} className="mt-1">
-            {template.itens?.nome && <div>{item.nome}</div>}
-            {template.itens?.separador && <div>----------------------------</div>}
+            {template.itens?.nome && <span>{item.nome}</span>}
+            {template.itens?.separador && <span>----------------------------</span>}
             {(template.itens?.quantidade || template.itens?.valorUnitario || template.itens?.valorTotal) && (
-              <div>
+              <span>
                 {template.itens?.quantidade && `QTD: ${item.qtd}`}
                 {template.itens?.valorUnitario && ` x R$ ${item.valorUnit.toFixed(2)}`}
                 {template.itens?.valorTotal && ` = R$ ${item.total.toFixed(2)}`}
-              </div>
+              </span>
             )}
           </div>
         ))}
       </div>
 
-      <div className="mt-2 pt-2 border-t border-dashed border-gray-400">
-        {template.adicionais?.subtotal && <div className="flex justify-between"><span>SUBTOTAL:</span><span>R$ {exampleVenda.subtotal.toFixed(2)}</span></div>}
-        {template.adicionais?.desconto && <div className="flex justify-between"><span>DESCONTO:</span><span>R$ {exampleVenda.desconto.toFixed(2)}</span></div>}
-        <div className="flex justify-between font-bold border-t border-gray-600 pt-1 mt-1">TOTAL: R$ {exampleVenda.total.toFixed(2)}</div>
+      <div className={`flex flex-col ${alignStyle} mt-2 pt-2 border-t border-dashed border-gray-400`}>
+        {template.adicionais?.subtotal && (
+          <div className="flex justify-between w-full"><span>SUBTOTAL:</span><span>R$ {exampleVenda.subtotal.toFixed(2)}</span></div>
+        )}
+        {template.adicionais?.desconto && (
+          <div className="flex justify-between w-full"><span>DESCONTO:</span><span>R$ {exampleVenda.desconto.toFixed(2)}</span></div>
+        )}
+        <div className="flex justify-between w-full font-bold border-t border-gray-600 pt-1 mt-1">
+          <span>TOTAL:</span><span>R$ {exampleVenda.total.toFixed(2)}</span>
+        </div>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-dashed border-gray-400">
-        {template.adicionais?.formaPagamento && <div>FORMA DE PAGAMENTO: {exampleVenda.formaPagamento}</div>}
-        {template.adicionais?.valorRecebido && <div>VALOR RECEBIDO: R$ {exampleVenda.valorRecebido.toFixed(2)}</div>}
-        {template.adicionais?.troco && <div>TROCO: R$ {exampleVenda.troco.toFixed(2)}</div>}
+      <div className={`flex flex-col ${alignStyle} mt-2 pt-2 border-t border-dashed border-gray-400`}>
+        {template.adicionais?.formaPagamento && <span>FORMA DE PAGAMENTO: {exampleVenda.formaPagamento}</span>}
+        {template.adicionais?.valorRecebido && <span>VALOR RECEBIDO: R$ {exampleVenda.valorRecebido.toFixed(2)}</span>}
+        {template.adicionais?.troco && <span>TROCO: R$ {exampleVenda.troco.toFixed(2)}</span>}
       </div>
 
-      <div className="mt-4 pt-2 border-t border-dashed border-gray-400 text-center">
-        {template.rodape?.linha1 && <div>{template.rodape.linha1}</div>}
-        {template.rodape?.linha2 && <div>{template.rodape.linha2}</div>}
-        {template.rodape?.linha3 && <div>{template.rodape.linha3}</div>}
-        {template.rodape?.linha4 && <div>{template.rodape.linha4}</div>}
+      <div className={`flex flex-col ${alignStyle} mt-4 pt-2 border-t border-dashed border-gray-400`}>
+        {template.rodape?.linha1 && <span>{template.rodape.linha1}</span>}
+        {template.rodape?.linha2 && <span>{template.rodape.linha2}</span>}
+        {template.rodape?.linha3 && <span>{template.rodape.linha3}</span>}
+        {template.rodape?.linha4 && <span>{template.rodape.linha4}</span>}
       </div>
     </div>
   )
@@ -165,6 +197,8 @@ export default function ConfiguracoesImpressao() {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('cabecalho')
   const [showPreview, setShowPreview] = useState(true)
+  const [paperFormat, setPaperFormat] = useState('80mm')
+  const [showFormatDropdown, setShowFormatDropdown] = useState(false)
 
   const isAdmin = user?.role === 'admin'
   const isEmpresa = user?.role === 'empresa'
@@ -187,7 +221,7 @@ export default function ConfiguracoesImpressao() {
       const res = await fetch(apiUrl('/api/impressao/template'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(template)
+        body: JSON.stringify({ ...template, paperFormat })
       })
       if (res.ok) alert('✅ Template salvo com sucesso')
       else alert('❌ Erro ao salvar')
@@ -438,10 +472,54 @@ export default function ConfiguracoesImpressao() {
         {showPreview && (
           <div className="xl:col-span-1">
             <div className="sticky top-4">
-              <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                <Eye size={14} /> Preview do Comprovante
-              </h3>
-              <PreviewComprovante template={template} />
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                  <Eye size={14} /> Preview do Comprovante
+                </h3>
+                
+                {/* Dropdown Formato do Papel */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowFormatDropdown(!showFormatDropdown)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-sm text-white transition-all"
+                  >
+                    <Printer size={14} className="text-blue-400" />
+                    {PAPER_FORMATS[paperFormat]?.label || '80mm (Padrão)'}
+                    <ChevronDown size={14} className={`transition-transform ${showFormatDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showFormatDropdown && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                      {Object.entries(PAPER_FORMATS).map(([key, { label }]) => (
+                        <button
+                          key={key}
+                          onClick={() => { setPaperFormat(key); setShowFormatDropdown(false) }}
+                          className={`w-full px-4 py-2.5 text-left text-sm transition-all flex items-center justify-between ${
+                            paperFormat === key 
+                              ? 'bg-blue-600/20 text-blue-400' 
+                              : 'text-gray-300 hover:bg-gray-800'
+                          }`}
+                        >
+                          <span>{label}</span>
+                          {paperFormat === key && <span className="text-blue-400">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Preview Container */}
+              <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 flex justify-center overflow-x-auto">
+                <PreviewComprovante template={template} paperFormat={paperFormat} />
+              </div>
+              
+              {/* Paper format info */}
+              <div className="mt-3 text-center">
+                <span className="text-xs text-gray-500">
+                  Largura real: {PAPER_FORMATS[paperFormat]?.width || 200}px • {paperFormat}
+                </span>
+              </div>
             </div>
           </div>
         )}
