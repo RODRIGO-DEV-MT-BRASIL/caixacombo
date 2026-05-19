@@ -121,6 +121,7 @@ const deviceLastSync = new Map(); // Rastrear último sync de cada dispositivo
 
 // Emitir evento apenas para dashboards da empresa específica (ou todos se empresaId=null)
 function emitToEmpresa(event, data, empresaId = null) {
+  // Enviar para dashboards da empresa (admin vê tudo)
   connectedDashboards.forEach((info, socketId) => {
     const socket = io.sockets.sockets.get(socketId);
     if (!socket) return;
@@ -129,6 +130,11 @@ function emitToEmpresa(event, data, empresaId = null) {
       socket.emit(event, data);
     }
   });
+  
+  // Enviar para terminais da empresa (usando sala específica)
+  if (empresaId) {
+    io.to(`empresa_${empresaId}`).emit(event, data);
+  }
 }
 
 // Emitir evento de dispositivo filtrado pelo empresaId do dispositivo
@@ -1318,37 +1324,61 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
   const { empresaId } = req.body;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
 
-  // Verificar se é admin
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Apenas admin pode aprovar dispositivos' });
+  // Admin pode aprovar qualquer terminal, empresa só pode aprovar terminais pendentes para si mesma
+  let targetEmpresaId = empresaId;
+  
+  if (req.user?.role === 'admin') {
+    if (!targetEmpresaId) {
+      return res.status(400).json({ error: 'empresaId é obrigatório para admin' });
+    }
+  } else if (req.user?.role === 'empresa') {
+    // Empresa só pode aprovar terminais para si mesma
+    targetEmpresaId = req.user.empresaId;
+    if (!targetEmpresaId) {
+      return res.status(403).json({ error: 'Empresa não possui empresaId' });
+    }
+  } else {
+    return res.status(403).json({ error: 'Apenas admin ou empresa pode aprovar dispositivos' });
   }
 
-  if (!empresaId) {
-    return res.status(400).json({ error: 'empresaId é obrigatório' });
-  }
-
-  const empresa = (db.empresas || []).find(e => e.id === empresaId);
+  const empresa = (db.empresas || []).find(e => e.id === targetEmpresaId);
   if (!empresa) {
     return res.status(404).json({ error: 'Empresa não encontrada' });
+  }
+
+  if (!empresa.ativo) {
+    return res.status(403).json({ error: 'Empresa desativada' });
   }
 
   // Atualizar em memória
   const device = connectedDevices.get(deviceId);
   if (device) {
-    device.empresaId = empresaId;
+    device.empresaId = targetEmpresaId;
     device.status = 'online'; // Aprovado = online
   }
 
   // Atualizar no banco de dados
   const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
   if (deviceIndex !== -1) {
-    db.dispositivos[deviceIndex].empresaId = empresaId;
+    db.dispositivos[deviceIndex].empresaId = targetEmpresaId;
     db.dispositivos[deviceIndex].status = 'online';
+    debouncedSaveData();
+  } else {
+    // Se dispositivo não existe no banco, criar
+    db.dispositivos.push({
+      deviceId,
+      deviceName: device?.deviceName || 'Dispositivo',
+      deviceType: device?.deviceType || 'Android',
+      serialNumber: device?.serialNumber || null,
+      status: 'online',
+      empresaId: targetEmpresaId,
+      lastPoll: new Date()
+    });
     debouncedSaveData();
   }
 
   // Notificar dashboards
-  emitDeviceEvent('device_status_update', { deviceId, empresaId, status: 'online' });
+  emitDeviceEvent('device_status_update', { deviceId, empresaId: targetEmpresaId, status: 'online' });
 
   // Enviar empresa_config para o terminal (whitelabel) - via WebSocket E Polling
   const empresaConfig = {
@@ -1359,14 +1389,14 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
     accentColor: empresa.accentColor || '#10b981',
     logoUrl: empresa.logoUrl || ''
   };
-  const produtosEmpresa = db.produtos.filter(p => p.empresaId === empresaId);
-  const categoriasEmpresa = db.categorias.filter(c => c.empresaId === empresaId);
-  const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === empresaId);
+  const produtosEmpresa = db.produtos.filter(p => p.empresaId && String(p.empresaId) === String(targetEmpresaId));
+  const categoriasEmpresa = db.categorias.filter(c => c.empresaId && String(c.empresaId) === String(targetEmpresaId));
+  const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(targetEmpresaId));
 
   // Via WebSocket (se conectado)
   const deviceSocket = device?.socketId ? io.sockets.sockets.get(device.socketId) : null;
   if (deviceSocket) {
-    deviceSocket.emit('approval_status', { approved: true, status: 'online', empresaId });
+    deviceSocket.emit('approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
     deviceSocket.emit('empresa_config', empresaConfig);
     deviceSocket.emit('produtos_sync', { produtos: produtosEmpresa, timestamp: new Date() });
     deviceSocket.emit('categorias_sync', { categorias: categoriasEmpresa, timestamp: new Date() });
@@ -1374,17 +1404,17 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
   }
 
   // Via Polling (garantir entrega para terminais SUNMI)
-  enqueueDeviceCommand(deviceId, 'approval_status', { approved: true, status: 'online', empresaId });
+  enqueueDeviceCommand(deviceId, 'approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
   enqueueDeviceCommand(deviceId, 'empresa_config', empresaConfig);
   enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
   if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
   if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
-  console.log(`📦 Terminal ${deviceId} aprovado - ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias (WS+Poll)`);
+  console.log(`✅ Terminal ${deviceId} aprovado - empresa ${empresa.nome} (${targetEmpresaId}) - ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias (WS+Poll)`);
 
   // Auditoria
-  addAuditoria('mudanca_status', deviceId, `Dispositivo aprovado e associado à empresa ${empresa.nome}`, dashboardInfo?.usuario);
+  addAuditoria('mudanca_status', deviceId, `Dispositivo aprovado e associado à empresa ${empresa.nome}`, dashboardInfo?.usuario || req.user?.username);
 
-  res.json({ success: true, empresaId, status: 'online' });
+  res.json({ success: true, empresaId: targetEmpresaId, status: 'online' });
 });
 
 // Rota para rejeitar/desaprovar dispositivo
@@ -1392,11 +1422,19 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
   const { deviceId } = req.params;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
 
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Apenas admin pode rejeitar dispositivos' });
+  const device = connectedDevices.get(deviceId);
+  const deviceDb = db.dispositivos?.find(d => d.deviceId === deviceId);
+  const currentEmpresaId = device?.empresaId || deviceDb?.empresaId;
+
+  // Admin pode rejeitar qualquer terminal, empresa só pode rejeitar terminais da própria empresa
+  if (req.user?.role === 'empresa') {
+    if (String(currentEmpresaId) !== String(req.user.empresaId)) {
+      return res.status(403).json({ error: 'Empresa só pode rejeitar terminais da própria empresa' });
+    }
+  } else if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Apenas admin ou empresa pode rejeitar dispositivos' });
   }
 
-  const device = connectedDevices.get(deviceId);
   if (device) {
     device.empresaId = null;
     device.status = 'pending';
@@ -1421,7 +1459,7 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
 
   emitDeviceEvent('device_status_update', { deviceId, empresaId: null, status: 'pending' });
 
-  addAuditoria('mudanca_status', deviceId, 'Dispositivo rejeitado/desassociado', dashboardInfo?.usuario);
+  addAuditoria('mudanca_status', deviceId, 'Dispositivo rejeitado/desassociado', dashboardInfo?.usuario || req.user?.username);
 
   res.json({ success: true, status: 'pending' });
 });
@@ -2869,6 +2907,12 @@ io.on('connection', (socket) => {
     console.log(`📱 ${deviceName} (${deviceId}) [${deviceStatus}] empresaId=${deviceEmpresaId || 'nenhum'}`);
     emitDeviceEvent('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
 
+    // Entrar na sala da empresa (para receber eventos apenas da empresa correta)
+    if (deviceEmpresaId) {
+      socket.join(`empresa_${deviceEmpresaId}`);
+      console.log(`🏠 Terminal ${deviceId} entrou na sala empresa_${deviceEmpresaId}`);
+    }
+
     // Notificar terminal sobre seu status de aprovação
     socket.emit('approval_status', { approved: isApproved, status: deviceStatus, empresaId: deviceEmpresaId });
 
@@ -2886,7 +2930,7 @@ io.on('connection', (socket) => {
         });
       }
       // Enviar produtos filtrados pela empresa
-      const produtosEmpresa = db.produtos.filter(p => p.empresaId === deviceEmpresaId);
+      const produtosEmpresa = db.produtos.filter(p => p.empresaId && String(p.empresaId) === String(deviceEmpresaId));
       socket.emit('produtos_sync', { produtos: produtosEmpresa, timestamp: new Date() });
       console.log(`📦 Enviados ${produtosEmpresa.length} produtos para ${deviceId} (empresa ${deviceEmpresaId})`);
     } else {
