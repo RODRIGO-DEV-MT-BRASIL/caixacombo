@@ -326,6 +326,7 @@ async function migrateData(data) {
   if (data.dispositivos && data.dispositivos.length) await Dispositivo.insertMany(data.dispositivos);
   if (data.empresas && data.empresas.length) await Empresa.insertMany(data.empresas);
   if (data.clientes && data.clientes.length) await Cliente.insertMany(data.clientes);
+  if (data.funcionarios && data.funcionarios.length) await Funcionario.insertMany(data.funcionarios);
   if (data.caixaSessoes && data.caixaSessoes.length) await CaixaSessao.insertMany(data.caixaSessoes);
   if (data.auditoria && data.auditoria.length) await AuditoriaDoc.insertMany(data.auditoria);
   if (data.config && Object.keys(data.config).length) {
@@ -381,7 +382,7 @@ async function saveData() {
     await bulkUpsert(Dispositivo, db.dispositivos, 'deviceId');
     await bulkUpsert(Empresa, db.empresas, 'id');
     await bulkUpsert(Cliente, db.clientes, 'id');
-    await bulkUpsert(Funcionario, db.funcionarios, 'id'); // Usa $set para preservar campos existentes
+    await bulkUpsertOnly(Funcionario, db.funcionarios, 'id'); // Upsert-only: preserva funcionários existentes
 
     // Operações e auditoria: upsert-only para preservar registros antigos
     await bulkUpsertOnly(Operacao, db.operacoes, 'id');
