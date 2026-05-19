@@ -205,31 +205,65 @@ fun ProdutosScreen(
                 Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)
                 ) {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(8.dp))
 
-                    // Busca com estilo moderno
-                    OutlinedTextField(
-                        value = busca,
-                        onValueChange = viewModel::buscarProdutos,
-                        placeholder = { Text("Buscar produto...") },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = primaryColor) },
-                        trailingIcon = {
+                    // Busca moderna com estilo ultracompacto
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFF5F5F5),
+                        tonalElevation = 2.dp,
+                        shadowElevation = 4.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(26.dp)
+                            )
+                            TextField(
+                                value = busca,
+                                onValueChange = viewModel::buscarProdutos,
+                                placeholder = { 
+                                    Text(
+                                        "Buscar produto por nome ou código...",
+                                        color = Color.Gray.copy(alpha = 0.7f),
+                                        fontSize = 16.sp
+                                    ) 
+                                },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent
+                                ),
+                                textStyle = LocalTextStyle.current.copy(
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
                             if (busca.isNotEmpty()) {
                                 IconButton(onClick = { viewModel.buscarProdutos("") }) {
-                                    Icon(Icons.Default.Clear, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Limpar",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(22.dp)
+                                    )
                                 }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-                        )
-                    )
+                        }
+                    }
 
                     Spacer(Modifier.height(10.dp))
 
