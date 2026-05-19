@@ -103,9 +103,60 @@ fun HomeScreen(
     var pin by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var terminalPendente by remember { mutableStateOf(false) }
 
     // Detectar se teclado está aberto
     val isKeyboardOpen = remember { mutableStateOf(false) }
+    
+    // Tela de terminal pendente
+    if (terminalPendente) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(backgroundColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = Color(0xFFFF9800)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "Aguardando Aprovação",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Seu terminal ainda não foi aprovado pela empresa.",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Solicite ao administrator da empresa que aprove seu terminal na página de Terminais.",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = { terminalPendente = false; erro = "" },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Tentar Novamente")
+                }
+            }
+        }
+    } else {
 
     Box(
         modifier = Modifier
@@ -369,7 +420,13 @@ fun HomeScreen(
                                         }
                                         withContext(Dispatchers.Main) {
                                             isLoading = false
-                                            erro = errorMsg
+                                            // Verificar se é erro de terminal pendente
+                                            if (errorMsg.contains("aguardando aprovação") || errorMsg.contains("Terminal")) {
+                                                terminalPendente = true
+                                                erro = ""
+                                            } else {
+                                                erro = errorMsg
+                                            }
                                         }
                                     }
                                 }
@@ -455,6 +512,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+    }
     }
 }
 
