@@ -322,19 +322,23 @@ export default function Produtos() {
   // ===== SINCRONIZAR TERMINAIS =====
   const handleSyncTerminais = async () => {
     setSyncing(true)
+    console.log('🔄 [SYNC] Iniciando sincronização de terminais...')
     try {
       const res = await fetch(apiUrl('/api/force-sync'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ type: 'all' })
       })
+      console.log('🔄 [SYNC] Response status:', res.status)
       const data = await res.json()
+      console.log('🔄 [SYNC] Response data:', data)
       if (data.success) {
-        toast.success(`Sincronizado com ${data.devices} terminal(is): ${data.synced.join(', ')}`)
+        toast.success(`Sincronizado com ${data.devices} terminal(is): ${data.synced?.join(', ') || 'todos'}`)
       } else {
-        toast.error('Erro ao sincronizar terminais')
+        toast.error(data.error || 'Erro ao sincronizar terminais')
       }
-    } catch {
+    } catch (err) {
+      console.error('🔄 [SYNC] Erro:', err)
       toast.error('Erro ao conectar com o servidor')
     } finally {
       setSyncing(false)
