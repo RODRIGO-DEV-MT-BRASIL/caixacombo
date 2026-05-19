@@ -2110,7 +2110,8 @@ app.post('/api/device/poll', async (req, res) => {
   // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
   const isApproved = !!(existing?.empresaId || existingDb?.empresaId);
-  const pollEmpresaId = existing?.empresaId || existingDb?.empresaId || null;
+  // Usar empresaId do banco de dados (mais confiável) ou do mapa em memória
+  const pollEmpresaId = existingDb?.empresaId || existing?.empresaId || null;
   const pollStatus = isApproved ? (status || 'online') : 'pending';
 
   connectedDevices.set(deviceId, {
