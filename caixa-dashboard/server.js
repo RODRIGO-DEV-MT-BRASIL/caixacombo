@@ -439,8 +439,15 @@ app.post('/api/auth/login', async (req, res) => {
           return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
         }
         
+        // Terminal existe - verificar se pertence a esta empresa
         if (terminalNoBanco.empresaId !== empresaDoFuncionario) {
-          return res.status(403).json({ error: 'Terminal não pertence a esta empresa.' });
+          // Terminal pertence a outra empresa - atualizar para esta empresa e deixar pendente
+          terminalNoBanco.empresaId = empresaDoFuncionario;
+          terminalNoBanco.status = 'pending';
+          terminalNoBanco.lastPoll = new Date();
+          debouncedSaveData();
+          console.log(`📱 [LOGIN] Terminal ${deviceId}transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
+          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
         }
         
         if (terminalNoBanco.status === 'blocked') {
@@ -494,8 +501,15 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
       }
       
+      // Terminal existe - verificar se pertence a esta empresa
       if (terminalNoBanco.empresaId !== empresaDoFuncionario) {
-        return res.status(403).json({ error: 'Terminal não pertence a esta empresa.' });
+        // Terminal pertence a outra empresa - transferir para esta empresa e deixar pendente
+        terminalNoBanco.empresaId = empresaDoFuncionario;
+        terminalNoBanco.status = 'pending';
+        terminalNoBanco.lastPoll = new Date();
+        debouncedSaveData();
+        console.log(`📱 [LOGIN] Terminal ${deviceId} transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
+        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
       }
       
       if (terminalNoBanco.status === 'blocked') {
