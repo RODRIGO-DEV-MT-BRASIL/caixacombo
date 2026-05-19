@@ -40,6 +40,9 @@ class PollingService : Service() {
         private var pollingDeviceId: String? = null
         private var deviceName: String? = null
         private var serialNumber: String? = null
+        
+        // Empresa aprovada - armazenada quando terminal é aprovado
+        private var approvedEmpresaId: String? = null
 
         // Admin para reboot
         private var devicePolicyManager: android.app.admin.DevicePolicyManager? = null
@@ -90,7 +93,13 @@ class PollingService : Service() {
 
         fun getServerUrl(): String = SERVER_URL
         fun getDeviceId(): String? = pollingDeviceId
-
+        fun getApprovedEmpresaId(): String? = approvedEmpresaId
+        
+        fun setApprovedEmpresaId(empresaId: String?) {
+            approvedEmpresaId = empresaId
+            Log.d(TAG, "Empresa aprovada configurada: $empresaId")
+        }
+        
         fun setDeviceInfo(id: String, name: String, serial: String? = null) {
             pollingDeviceId = id
             deviceName = name
@@ -565,8 +574,17 @@ class PollingService : Service() {
                 when (command) {
                     "produtos_sync" -> {
                         needsProductSync = false
-                        syncProdutos = params?.optJSONArray("produtos")?.length() ?: 0
+                        val produtosArray = params?.optJSONArray("produtos")
+                        syncProdutos = produtosArray?.length() ?: 0
                         hadSync = true
+                        // Log de debug para ver empresaId dos produtos
+                        if (produtosArray != null) {
+                            val sampleProdutos = (0 until minOf(3, produtosArray.length())).map { j ->
+                                val p = produtosArray.getJSONObject(j)
+                                "${p.optString("nome", "sem nome")} (emp=${p.optString("empresaId", "null")})"
+                            }.joinToString(", ")
+                            Log.d("SYNC_DEBUG", "📦 Sync de produtos - empresaId aprovada: $approvedEmpresaId, produtos: $syncProdutos, amostras: $sampleProdutos")
+                        }
                         Log.d(TAG, "Sync de produtos recebido ($syncProdutos itens) - flag needsProductSync resetada")
                     }
                     "categorias_sync" -> {
@@ -692,6 +710,11 @@ class PollingService : Service() {
                 val status = params?.optString("status", "pending") ?: "pending"
                 val empresaId = params?.optString("empresaId", null)
                 Log.d(TAG, "approval_status recebido: approved=$approved, status=$status, empresaId=$empresaId")
+                // Salvar empresaId aprovada para usar no sync
+                if (approved && empresaId != null) {
+                    approvedEmpresaId = empresaId
+                    Log.d(TAG, "💾 Empresa salva no PollingService: $empresaId")
+                }
                 onApprovalStatus?.invoke(approved, status, empresaId)
             }
             "empresa_config" -> {
