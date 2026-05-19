@@ -22,6 +22,7 @@ export default function Produtos() {
   const [filterEmpresa, setFilterEmpresa] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const [vendasLocais, setVendasLocais] = useState([])
   const [importing, setImporting] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -155,13 +156,19 @@ export default function Produtos() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Excluir este produto?')) return
+    const produto = produtos.find(p => p.id === id)
+    setConfirmDelete(produto)
+  }
+
+  const confirmDeleteExecute = async () => {
+    if (!confirmDelete) return
     try {
-      await fetch(apiUrl(`/api/produtos/${id}`), {
+      await fetch(apiUrl(`/api/produtos/${confirmDelete.id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success('Produto excluído com sucesso!')
+      setConfirmDelete(null)
       fetchProdutos()
     } catch (error) {
       toast.error('Erro ao excluir produto')
@@ -510,6 +517,34 @@ export default function Produtos() {
           user={user}
           token={token}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm">
+            <div className="p-6 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Trash2 className="text-red-400" size={20} />
+                Confirmar Exclusão
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-300 mb-2">Deseja excluir este produto?</p>
+              <p className="text-white font-medium">{confirmDelete.nome}</p>
+              {confirmDelete.preco && (
+                <p className="text-gray-500 text-sm mt-1">R$ {confirmDelete.preco.toFixed(2)}</p>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-700 flex gap-3 justify-end">
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                Cancelar
+              </button>
+              <button onClick={confirmDeleteExecute} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
