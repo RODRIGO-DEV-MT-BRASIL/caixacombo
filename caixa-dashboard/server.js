@@ -434,6 +434,16 @@ app.post('/api/auth/login', async (req, res) => {
             lastPoll: new Date()
           };
           db.dispositivos.push(novoTerminal);
+          connectedDevices.set(deviceId, {
+            deviceId,
+            deviceName: req.body.deviceName || 'Terminal Android',
+            deviceType: 'Android',
+            serialNumber: req.body.serialNumber || null,
+            status: 'pending',
+            empresaId: empresaDoFuncionario,
+            connectedAt: new Date(),
+            socketId: null
+          });
           debouncedSaveData();
           console.log(`📱 [LOGIN] Novo terminal ${deviceId} registrado como pendente para empresa ${empresaDoFuncionario}`);
           return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
@@ -496,6 +506,16 @@ app.post('/api/auth/login', async (req, res) => {
           lastPoll: new Date()
         };
         db.dispositivos.push(novoTerminal);
+        connectedDevices.set(deviceId, {
+          deviceId,
+          deviceName: req.body.deviceName || 'Terminal Android',
+          deviceType: 'Android',
+          serialNumber: req.body.serialNumber || null,
+          status: 'pending',
+          empresaId: empresaDoFuncionario,
+          connectedAt: new Date(),
+          socketId: null
+        });
         debouncedSaveData();
         console.log(`📱 [LOGIN] Novo terminal ${deviceId} registrado como pendente para empresa ${empresaDoFuncionario}`);
         return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
@@ -507,6 +527,8 @@ app.post('/api/auth/login', async (req, res) => {
         terminalNoBanco.empresaId = empresaDoFuncionario;
         terminalNoBanco.status = 'pending';
         terminalNoBanco.lastPoll = new Date();
+        const cd = connectedDevices.get(deviceId);
+        if (cd) { cd.empresaId = empresaDoFuncionario; cd.status = 'pending' }
         debouncedSaveData();
         console.log(`📱 [LOGIN] Terminal ${deviceId} transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
         return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
@@ -870,9 +892,12 @@ app.get('/api/produtos', authenticateToken, (req, res) => {
 app.get('/api/vendas', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.vendas || [];
-  // Empresa não filtra - vê todas as vendas dos funcionários
+  // Empresa só vê vendas da própria empresa
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    result = result.filter(v => v.empresaId === req.user.empresaId);
+  }
   // Admin pode filtrar por empresa via query
-  if (req.query.empresaId) {
+  else if (req.query.empresaId) {
     result = result.filter(v => v.empresaId === req.query.empresaId);
   }
   const total = result.length;
