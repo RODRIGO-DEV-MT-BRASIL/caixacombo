@@ -203,7 +203,7 @@ fun ProdutosScreen(
             if (selectedMainTab == 0) {
                 // ====== ABA PRODUTOS ======
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
                 ) {
                     Spacer(Modifier.height(10.dp))
 
