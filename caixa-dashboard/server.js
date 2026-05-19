@@ -2181,34 +2181,32 @@ app.post('/api/device/poll', async (req, res) => {
   const serverJustStarted = serverAgeMs < 600000; // 10 minutos
   const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
   
-  if (needsInitialSync || appRequestedSync || forceSyncOnRestart) {
-    const reason = !existing ? 'novo' : !existing.lastPoll ? 'sem lastPoll' : appRequestedSync ? 'app solicitou' : forceSyncOnRestart ? 'force-restart' : 'pós-restart servidor';
-    if (isApproved && pollEmpresaId) {
-      // Terminal aprovado: enviar dados filtrados pela empresa
-      const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId === pollEmpresaId);
-      console.log(`📦 [POLL-SYNC] ${deviceId} (${reason}) - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id})`).join(', ')}`);
-      const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId === pollEmpresaId);
-      const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === pollEmpresaId);
-      enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
-      if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
-      if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
-      // Enviar config da empresa (whitelabel)
-      const empresa = (db.empresas || []).find(e => e.id === pollEmpresaId);
-      if (empresa) {
-        enqueueDeviceCommand(deviceId, 'empresa_config', {
-          empresaId: empresa.id, nome: empresa.nome,
-          primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4',
-          accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || ''
-        });
-      }
-    } else {
-      // Terminal pendente: sem dados
-      console.log(`⏳ [POLL-SYNC] ${deviceId} (${reason}) - PENDENTE, sem sync`);
-      enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: [] });
+  // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
+  if (isApproved && pollEmpresaId) {
+    // Terminal aprovado: enviar dados filtrados pela empresa
+    const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId === pollEmpresaId);
+    console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id})`).join(', ')}`);
+    const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId === pollEmpresaId);
+    const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === pollEmpresaId);
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
+    if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
+    if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
+    // Enviar config da empresa (whitelabel)
+    const empresa = (db.empresas || []).find(e => e.id === pollEmpresaId);
+    if (empresa) {
+      enqueueDeviceCommand(deviceId, 'empresa_config', {
+        empresaId: empresa.id, nome: empresa.nome,
+        primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4',
+        accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || ''
+      });
     }
-    // Sempre enviar approval_status
-    enqueueDeviceCommand(deviceId, 'approval_status', { approved: isApproved, status: pollStatus, empresaId: pollEmpresaId });
+  } else {
+    // Terminal pendente: sem dados
+    console.log(`⏳ [POLL-SYNC] ${deviceId} - PENDENTE, sem sync`);
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: [] });
   }
+  // Sempre enviar approval_status
+  enqueueDeviceCommand(deviceId, 'approval_status', { approved: isApproved, status: pollStatus, empresaId: pollEmpresaId });
 
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];
