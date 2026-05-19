@@ -169,7 +169,7 @@ export default function Terminais() {
       </div>
 
       {/* Terminais Pendentes - Aprovação */}
-      {pending.length > 0 && user?.role === 'admin' && (
+      {pending.length > 0 && (user?.role === 'admin' || user?.role === 'empresa') && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Shield size={18} className="text-yellow-400" />
