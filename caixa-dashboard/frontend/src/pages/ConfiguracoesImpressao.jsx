@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
-import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
+import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building } from 'lucide-react'
 
 const PAPER_FORMATS = {
   '80mm': { label: '80mm Padrão', width: 200 },
@@ -11,40 +11,49 @@ const PAPER_FORMATS = {
 }
 
 const defaultTemplate = {
-  cabecalho: { nomeEmpresa: true, cnpj: true, endereco: true, telefone: true, email: true, cidade: true },
-  logo: { enabled: false, width: 120, height: 60, spacingTop: 10, spacingBottom: 10 },
+  empresa: { nome: 'Rodrigo Dev MT', cnpj: '12.345.678/0001-90', ie: '', endereco: '', telefone: '', email: '', cidade: '' },
+  logo: { enabled: false, width: 120, height: 60, spacingTop: 10, spacingBottom: 10, base64: null },
+  cabecalho: { titulo: 'COMPROVANTE DE VENDA', subtitulo: '' },
   itens: { nome: true, quantidade: true, valorUnitario: true, valorTotal: true, separador: true },
   adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true },
   rodape: { linha1: 'Agradecemos sua vinda', linha2: 'Volte sempre', linha3: '', linha4: '' },
   estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 },
-  tamanhos: { titulo: 32, subtitulo: 24, corpo: 22, rodape: 20 }
+  tamanhos: { titulo: 32, subtitulo: 24, corpo: 22, rodape: 20, empresa: 28 }
 }
-
-const fieldLabels = { nomeEmpresa: 'Nome da Empresa', cnpj: 'CNPJ', endereco: 'Endereço', telefone: 'Telefone', email: 'E-mail', cidade: 'Cidade/UF' }
-const itemLabels = { nome: 'Nome do Produto', quantidade: 'Quantidade', valorUnitario: 'Valor Unitário', valorTotal: 'Subtotal do Item', separador: 'Linha Separadora' }
-const adicionalLabels = { subtotal: 'Subtotal', desconto: 'Desconto', total: 'TOTAL', formaPagamento: 'Forma de Pagamento', valorRecebido: 'Valor Recebido', troco: 'Troco', numeroVenda: 'Número da Venda', dataHora: 'Data/Hora' }
 
 function PreviewComprovante({ template, paperFormat = '80mm' }) {
   const exampleVenda = { id: 123, data: '19/05/2026 15:45', itens: [{ nome: 'Coca-Cola 350ml', qtd: 2, valorUnit: 3.00, total: 6.00 }, { nome: 'Sanduíche Natural', qtd: 1, valorUnit: 8.00, total: 8.00 }], subtotal: 14.00, desconto: 0.00, total: 14.00, formaPagamento: 'DINHEIRO', valorRecebido: 20.00, troco: 6.00 }
   const fs = { pequeno: 9, medio: 11, grande: 13 }[template.estilo?.tamanhoFonte] || 11
   const tituloFs = (template.tamanhos?.titulo || 32) * 0.35
+  const empresaFs = (template.tamanhos?.empresa || 28) * 0.4
   const paperWidth = PAPER_FORMATS[paperFormat]?.width || 200
   const alignClass = { esquerda: 'text-left', direita: 'text-right', centro: 'text-center' }[template.estilo?.alinhamento] || 'text-center'
 
   return (
     <div className="bg-white text-black rounded font-mono overflow-hidden" style={{ width: paperWidth, fontSize: fs, lineHeight: 1.4, padding: '10px 6px' }}>
-      {template.logo?.enabled && (
+      {template.logo?.enabled && template.logo?.base64 && (
+        <div className="flex justify-center mb-1" style={{ marginBottom: template.logo.spacingTop || 10 }}>
+          <img src={template.logo.base64} alt="Logo" style={{ width: template.logo.width, height: template.logo.height, objectFit: 'contain' }} />
+        </div>
+      )}
+      {template.logo?.enabled && !template.logo?.base64 && (
         <div className="flex justify-center mb-1" style={{ marginBottom: template.logo.spacingTop || 10 }}>
           <div className="bg-gray-200 flex items-center justify-center rounded text-gray-500" style={{ width: template.logo.width, height: template.logo.height, fontSize: fs - 2 }}>[LOGO]</div>
         </div>
       )}
       <div className={alignClass}>
-        {template.cabecalho?.nomeEmpresa && <div className="font-bold" style={{ fontSize: tituloFs }}>Rodrigo Dev MT</div>}
-        {template.cabecalho?.cnpj && <div>CNPJ 12.345.678/0001-90</div>}
-        {template.cabecalho?.endereco && <div>Rua Exemplo, 123 - Centro</div>}
-        {template.cabecalho?.telefone && <div>(45) 99999-9999</div>}
+        <div className="font-bold" style={{ fontSize: empresaFs }}>{template.empresa?.nome || 'Empresa'}</div>
+        {template.empresa?.cnpj && <div>CNPJ: {template.empresa.cnpj}</div>}
+        {template.empresa?.ie && <div>IE: {template.empresa.ie}</div>}
+        {template.empresa?.endereco && <div>{template.empresa.endereco}</div>}
+        {template.empresa?.cidade && <div>{template.empresa.cidade}</div>}
+        {template.empresa?.telefone && <div>Tel: {template.empresa.telefone}</div>}
+        {template.empresa?.email && <div>{template.empresa.email}</div>}
       </div>
-      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: tituloFs * 0.9 }}>COMPROVANTE DE VENDA</div>
+      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: tituloFs }}>
+        {template.cabecalho?.titulo || 'COMPROVANTE DE VENDA'}
+      </div>
+      {template.cabecalho?.subtitulo && <div className={`${alignClass} text-xs`}>{template.cabecalho.subtitulo}</div>}
       <div className={alignClass}>
         {template.adicionais?.numeroVenda && <div>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
         {template.adicionais?.dataHora && <div>DATA: {exampleVenda.data}</div>}
@@ -137,7 +146,7 @@ export default function ConfiguracoesImpressao() {
   const [template, setTemplate] = useState(defaultTemplate)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('cabecalho')
+  const [activeTab, setActiveTab] = useState('empresa')
   const [showPreview, setShowPreview] = useState(true)
   const [paperFormat, setPaperFormat] = useState('80mm')
 
@@ -163,6 +172,8 @@ export default function ConfiguracoesImpressao() {
     setSaving(false)
   }
 
+  const updateEmpresa = (field, value) => setTemplate(prev => ({ ...prev, empresa: { ...prev.empresa, [field]: value } }))
+  const updateCabecalho = (field, value) => setTemplate(prev => ({ ...prev, cabecalho: { ...prev.cabecalho, [field]: value } }))
   const updateField = (section, field, value) => setTemplate(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }))
   const updateSize = (field, value) => setTemplate(prev => ({ ...prev, tamanhos: { ...prev.tamanhos, [field]: value } }))
   const toggleField = (section, field) => setTemplate(prev => ({ ...prev, [section]: { ...prev[section], [field]: !prev[section]?.[field] } }))
@@ -171,17 +182,17 @@ export default function ConfiguracoesImpressao() {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => setTemplate(prev => ({ ...prev, logo: { ...prev.logo, base64: ev.target.result } }))
+    reader.onload = (ev) => setTemplate(prev => ({ ...prev, logo: { ...prev.logo, base64: ev.target.result, enabled: true } }))
     reader.readAsDataURL(file)
   }
 
   if (loading) return <div className="glass p-12 text-center"><Loader2 size={32} className="animate-spin mx-auto text-blue-400 mb-3" /><p className="text-gray-400">Carregando template...</p></div>
 
   const tabs = [
-    { id: 'cabecalho', label: 'Cabeçalho', icon: Building2 },
+    { id: 'empresa', label: 'Empresa', icon: Building },
     { id: 'logo', label: 'Logo', icon: Image },
+    { id: 'cabecalho', label: 'Cabeçalho', icon: Edit3 },
     { id: 'itens', label: 'Itens', icon: List },
-    { id: 'adicional', label: 'Adicionais', icon: List },
     { id: 'rodape', label: 'Rodapé', icon: List },
     { id: 'estilo', label: 'Estilo', icon: Palette },
     { id: 'tamanhos', label: 'Tamanhos', icon: Type },
@@ -216,25 +227,51 @@ export default function ConfiguracoesImpressao() {
 
       {/* Editor */}
       <div className="space-y-3">
-        {/* Cabeçalho */}
-        {activeTab === 'cabecalho' && (
-          <SectionCard title="Campos do Cabeçalho" icon={Building2}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {Object.entries(fieldLabels).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
-                  <input type="checkbox" checked={template.cabecalho?.[key] ?? true} onChange={() => toggleField('cabecalho', key)} className="rounded" />
-                  <span className="text-sm text-gray-300">{label}</span>
-                </label>
-              ))}
+        {/* Empresa */}
+        {activeTab === 'empresa' && (
+          <SectionCard title="Dados da Empresa" icon={Building}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Building size={12} /> Nome da Empresa</label>
+                <input type="text" value={template.empresa?.nome || ''} onChange={e => updateEmpresa('nome', e.target.value)} className="input-field text-sm" placeholder="Nome da empresa" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Hash size={12} /> CNPJ</label>
+                  <input type="text" value={template.empresa?.cnpj || ''} onChange={e => updateEmpresa('cnpj', e.target.value)} className="input-field text-sm" placeholder="00.000.000/0000-00" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Hash size={12} /> Inscrição Estadual (IE)</label>
+                  <input type="text" value={template.empresa?.ie || ''} onChange={e => updateEmpresa('ie', e.target.value)} className="input-field text-sm" placeholder="000.000.000" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin size={12} /> Endereço</label>
+                <input type="text" value={template.empresa?.endereco || ''} onChange={e => updateEmpresa('endereco', e.target.value)} className="input-field text-sm" placeholder="Rua, número, bairro" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin size={12} /> Cidade/UF</label>
+                  <input type="text" value={template.empresa?.cidade || ''} onChange={e => updateEmpresa('cidade', e.target.value)} className="input-field text-sm" placeholder="Cidade - UF" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Phone size={12} /> Telefone</label>
+                  <input type="text" value={template.empresa?.telefone || ''} onChange={e => updateEmpresa('telefone', e.target.value)} className="input-field text-sm" placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Mail size={12} /> E-mail</label>
+                <input type="text" value={template.empresa?.email || ''} onChange={e => updateEmpresa('email', e.target.value)} className="input-field text-sm" placeholder="contato@empresa.com" />
+              </div>
             </div>
           </SectionCard>
         )}
 
         {/* Logo */}
         {activeTab === 'logo' && (
-          <SectionCard title="Configurações do Logo" icon={Image}>
+          <SectionCard title="Logo do Comprovante" icon={Image}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-gray-300">Exibir Logo no Comprovante</span>
+              <span className="text-sm text-gray-300">Exibir Logo</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" checked={template.logo?.enabled ?? false} onChange={() => updateField('logo', 'enabled', !template.logo?.enabled)} className="sr-only peer" />
                 <div className="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-blue-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -248,12 +285,24 @@ export default function ConfiguracoesImpressao() {
                 <RangeSlider label="Espaço Abaixo" value={template.logo?.spacingBottom || 10} onChange={v => updateField('logo', 'spacingBottom', v)} min={0} max={30} />
                 {template.logo?.base64 ? (
                   <div className="border border-gray-600 rounded-lg p-4 text-center">
-                    <img src={template.logo.base64} alt="Logo" className="max-h-24 mx-auto mb-2 rounded" />
-                    <button onClick={() => updateField('logo', 'base64', null)} className="text-red-400 text-xs hover:underline">Remover</button>
+                    <img src={template.logo.base64} alt="Logo" className="max-h-24 mx-auto mb-3 rounded" />
+                    <div className="flex gap-2 justify-center">
+                      <label className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white cursor-pointer transition-all flex items-center gap-2">
+                        <Upload size={14} /> Trocar
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                      </label>
+                      <button onClick={() => updateField('logo', 'base64', null)} className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 rounded-lg text-sm transition-all flex items-center gap-2">
+                        <Trash2 size={14} /> Remover
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg cursor-pointer text-sm text-gray-300 transition-all">
-                    <Image size={16} /> Upload Logo
+                  <label className="flex items-center justify-center gap-2 px-4 py-6 bg-gray-800 hover:bg-gray-700 border-2 border-dashed border-gray-600 rounded-lg cursor-pointer text-gray-400 transition-all hover:text-white">
+                    <Upload size={24} />
+                    <div>
+                      <div className="text-sm font-medium">Upload Logo</div>
+                      <div className="text-xs text-gray-500">PNG, JPG ou GIF • Máx 2MB</div>
+                    </div>
                     <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                   </label>
                 )}
@@ -262,30 +311,43 @@ export default function ConfiguracoesImpressao() {
           </SectionCard>
         )}
 
+        {/* Cabeçalho */}
+        {activeTab === 'cabecalho' && (
+          <SectionCard title="Título e Subtítulo do Comprovante" icon={Edit3}>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Título Principal</label>
+                <input type="text" value={template.cabecalho?.titulo || ''} onChange={e => updateCabecalho('titulo', e.target.value)} className="input-field text-sm" placeholder="COMPROVANTE DE VENDA" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Subtítulo (opcional)</label>
+                <input type="text" value={template.cabecalho?.subtitulo || ''} onChange={e => updateCabecalho('subtitulo', e.target.value)} className="input-field text-sm" placeholder="Ex: Via do Cliente" />
+              </div>
+            </div>
+          </SectionCard>
+        )}
+
         {/* Itens */}
         {activeTab === 'itens' && (
           <SectionCard title="Campos dos Itens" icon={List}>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(itemLabels).map(([key, label]) => (
+              {[['nome', 'Nome do Produto'], ['quantidade', 'Quantidade'], ['valorUnitario', 'Valor Unitário'], ['valorTotal', 'Subtotal do Item'], ['separador', 'Linha Separadora']].map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                   <input type="checkbox" checked={template.itens?.[key] ?? true} onChange={() => toggleField('itens', key)} className="rounded" />
                   <span className="text-sm text-gray-300">{label}</span>
                 </label>
               ))}
             </div>
-          </SectionCard>
-        )}
-
-        {/* Adicional */}
-        {activeTab === 'adicional' && (
-          <SectionCard title="Campos Adicionais" icon={List}>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(adicionalLabels).map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
-                  <input type="checkbox" checked={template.adicionais?.[key] ?? true} onChange={() => toggleField('adicionais', key)} className="rounded" />
-                  <span className="text-sm text-gray-300">{label}</span>
-                </label>
-              ))}
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Campos Adicionais</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {[['subtotal', 'Subtotal'], ['desconto', 'Desconto'], ['total', 'TOTAL'], ['formaPagamento', 'Forma de Pagamento'], ['valorRecebido', 'Valor Recebido'], ['troco', 'Troco'], ['numeroVenda', 'Número da Venda'], ['dataHora', 'Data/Hora']].map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
+                    <input type="checkbox" checked={template.adicionais?.[key] ?? true} onChange={() => toggleField('adicionais', key)} className="rounded" />
+                    <span className="text-sm text-gray-300">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </SectionCard>
         )}
@@ -297,7 +359,7 @@ export default function ConfiguracoesImpressao() {
               {[1, 2, 3, 4].map(n => (
                 <div key={n}>
                   <label className="block text-xs text-gray-400 mb-1">Linha {n}</label>
-                  <input type="text" value={template.rodape?.[`linha${n}`] || ''} onChange={e => updateField('rodape', `linha${n}`, e.target.value)} className="input-field text-sm" placeholder={`Mensagem ${n} (opcional)`} />
+                  <input type="text" value={template.rodape?.[`linha${n}`] || ''} onChange={e => updateField('rodape', `linha${n}`, e.target.value)} className="input-field text-sm" placeholder={`Mensagem ${n}`} />
                 </div>
               ))}
             </div>
@@ -311,11 +373,7 @@ export default function ConfiguracoesImpressao() {
               <div>
                 <label className="block text-xs text-gray-400 mb-2">Alinhamento</label>
                 <div className="flex gap-2">
-                  {[
-                    { value: 'esquerda', icon: AlignLeft },
-                    { value: 'centro', icon: AlignCenter },
-                    { value: 'direita', icon: AlignRight },
-                  ].map(({ value, icon: Icon }) => (
+                  {[{ value: 'esquerda', icon: AlignLeft }, { value: 'centro', icon: AlignCenter }, { value: 'direita', icon: AlignRight }].map(({ value, icon: Icon }) => (
                     <button key={value} onClick={() => updateField('estilo', 'alinhamento', value)}
                       className={`flex-1 p-3 rounded-lg border transition-all ${template.estilo?.alinhamento === value ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'border-gray-700 text-gray-400 hover:bg-white/5'}`}>
                       <Icon size={18} className="mx-auto" />
@@ -339,13 +397,11 @@ export default function ConfiguracoesImpressao() {
         {activeTab === 'tamanhos' && (
           <SectionCard title="Tamanhos dos Títulos" icon={Type}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <RangeSlider label="Nome da Empresa" value={template.tamanhos?.empresa || 28} onChange={v => updateSize('empresa', v)} min={16} max={48} />
               <RangeSlider label="Título Principal" value={template.tamanhos?.titulo || 32} onChange={v => updateSize('titulo', v)} min={20} max={48} />
               <RangeSlider label="Subtítulo" value={template.tamanhos?.subtitulo || 24} onChange={v => updateSize('subtitulo', v)} min={16} max={36} />
               <RangeSlider label="Corpo do Texto" value={template.tamanhos?.corpo || 22} onChange={v => updateSize('corpo', v)} min={14} max={32} />
               <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
-            </div>
-            <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
-              <p className="text-xs text-gray-400">Preview em tempo real ao lado ▶</p>
             </div>
           </SectionCard>
         )}
