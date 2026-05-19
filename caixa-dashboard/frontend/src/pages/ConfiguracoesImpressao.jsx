@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
-import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, X } from 'lucide-react'
+import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
 
 const PAPER_FORMATS = {
   '80mm': { label: '80mm Padrão', width: 200 },
@@ -16,7 +16,8 @@ const defaultTemplate = {
   itens: { nome: true, quantidade: true, valorUnitario: true, valorTotal: true, separador: true },
   adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true },
   rodape: { linha1: 'Agradecemos sua vinda', linha2: 'Volte sempre', linha3: '', linha4: '' },
-  estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 }
+  estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 },
+  tamanhos: { titulo: 32, subtitulo: 24, corpo: 22, rodape: 20 }
 }
 
 const fieldLabels = { nomeEmpresa: 'Nome da Empresa', cnpj: 'CNPJ', endereco: 'Endereço', telefone: 'Telefone', email: 'E-mail', cidade: 'Cidade/UF' }
@@ -26,23 +27,24 @@ const adicionalLabels = { subtotal: 'Subtotal', desconto: 'Desconto', total: 'TO
 function PreviewComprovante({ template, paperFormat = '80mm' }) {
   const exampleVenda = { id: 123, data: '19/05/2026 15:45', itens: [{ nome: 'Coca-Cola 350ml', qtd: 2, valorUnit: 3.00, total: 6.00 }, { nome: 'Sanduíche Natural', qtd: 1, valorUnit: 8.00, total: 8.00 }], subtotal: 14.00, desconto: 0.00, total: 14.00, formaPagamento: 'DINHEIRO', valorRecebido: 20.00, troco: 6.00 }
   const fs = { pequeno: 9, medio: 11, grande: 13 }[template.estilo?.tamanhoFonte] || 11
+  const tituloFs = (template.tamanhos?.titulo || 32) * 0.35
   const paperWidth = PAPER_FORMATS[paperFormat]?.width || 200
   const alignClass = { esquerda: 'text-left', direita: 'text-right', centro: 'text-center' }[template.estilo?.alinhamento] || 'text-center'
 
   return (
     <div className="bg-white text-black rounded font-mono overflow-hidden" style={{ width: paperWidth, fontSize: fs, lineHeight: 1.4, padding: '10px 6px' }}>
       {template.logo?.enabled && (
-        <div className="flex justify-center mb-1">
+        <div className="flex justify-center mb-1" style={{ marginBottom: template.logo.spacingTop || 10 }}>
           <div className="bg-gray-200 flex items-center justify-center rounded text-gray-500" style={{ width: template.logo.width, height: template.logo.height, fontSize: fs - 2 }}>[LOGO]</div>
         </div>
       )}
       <div className={alignClass}>
-        {template.cabecalho?.nomeEmpresa && <div className="font-bold">Rodrigo Dev MT</div>}
+        {template.cabecalho?.nomeEmpresa && <div className="font-bold" style={{ fontSize: tituloFs }}>Rodrigo Dev MT</div>}
         {template.cabecalho?.cnpj && <div>CNPJ 12.345.678/0001-90</div>}
         {template.cabecalho?.endereco && <div>Rua Exemplo, 123 - Centro</div>}
         {template.cabecalho?.telefone && <div>(45) 99999-9999</div>}
       </div>
-      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`}>COMPROVANTE DE VENDA</div>
+      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: tituloFs * 0.9 }}>COMPROVANTE DE VENDA</div>
       <div className={alignClass}>
         {template.adicionais?.numeroVenda && <div>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
         {template.adicionais?.dataHora && <div>DATA: {exampleVenda.data}</div>}
@@ -70,10 +72,10 @@ function PreviewComprovante({ template, paperFormat = '80mm' }) {
         {template.adicionais?.troco && <div>TROCO: R$ {exampleVenda.troco.toFixed(2)}</div>}
       </div>
       <div className={`${alignClass} mt-3 pt-2 border-t border-dashed border-gray-400`}>
-        {template.rodape?.linha1 && <div>{template.rodape.linha1}</div>}
-        {template.rodape?.linha2 && <div>{template.rodape.linha2}</div>}
-        {template.rodape?.linha3 && <div>{template.rodape.linha3}</div>}
-        {template.rodape?.linha4 && <div>{template.rodape.linha4}</div>}
+        {template.rodape?.linha1 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha1}</div>}
+        {template.rodape?.linha2 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha2}</div>}
+        {template.rodape?.linha3 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha3}</div>}
+        {template.rodape?.linha4 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha4}</div>}
       </div>
     </div>
   )
@@ -97,6 +99,35 @@ function DarkSelect({ value, onChange, options, className = '' }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function RangeSlider({ value, onChange, min = 8, max = 60, step = 1, label }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-400">{label}</span>
+        <span className="text-xs text-blue-400 font-mono">{value}px</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(parseInt(e.target.value))}
+        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+    </div>
+  )
+}
+
+function SectionCard({ title, icon: Icon, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="glass rounded-xl overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+        <div className="flex items-center gap-3">
+          <Icon size={18} className="text-blue-400" />
+          <span className="font-semibold text-white">{title}</span>
+        </div>
+        <ChevronDown size={18} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="p-4 pt-0 border-t border-white/5">{children}</div>}
     </div>
   )
 }
@@ -133,6 +164,7 @@ export default function ConfiguracoesImpressao() {
   }
 
   const updateField = (section, field, value) => setTemplate(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }))
+  const updateSize = (field, value) => setTemplate(prev => ({ ...prev, tamanhos: { ...prev.tamanhos, [field]: value } }))
   const toggleField = (section, field) => setTemplate(prev => ({ ...prev, [section]: { ...prev[section], [field]: !prev[section]?.[field] } }))
 
   const handleLogoUpload = (e) => {
@@ -151,7 +183,8 @@ export default function ConfiguracoesImpressao() {
     { id: 'itens', label: 'Itens', icon: List },
     { id: 'adicional', label: 'Adicionais', icon: List },
     { id: 'rodape', label: 'Rodapé', icon: List },
-    { id: 'estilo', label: 'Estilo', icon: List },
+    { id: 'estilo', label: 'Estilo', icon: Palette },
+    { id: 'tamanhos', label: 'Tamanhos', icon: Type },
   ]
 
   return (
@@ -175,19 +208,18 @@ export default function ConfiguracoesImpressao() {
       <div className="flex gap-2 overflow-x-auto pb-2">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === t.id ? 'bg-blue-600 text-white' : 'glass text-gray-400 hover:text-white'}`}>
-            <t.icon size={14} className="inline mr-1" /> {t.label}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === t.id ? 'bg-blue-600 text-white' : 'glass text-gray-400 hover:text-white'}`}>
+            <t.icon size={14} /> {t.label}
           </button>
         ))}
       </div>
 
       {/* Editor */}
-      <div className="glass p-4">
+      <div className="space-y-3">
         {/* Cabeçalho */}
         {activeTab === 'cabecalho' && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-300">Campos do Cabeçalho</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <SectionCard title="Campos do Cabeçalho" icon={Building2}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {Object.entries(fieldLabels).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                   <input type="checkbox" checked={template.cabecalho?.[key] ?? true} onChange={() => toggleField('cabecalho', key)} className="rounded" />
@@ -195,45 +227,45 @@ export default function ConfiguracoesImpressao() {
                 </label>
               ))}
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Logo */}
         {activeTab === 'logo' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-300">Configurações do Logo</h3>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={template.logo?.enabled ?? false} onChange={() => updateField('logo', 'enabled', !template.logo?.enabled)} className="rounded" />
-                <span className="text-sm text-gray-300">Ativar Logo</span>
+          <SectionCard title="Configurações do Logo" icon={Image}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-gray-300">Exibir Logo no Comprovante</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={template.logo?.enabled ?? false} onChange={() => updateField('logo', 'enabled', !template.logo?.enabled)} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-blue-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
             {template.logo?.enabled && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-xs text-gray-400 mb-1">Largura (px)</label><input type="number" value={template.logo?.width || 120} onChange={e => updateField('logo', 'width', parseInt(e.target.value) || 120)} className="input-field text-sm" /></div>
-                  <div><label className="block text-xs text-gray-400 mb-1">Altura (px)</label><input type="number" value={template.logo?.height || 60} onChange={e => updateField('logo', 'height', parseInt(e.target.value) || 60)} className="input-field text-sm" /></div>
-                  <div><label className="block text-xs text-gray-400 mb-1">Espaço Acima (px)</label><input type="number" value={template.logo?.spacingTop || 10} onChange={e => updateField('logo', 'spacingTop', parseInt(e.target.value) || 10)} className="input-field text-sm" /></div>
-                  <div><label className="block text-xs text-gray-400 mb-1">Espaço Abaixo (px)</label><input type="number" value={template.logo?.spacingBottom || 10} onChange={e => updateField('logo', 'spacingBottom', parseInt(e.target.value) || 10)} className="input-field text-sm" /></div>
-                </div>
+              <div className="space-y-4">
+                <RangeSlider label="Largura da Logo" value={template.logo?.width || 120} onChange={v => updateField('logo', 'width', v)} min={60} max={200} />
+                <RangeSlider label="Altura da Logo" value={template.logo?.height || 60} onChange={v => updateField('logo', 'height', v)} min={30} max={120} />
+                <RangeSlider label="Espaço Acima" value={template.logo?.spacingTop || 10} onChange={v => updateField('logo', 'spacingTop', v)} min={0} max={30} />
+                <RangeSlider label="Espaço Abaixo" value={template.logo?.spacingBottom || 10} onChange={v => updateField('logo', 'spacingBottom', v)} min={0} max={30} />
                 {template.logo?.base64 ? (
                   <div className="border border-gray-600 rounded-lg p-4 text-center">
-                    <img src={template.logo.base64} alt="Logo" className="max-h-20 mx-auto mb-2" />
+                    <img src={template.logo.base64} alt="Logo" className="max-h-24 mx-auto mb-2 rounded" />
                     <button onClick={() => updateField('logo', 'base64', null)} className="text-red-400 text-xs hover:underline">Remover</button>
                   </div>
                 ) : (
-                  <label className="btn-ghost cursor-pointer text-sm"><Image size={14} className="inline mr-1" /> Upload Logo<input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /></label>
+                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg cursor-pointer text-sm text-gray-300 transition-all">
+                    <Image size={16} /> Upload Logo
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                  </label>
                 )}
-              </>
+              </div>
             )}
-          </div>
+          </SectionCard>
         )}
 
         {/* Itens */}
         {activeTab === 'itens' && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-300">Campos dos Itens</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <SectionCard title="Campos dos Itens" icon={List}>
+            <div className="grid grid-cols-2 gap-2">
               {Object.entries(itemLabels).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                   <input type="checkbox" checked={template.itens?.[key] ?? true} onChange={() => toggleField('itens', key)} className="rounded" />
@@ -241,14 +273,13 @@ export default function ConfiguracoesImpressao() {
                 </label>
               ))}
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Adicional */}
         {activeTab === 'adicional' && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-300">Campos Adicionais</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <SectionCard title="Campos Adicionais" icon={List}>
+            <div className="grid grid-cols-2 gap-2">
               {Object.entries(adicionalLabels).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                   <input type="checkbox" checked={template.adicionais?.[key] ?? true} onChange={() => toggleField('adicionais', key)} className="rounded" />
@@ -256,47 +287,73 @@ export default function ConfiguracoesImpressao() {
                 </label>
               ))}
             </div>
-          </div>
+          </SectionCard>
         )}
 
         {/* Rodapé */}
         {activeTab === 'rodape' && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-300">Mensagens do Rodapé</h3>
-            {[1, 2, 3, 4].map(n => (
-              <div key={n}>
-                <label className="block text-xs text-gray-400 mb-1">Linha {n}</label>
-                <input type="text" value={template.rodape?.[`linha${n}`] || ''} onChange={e => updateField('rodape', `linha${n}`, e.target.value)} className="input-field text-sm" placeholder={`Mensagem ${n} (opcional)`} />
-              </div>
-            ))}
-          </div>
+          <SectionCard title="Mensagens do Rodapé" icon={List}>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map(n => (
+                <div key={n}>
+                  <label className="block text-xs text-gray-400 mb-1">Linha {n}</label>
+                  <input type="text" value={template.rodape?.[`linha${n}`] || ''} onChange={e => updateField('rodape', `linha${n}`, e.target.value)} className="input-field text-sm" placeholder={`Mensagem ${n} (opcional)`} />
+                </div>
+              ))}
+            </div>
+          </SectionCard>
         )}
 
         {/* Estilo */}
         {activeTab === 'estilo' && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-300">Estilo do Comprovante</h3>
-            <div className="flex flex-wrap gap-4">
+          <SectionCard title="Estilo e Alinhamento" icon={Palette}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Alinhamento</label>
-                <DarkSelect value={template.estilo?.alinhamento || 'centro'} onChange={v => updateField('estilo', 'alinhamento', v)} options={[{ value: 'centro', label: 'Centro' }, { value: 'esquerda', label: 'Esquerda' }, { value: 'direita', label: 'Direita' }]} className="w-36" />
+                <label className="block text-xs text-gray-400 mb-2">Alinhamento</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'esquerda', icon: AlignLeft },
+                    { value: 'centro', icon: AlignCenter },
+                    { value: 'direita', icon: AlignRight },
+                  ].map(({ value, icon: Icon }) => (
+                    <button key={value} onClick={() => updateField('estilo', 'alinhamento', value)}
+                      className={`flex-1 p-3 rounded-lg border transition-all ${template.estilo?.alinhamento === value ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'border-gray-700 text-gray-400 hover:bg-white/5'}`}>
+                      <Icon size={18} className="mx-auto" />
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Tamanho da Fonte</label>
-                <DarkSelect value={template.estilo?.tamanhoFonte || 'medio'} onChange={v => updateField('estilo', 'tamanhoFonte', v)} options={[{ value: 'pequeno', label: 'Pequeno' }, { value: 'medio', label: 'Médio' }, { value: 'grande', label: 'Grande' }]} className="w-36" />
+                <label className="block text-xs text-gray-400 mb-2">Tamanho da Fonte</label>
+                <DarkSelect value={template.estilo?.tamanhoFonte || 'medio'} onChange={v => updateField('estilo', 'tamanhoFonte', v)} options={[{ value: 'pequeno', label: 'Pequeno' }, { value: 'medio', label: 'Médio' }, { value: 'grande', label: 'Grande' }]} className="w-full" />
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Espaço entre Linhas</label>
-                <input type="number" value={template.estilo?.espacoEntreLinhas || 8} onChange={e => updateField('estilo', 'espacoEntreLinhas', parseInt(e.target.value) || 8)} className="input-field text-sm w-24" />
+                <label className="block text-xs text-gray-400 mb-2">Espaço entre Linhas</label>
+                <RangeSlider label="" value={template.estilo?.espacoEntreLinhas || 8} onChange={v => updateField('estilo', 'espacoEntreLinhas', v)} min={2} max={16} />
               </div>
             </div>
-          </div>
+          </SectionCard>
+        )}
+
+        {/* Tamanhos */}
+        {activeTab === 'tamanhos' && (
+          <SectionCard title="Tamanhos dos Títulos" icon={Type}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <RangeSlider label="Título Principal" value={template.tamanhos?.titulo || 32} onChange={v => updateSize('titulo', v)} min={20} max={48} />
+              <RangeSlider label="Subtítulo" value={template.tamanhos?.subtitulo || 24} onChange={v => updateSize('subtitulo', v)} min={16} max={36} />
+              <RangeSlider label="Corpo do Texto" value={template.tamanhos?.corpo || 22} onChange={v => updateSize('corpo', v)} min={14} max={32} />
+              <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
+            </div>
+            <div className="mt-4 p-3 bg-gray-800/50 rounded-lg">
+              <p className="text-xs text-gray-400">Preview em tempo real ao lado ▶</p>
+            </div>
+          </SectionCard>
         )}
       </div>
 
-      {/* Preview - abaixo do editor */}
+      {/* Preview */}
       {showPreview && (
-        <div className="glass p-4">
+        <div className="glass rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
               <Eye size={14} /> Preview do Comprovante
