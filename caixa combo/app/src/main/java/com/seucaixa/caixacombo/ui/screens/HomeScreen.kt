@@ -462,6 +462,23 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(if (isSmallScreen) 12.dp else 24.dp))
 
+            // Botão atualizar produtos (aparece após login no sistema)
+            if (SecurePrefs.getOperatorId(context) > 0) {
+                OutlinedButton(
+                    onClick = {
+                        com.seucaixa.caixacombo.service.PollingService.requestProductSync()
+                        android.widget.Toast.makeText(context, "Sincronizando produtos...", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
+                ) {
+                    Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Atualizar Produtos")
+                }
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
+            }
+
             // Rodapé
             if (rodape.isNotEmpty()) {
                 Text(
