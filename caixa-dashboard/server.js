@@ -2326,6 +2326,10 @@ app.post('/api/device/poll', async (req, res) => {
     addAuditoria('bloqueio', deviceId, 'Novo dispositivo conectado sem serial válido; manter em pending', 'Sistema');
   }
 
+  console.log(`📱 [POLL-DEBUG] deviceId=${deviceId}, serial=${serialNumber}`);
+  console.log(`📱 [POLL-DEBUG] existing no mapa: ${JSON.stringify(existing)}`);
+  console.log(`📱 [POLL-DEBUG] existingDb no banco: ${JSON.stringify(existingDb)}`);
+  
   // Registrar/atualizar dispositivo no mapa
   // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
@@ -2333,6 +2337,8 @@ app.post('/api/device/poll', async (req, res) => {
   // Usar empresaId do banco de dados (mais confiável) ou do mapa em memória
   const pollEmpresaId = existingDb?.empresaId || existing?.empresaId || null;
   const pollStatus = isApproved ? (status || 'online') : 'pending';
+  
+  console.log(`📱 [POLL-DEBUG] isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}, pollStatus=${pollStatus}`);
 
   connectedDevices.set(deviceId, {
     socketId: existing?.socketId || null,
@@ -2401,6 +2407,10 @@ app.post('/api/device/poll', async (req, res) => {
   const serverAgeMs = Date.now() - serverStartTime.getTime();
   const serverJustStarted = serverAgeMs < 600000; // 10 minutos
   const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
+  
+  console.log(`📱 [POLL-DEBUG] deviceId=${deviceId}, serial=${serialNumber}`);
+  console.log(`📱 [POLL-DEBUG] existing no mapa: ${JSON.stringify(existing)}`);
+  console.log(`📱 [POLL-DEBUG] existingDb no banco: ${JSON.stringify(existingDb)}`);
   
   // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
   const empresaDoTerminal = (db.empresas || []).find(e => String(e.id) === String(pollEmpresaId));
