@@ -331,12 +331,41 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
+// Função helper para obter companyId (empresaId) de forma segura
+function getCompanyId(req) {
+  // Se é empresa (role='empresa'), usar empresaId do token
+  if (req.user?.role === 'empresa') {
+    return req.user.empresaId;
+  }
+  // Se é admin do sistema (role='admin'), retornar null (deve especificar empresaId no body)
+  if (req.user?.role === 'admin') {
+    return null;
+  }
+  // Funcionário também usa empresaId do token
+  if (req.user?.role === 'funcionario') {
+    return req.user.empresaId;
+  }
+  return null;
+}
+
+// Função para filtrar array por empresaId
+function filterByEmpresaId(array, empresaId, field = 'empresaId') {
+  if (!empresaId) return [];
+  return array.filter(item => item[field] && String(item[field]) === String(empresaId));
+}
+
 function authenticateToken(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Não autorizado' });
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Token inválido' });
     req.user = user;
+    // Adicionar helper para identificar tipo de usuário
+    req.isSuperAdmin = user?.role === 'admin' && !user?.empresaId;
+    req.isCompanyAdmin = user?.role === 'empresa';
+    req.isFuncionario = user?.role === 'funcionario';
+    // Obter companyId (empresaId) do token ou body
+    req.companyId = getCompanyId(req);
     next();
   });
 }
@@ -2092,6 +2121,131 @@ app.post('/api/fechamento-pdf', authenticateToken, async (req, res) => {
     console.error('Erro ao gerar PDF:', error);
     res.status(500).json({ error: 'Erro ao gerar PDF', details: error.message });
   }
+});
+
+// ==================== TERMINAL ACTIVATION & SYNC (Multi-Tenant) ====================
+
+// POST /api/terminal/activate - Ativar terminal com código de ativação
+app.post('/api/terminal/activate', async (req, res) => {
+  const { activationCode, deviceId, deviceName, deviceType, serialNumber } = req.body;
+  
+  if (!activationCode) {
+    return res.status(400).json({ error: 'Código de ativação obrigatório' });
+  }
+  
+  console.log(`📱 [TERMINAL-ACTIVATE] Código: ${activationCode}, deviceId: ${deviceId}`);
+  
+  // Buscar terminal pelo código de ativação
+  const terminal = db.dispositivos?.find(d => d.activationCode === activationCode);
+  
+  if (!terminal) {
+    return res.status(404).json({ error: 'Código de ativação inválido' });
+  }
+  
+  if (terminal.status === 'blocked') {
+    return res.status(403).json({ error: 'Terminal bloqueado. Contate o administrador.' });
+  }
+  
+  const empresa = db.empresas?.find(e => e.id === terminal.empresaId);
+  if (!empresa) {
+    return res.status(404).json({ error: 'Empresa whitelabel não encontrada para este terminal' });
+  }
+  
+  if (!empresa.ativo) {
+    return res.status(403).json({ error: 'Empresa desativada. Contate o administrador.' });
+  }
+  
+  // Atualizar dados do terminal
+  terminal.deviceId = deviceId || terminal.deviceId;
+  terminal.deviceName = deviceName || terminal.deviceName;
+  terminal.deviceType = deviceType || terminal.deviceType;
+  terminal.serialNumber = serialNumber || terminal.serialNumber;
+  terminal.lastPoll = new Date();
+  
+  // Gerar token de autenticação para o terminal
+  const token = jwt.sign({
+    role: 'terminal',
+    deviceId: terminal.deviceId,
+    empresaId: terminal.empresaId,
+    isTerminal: true
+  }, JWT_SECRET, { expiresIn: '30d' });
+  
+  console.log(`✅ [TERMINAL-ACTIVATE] Terminal ${terminal.deviceId} ativado - empresa: ${empresa.nome} (${empresa.id})`);
+  
+  res.json({
+    success: true,
+    terminalId: terminal.deviceId,
+    companyId: terminal.empresaId,
+    companyName: empresa.nome,
+    token,
+    status: terminal.status || 'pending',
+    config: {
+      primaryColor: empresa.primaryColor || '#3b82f6',
+      secondaryColor: empresa.secondaryColor || '#06b6d4',
+      accentColor: empresa.accentColor || '#10b981',
+      logoUrl: empresa.logoUrl || ''
+    }
+  });
+});
+
+// Middleware para autenticar token de terminal
+function authenticateTerminalToken(req, res, next) {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token de terminal obrigatório' });
+  
+  jwt.verify(token, JWT_SECRET, (err, terminal) => {
+    if (err) return res.status(403).json({ error: 'Token de terminal inválido' });
+    if (terminal.role !== 'terminal') return res.status(403).json({ error: 'Token não é de terminal' });
+    
+    req.terminal = terminal;
+    req.terminalCompanyId = terminal.empresaId;
+    next();
+  });
+}
+
+// GET /api/terminal/sync - Sincronizar dados do terminal (multi-tenant)
+app.get('/api/terminal/sync', authenticateTerminalToken, async (req, res) => {
+  const companyId = req.terminalCompanyId;
+  
+  console.log(`📱 [TERMINAL-SYNC] companyId=${companyId}`);
+  
+  // Buscar dados SOMENTE da empresa vinculada ao terminal
+  const empresa = db.empresas?.find(e => e.id === companyId);
+  
+  if (!empresa) {
+    return res.status(404).json({ error: 'Empresa não encontrada' });
+  }
+  
+  // Produtos da empresa
+  const produtos = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(companyId));
+  
+  // Categorias da empresa
+  const categorias = (db.categorias || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  
+  // Clientes da empresa
+  const clientes = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  
+  // Configurações da empresa
+  const settings = {
+    primaryColor: empresa.primaryColor || '#3b82f6',
+    secondaryColor: empresa.secondaryColor || '#06b6d4',
+    accentColor: empresa.accentColor || '#10b981',
+    logoUrl: empresa.logoUrl || ''
+  };
+  
+  console.log(`📱 [TERMINAL-SYNC] ${companyId}: ${produtos.length} produtos, ${categorias.length} categorias, ${clientes.length} clientes`);
+  
+  res.json({
+    company: {
+      id: empresa.id,
+      name: empresa.nome,
+      settings
+    },
+    products: produtos,
+    categories: categorias,
+    customers: clientes,
+    updatedAt: new Date().toISOString()
+  });
 });
 
 // ==================== POLLING REST API (Stone Compliance - sem WebSocket no POS) ====================
