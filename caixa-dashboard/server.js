@@ -810,6 +810,7 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
   let empresaId = null;
   if (req.user.role === 'empresa') {
     empresaId = req.user.empresaId;
+    console.log(`📦 [DEBUG-PRODUTO] Empresa criando produto - req.user.empresaId=${empresaId}, role=${req.user.role}, tokenEmpresaId=${req.user.empresaId}`);
   } else if (req.user.role === 'admin') {
     empresaId = req.body.empresaId || null;
     if (!empresaId) {
@@ -2203,6 +2204,7 @@ app.post('/api/device/poll', async (req, res) => {
   // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
   console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}`);
   console.log(`📦 [POLL] existing=${JSON.stringify(existing?.empresaId)}, existingDb=${JSON.stringify(existingDb?.empresaId)}`);
+  console.log(`📦 [POLL-DEBUG] Todos os produtos no db:`, (db.produtos || []).map(p => ({ id: p.id, nome: p.nome, empresaId: p.empresaId, tipo: typeof p.empresaId })));
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados SOMENTE da empresa
     const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(pollEmpresaId));
