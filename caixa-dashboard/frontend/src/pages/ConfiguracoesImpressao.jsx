@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
 import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building } from 'lucide-react'
+import { useToast } from '../components/Toast'
 
 const PAPER_FORMATS = {
   '80mm': { label: '80mm Padrão', width: 200 },
@@ -143,6 +144,7 @@ function SectionCard({ title, icon: Icon, children, defaultOpen = true }) {
 
 export default function ConfiguracoesImpressao() {
   const { token, user } = useAuth()
+  const toast = useToast()
   const [template, setTemplate] = useState(defaultTemplate)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -167,8 +169,10 @@ export default function ConfiguracoesImpressao() {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...template, paperFormat })
       })
-      alert(res.ok ? '✅ Template salvo com sucesso' : '❌ Erro ao salvar')
-    } catch { alert('❌ Erro ao salvar') }
+      const data = await res.json()
+      if (res.ok) toast.success('✅ Template salvo com sucesso')
+      else toast.error(data.error || '❌ Erro ao salvar')
+    } catch { toast.error('❌ Erro ao salvar') }
     setSaving(false)
   }
 

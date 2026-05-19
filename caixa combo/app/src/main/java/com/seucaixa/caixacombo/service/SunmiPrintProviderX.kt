@@ -358,96 +358,92 @@ class SunmiPrintProviderX(private val context: Context) {
                 
                 // Título ou configuracao.titulo
                 val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
-                addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
+                addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
                 // CNPJ
                 configuracao?.cnpj?.takeIf { it.isNotBlank() }?.let {
-                    addText("CNPJ $it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("CNPJ $it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 // IE
                 configuracao?.inscricaoEstadual?.takeIf { it.isNotBlank() }?.let {
-                    addText("IE:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("IE:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 // Endereço
                 configuracao?.endereco?.takeIf { it.isNotBlank() }?.let {
-                    addText("END:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("END:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 // Cidade
                 configuracao?.cidade?.takeIf { it.isNotBlank() }?.let {
-                    addText("CIDADE:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("CIDADE:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 // CEP
                 configuracao?.cep?.takeIf { it.isNotBlank() }?.let {
-                    addText("CEP:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("CEP:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 // Telefone
                 configuracao?.telefone?.takeIf { it.isNotBlank() }?.let {
-                    addText("TEL:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    addText("TEL:$it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                
-                // Título FECHAMENTO DE CAIXA
-                addText("FECHAMENTO DE CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(35).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 
-                // Data na primeira linha, hora na segunda
-                addText("DATA: ${dateFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                // Título FECHAMENTO DE CAIXA
+                addText("FECHAMENTO DE CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("HORA: ${timeFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                addText("DATA: ${dateFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("HORA: ${timeFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Informações
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
-                addText("CAIXA: 01", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(35).enableBold(true))
+                addText("CAIXA: 01", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("OPERADOR: $nomeOperador", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(35).enableBold(true))
+                addText("OPERADOR: $nomeOperador", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("ABERTURA: ${dateFormat.format(dataAbertura)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                addText("ABERTURA: ${dateFormat.format(dataAbertura)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 val diaSemana = diaFormat.format(dataAbertura).replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale("pt", "BR")) else it.toString() }
-                addText("DIA: $diaSemana", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                addText("DIA: $diaSemana", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("HORA ABERTURA: ${timeFormat.format(dataAbertura)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                addText("HORA ABERTURA: ${timeFormat.format(dataAbertura)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
                 // Fechamento data e hora separados
-                addText("FECHAMENTO: ${dateFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
+                addText("FECHAMENTO: ${dateFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("HORA FECHAMENTO: ${timeFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("HORA FECHAMENTO: ${timeFormat.format(dataFechamento)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Produtos vendidos (agora vem primeiro)
                 if (produtosVendidos.isNotEmpty()) {
-                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 3)
-                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                    addText("PRODUTOS VENDIDOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(36).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
+                    addText("PRODUTOS VENDIDOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
 
                     produtosVendidos.forEach { (nome, qtd, total) ->
-                        addText("$nome", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                        addText("$nome", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                        addText("QTD: $qtd   TOTAL: R$ ${String.format("%.2f", total)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                        addText("QTD: $qtd   TOTAL: R$ ${String.format("%.2f", total)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     }
 
                     val totalItens = produtosVendidos.sumOf { it.second }
-                    addText("ITENS VENDIDOS: $totalItens", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(35).enableBold(true))
+                    addText("ITENS VENDIDOS: $totalItens", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 }
@@ -455,8 +451,8 @@ class SunmiPrintProviderX(private val context: Context) {
                 // Resumo de vendas por forma de pagamento
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("RESUMO DE VENDAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                addText("RESUMO DE VENDAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
 
                 valoresPorForma.forEach { (forma, valor) ->
@@ -465,43 +461,42 @@ class SunmiPrintProviderX(private val context: Context) {
                         "CARTAO_DEBITO" -> "DÉBITO"
                         else -> forma.replace("_", " ")
                     }
-                    addText("$label : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(35).enableBold(true))
+                    addText("$label : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
 
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("TOTAL DE VENDAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                addText("TOTAL DE VENDAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("R$ ${String.format("%.2f", totalVendas)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                addText("R$ ${String.format("%.2f", totalVendas)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
                 // FATURAMENTO
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("FATURAMENTO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                addText("FATURAMENTO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("R$ ${String.format("%.2f", totalVendas)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                addText("R$ ${String.format("%.2f", totalVendas)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Sangrias (seção separada com motivo)
                 if (sangriasDetalhadas.isNotEmpty()) {
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                    addText("SANGRIAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
-                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                    addText("SANGRIAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
 
                     sangriasDetalhadas.forEachIndexed { index, (motivo, valor, saldo) ->
-                        addText("${motivo} : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                        addText("${motivo} : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     }
 
-                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
-                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                    addText("TOTAL SANGRIAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                    addText("-R$ ${String.format("%.2f", totalSangrias)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
+                    addText("TOTAL SANGRIAS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                    addText("-R$ ${String.format("%.2f", totalSangrias)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 }
 
@@ -509,41 +504,41 @@ class SunmiPrintProviderX(private val context: Context) {
                 if (suprimentosDetalhados.isNotEmpty()) {
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                    addText("SUPRIMENTOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
-                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                    addText("SUPRIMENTOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
 
                     suprimentosDetalhados.forEachIndexed { index, (motivo, valor, saldo) ->
-                        addText("${motivo} : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                        addText("${motivo} : R$ ${String.format("%.2f", valor)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     }
 
-                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
-                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                    addText("TOTAL SUPRIMENTOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                    addText("+R$ ${String.format("%.2f", totalSuprimentos)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                    initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
+                    addText("TOTAL SUPRIMENTOS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                    addText("+R$ ${String.format("%.2f", totalSuprimentos)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 }
 
                 // Caixa final
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 3)
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("CAIXA FINAL", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(36).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
-                addText("DINHEIRO ESPERADO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                addText("CAIXA FINAL", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("DINHEIRO ESPERADO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
 
-                addText("R$ ${String.format("%.2f", saldoFinal)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(42).enableBold(true))
+                addText("R$ ${String.format("%.2f", saldoFinal)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
 
                 // VALOR EM CAIXA
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 3)
-                addText("VALOR EM CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                addText("VALOR EM CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 val valorEmCaixa = if (valorContado > 0) valorContado else saldoFinal
-                addText("R$ ${String.format("%.2f", valorEmCaixa)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(42).enableBold(true))
+                addText("R$ ${String.format("%.2f", valorEmCaixa)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
 
@@ -553,43 +548,44 @@ class SunmiPrintProviderX(private val context: Context) {
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                     initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
                     if (diferenca > 0) {
-                        addText("sobra caixa", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                        addText("SOBRA CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                        addText("R$ ${String.format("%.2f", diferenca)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(42).enableBold(true))
+                        addText("R$ ${String.format("%.2f", diferenca)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                     } else {
-                        addText("falta", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                        addText("FALTA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                         printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                        addText("R$ ${String.format("%.2f", Math.abs(diferenca))}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(42).enableBold(true))
+                        addText("R$ ${String.format("%.2f", Math.abs(diferenca))}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                     }
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 }
 
                 // Footer - usa configuracao ou padrão
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 3)
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
                 
                 // Linha 1 do rodapé
                 configuracao?.rodapeLinha1?.takeIf { it.isNotBlank() }?.let {
-                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
-                } ?: addText("Sistema: Rodrigo Dev MT", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                } ?: addText("Sistema: Rodrigo Dev MT", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
-                // Linha 2 do rodapé (WhatsApp na segunda linha como solicitado)
+                // Linha 2 do rodapé
                 configuracao?.rodapeLinha2?.takeIf { it.isNotBlank() }?.let {
-                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 configuracao?.rodapeLinha3?.takeIf { it.isNotBlank() }?.let {
-                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
                 configuracao?.rodapeLinha4?.takeIf { it.isNotBlank() }?.let {
-                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 } ?: run {
-                    addText("WhatsApp: (45)99104-6021", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                    addText("WhatsApp: (45)99104-6021", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 

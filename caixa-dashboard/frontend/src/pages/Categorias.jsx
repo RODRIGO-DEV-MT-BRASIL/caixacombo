@@ -3,10 +3,12 @@ import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
 import { Tags, Plus, Pencil, Trash2, Search, X, Loader2 } from 'lucide-react'
+import { useToast } from '../components/Toast'
 
 export default function Categorias() {
   const { user, token } = useAuth()
   const { socket } = useSocket()
+  const toast = useToast()
   const [categorias, setCategorias] = useState([])
   const [empresas, setEmpresas] = useState([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +69,7 @@ export default function Categorias() {
     const body = { nome: form.nome, descricao: form.descricao }
     if (user?.role === 'admin') {
       if (!form.empresaId) {
-        alert('Selecione uma empresa para cadastrar a categoria')
+        toast.warning('Selecione uma empresa para cadastrar a categoria')
         return
       }
       body.empresaId = form.empresaId

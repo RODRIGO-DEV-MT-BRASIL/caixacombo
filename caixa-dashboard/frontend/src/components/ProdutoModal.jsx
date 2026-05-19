@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Package, ImageIcon, Loader2, Upload } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
 
 export default function ProdutoModal({ isOpen, onClose, onSave, produto, categorias, empresas, user, token }) {
+  const toast = useToast()
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
@@ -104,13 +106,13 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
       if (user?.role === 'admin') {
         if (!form.empresaId) {
           setLoading(false)
-          alert('Selecione uma empresa para cadastrar o produto')
+          toast.warning('Selecione uma empresa para cadastrar o produto')
           return
         }
         const empresaSelecionada = empresas?.find(e => e.id === form.empresaId)
         if (!empresaSelecionada) {
           setLoading(false)
-          alert('Empresa selecionada inválida')
+          toast.error('Empresa selecionada inválida')
           return
         }
         produtoData.empresaId = form.empresaId

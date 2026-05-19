@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
 import { Palette, Save, Loader2, RotateCw, Shield } from 'lucide-react'
+import { useToast } from '../components/Toast'
 import SenhaConfirmModal from '../components/SenhaConfirmModal'
 
 const defaultConfig = {
@@ -14,6 +15,7 @@ const defaultConfig = {
 
 export default function Configuracoes() {
   const { token, user } = useAuth()
+  const toast = useToast()
   const [config, setConfig] = useState(defaultConfig)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -49,7 +51,6 @@ export default function Configuracoes() {
     try {
       let res
       if (isEmpresa && empresaId) {
-        // Empresa: atualizar sua própria empresa
         res = await fetch(apiUrl(`/api/empresas/${empresaId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -62,7 +63,6 @@ export default function Configuracoes() {
           })
         })
       } else {
-        // Admin: atualizar config global
         res = await fetch(apiUrl('/api/config'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -71,13 +71,13 @@ export default function Configuracoes() {
       }
       const data = await res.json()
       if (res.ok) {
-        alert('✅ Configurações salvas com sucesso')
+        toast.success('✅ Configurações salvas com sucesso')
         applyColors(config)
       } else {
-        alert('❌ Erro: ' + (data.error || 'Erro ao salvar'))
+        toast.error(data.error || '❌ Erro ao salvar')
       }
     } catch (e) {
-      alert('❌ Erro ao salvar configurações')
+      toast.error('❌ Erro ao salvar configurações')
     }
     setSaving(false)
   }
