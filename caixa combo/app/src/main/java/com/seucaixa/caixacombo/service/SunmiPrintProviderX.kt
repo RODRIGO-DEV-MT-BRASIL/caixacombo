@@ -219,62 +219,78 @@ class SunmiPrintProviderX(private val context: Context) {
                 
                 // Título ou configuracao.titulo
                 val titulo = configuracao?.titulo?.takeIf { it.isNotBlank() } ?: "Rodrigo Dev MT"
-                addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                addText(titulo, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 
                 // CNPJ
                 configuracao?.cnpj?.takeIf { it.isNotBlank() }?.let {
-                    addText("CNPJ $it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                    addText("CNPJ $it", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                     printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 }
                 
-                addText("ABERTURA DE CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("DATA: ${dateFormat.format(dataHora)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                addText("ABERTURA DE CAIXA", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(32).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("DATA: ${dateFormat.format(dataHora)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Informações
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.LEFT))
-                addText("CAIXA: 01", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
+                addText("CAIXA: 01", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("OPERADOR: $nomeOperador", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
+                addText("OPERADOR: $nomeOperador", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("HORA: ${timeFormat.format(dataHora)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("HORA: ${timeFormat.format(dataHora)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Valor Inicial
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("VALOR INICIAL", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                addText("VALOR INICIAL", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(28).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("DINHEIRO: R$ ${String.format("%.2f", valorInicial)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("DINHEIRO: R$ ${String.format("%.2f", valorInicial)}", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Observação
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("OBSERVACAO:", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                addText("OBSERVACAO:", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("Fundo de troco", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("Fundo de troco", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(24).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Status
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("STATUS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(34).enableBold(true))
+                addText("STATUS", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(26).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("CAIXA ABERTO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(38).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                addText("CAIXA ABERTO", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
 
                 // Footer
                 initLine(com.sunmi.printerx.style.BaseStyle.getStyle().setAlign(com.sunmi.printerx.enums.Align.CENTER))
-                addText("Sistema: Rodrigo Dev MT", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
+                configuracao?.rodapeLinha1?.takeIf { it.isNotBlank() }?.let {
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                } ?: addText("Sistema: Rodrigo Dev MT", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
-                addText("WhatsApp: (45)99104-6021", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(30).enableBold(true))
-                printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 2)
+                
+                configuracao?.rodapeLinha2?.takeIf { it.isNotBlank() }?.let {
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                }
+                
+                configuracao?.rodapeLinha3?.takeIf { it.isNotBlank() }?.let {
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                }
+                
+                configuracao?.rodapeLinha4?.takeIf { it.isNotBlank() }?.let {
+                    addText(it, com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                } ?: run {
+                    addText("WhatsApp: (45)99104-6021", com.sunmi.printerx.style.TextStyle.getStyle().setTextSize(22).enableBold(true))
+                    printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 1)
+                }
+                
                 printDividingLine(com.sunmi.printerx.enums.DividingLine.EMPTY, 3)
 
                 autoOut()
