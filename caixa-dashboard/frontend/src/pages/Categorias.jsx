@@ -13,6 +13,7 @@ export default function Categorias() {
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const [form, setForm] = useState({ nome: '', descricao: '', empresaId: '' })
   const [filterEmpresa, setFilterEmpresa] = useState('')
 
@@ -88,11 +89,17 @@ export default function Categorias() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Excluir esta categoria?')) return
-    await fetch(apiUrl(`/api/categorias/${id}`), {
+    const categoria = categorias.find(c => c.id === id)
+    setConfirmDelete(categoria)
+  }
+
+  const confirmDeleteExecute = async () => {
+    if (!confirmDelete) return
+    await fetch(apiUrl(`/api/categorias/${confirmDelete.id}`), {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     })
+    setConfirmDelete(null)
     fetchCategorias()
   }
 
@@ -209,6 +216,31 @@ export default function Categorias() {
                 <button type="submit" className="btn-primary flex-1">{editing ? 'Salvar' : 'Criar'}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm">
+            <div className="p-6 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Trash2 className="text-red-400" size={20} />
+                Confirmar Exclusão
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-300 mb-2">Deseja excluir esta categoria?</p>
+              <p className="text-white font-medium">{confirmDelete.nome}</p>
+            </div>
+            <div className="p-4 border-t border-gray-700 flex gap-3 justify-end">
+              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                Cancelar
+              </button>
+              <button onClick={confirmDeleteExecute} className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+                Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}
