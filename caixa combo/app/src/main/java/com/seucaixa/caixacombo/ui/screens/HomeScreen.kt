@@ -302,7 +302,7 @@ fun HomeScreen(
                                         withContext(Dispatchers.Main) {
                                             isLoading = false
                                             SecurePrefs.saveOperator(context, nome, cargo, funcId)
-                                            SecurePrefs.saveOperatorEmpresaId(empresaId)
+                                            SecurePrefs.saveOperatorEmpresaId(context, empresaId)
                                             sharedPreferences.edit()
                                                 .putString("operador_nome", nome)
                                                 .putString("operador_cargo", cargo)

@@ -55,12 +55,19 @@ object SecurePrefs {
         return getPrefs(context).getLong(KEY_OPERATOR_ID, -1)
     }
 
-    fun saveOperatorEmpresaId(empresaId: String) {
+    fun saveOperatorEmpresaId(context: Context, empresaId: String) {
         cachedEmpresaId = empresaId
+        getPrefs(context).edit().putString(KEY_OPERATOR_EMPRESA_ID, empresaId).apply()
     }
 
-    fun getOperadorEmpresaId(): String? {
-        return cachedEmpresaId
+    fun getOperadorEmpresaId(context: Context? = null): String? {
+        if (cachedEmpresaId != null) return cachedEmpresaId
+        if (context != null) {
+            val stored = getPrefs(context).getString(KEY_OPERATOR_EMPRESA_ID, null)
+            cachedEmpresaId = stored
+            return stored
+        }
+        return null
     }
 
     fun clearOperator(context: Context) {

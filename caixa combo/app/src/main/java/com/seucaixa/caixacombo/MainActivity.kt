@@ -249,11 +249,13 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "Approval status: approved=$approved, status=$status, empresaId=$empresaId")
                     isApprovedState.value = approved
+                    if (empresaId != null) {
+                        com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(applicationContext, empresaId)
+                        android.util.Log.d("MainActivity", "EmpresaId salvo: $empresaId")
+                    }
                     if (!approved) {
-                        // Terminal pendente - mostrar tela de aguardando aprovação
                         showApprovalPendingScreen()
                     } else {
-                        // Terminal aprovado - fechar tela de pendência se aberta
                         hideApprovalPendingScreen()
                     }
                 }
@@ -1528,7 +1530,7 @@ class MainActivity : ComponentActivity() {
                     // Salvar operador logado
                     val funcId = funcionario.optLong("id", -1)
                     com.seucaixa.caixacombo.data.SecurePrefs.saveOperator(this@MainActivity, nome, cargo, funcId)
-                    com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(empresaId)
+                    com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(this@MainActivity, empresaId)
 
                     // Salvar permissões
                     val permPrefs = getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)
