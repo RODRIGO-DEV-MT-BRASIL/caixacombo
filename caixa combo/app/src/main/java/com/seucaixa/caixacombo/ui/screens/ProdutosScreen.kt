@@ -205,36 +205,39 @@ fun ProdutosScreen(
                 Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)
                 ) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
 
-                    // Busca moderna com estilo ultracompacto
+                    // Busca moderna ultralarga
                     Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFF5F5F5),
-                        tonalElevation = 2.dp,
-                        shadowElevation = 4.dp
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFF8F9FA),
+                        tonalElevation = 4.dp,
+                        shadowElevation = 6.dp
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                                .padding(horizontal = 20.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 Icons.Default.Search,
                                 contentDescription = null,
                                 tint = primaryColor,
-                                modifier = Modifier.size(26.dp)
+                                modifier = Modifier.size(28.dp)
                             )
+                            Spacer(modifier = Modifier.width(12.dp))
                             TextField(
                                 value = busca,
                                 onValueChange = viewModel::buscarProdutos,
                                 placeholder = { 
                                     Text(
                                         "Buscar produto por nome ou código...",
-                                        color = Color.Gray.copy(alpha = 0.7f),
-                                        fontSize = 16.sp
+                                        color = Color.Gray.copy(alpha = 0.6f),
+                                        fontSize = 17.sp
                                     ) 
                                 },
                                 modifier = Modifier.weight(1f),
@@ -248,7 +251,7 @@ fun ProdutosScreen(
                                     disabledIndicatorColor = Color.Transparent
                                 ),
                                 textStyle = LocalTextStyle.current.copy(
-                                    fontSize = 16.sp,
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             )
@@ -257,15 +260,15 @@ fun ProdutosScreen(
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = "Limpar",
-                                        tint = Color.Gray,
-                                        modifier = Modifier.size(22.dp)
+                                        tint = Color.Gray.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
                         }
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     // Chips de filtro por categoria com scroll horizontal
                     val todasCategorias = listOf(null to "Todos") + categorias.map { it.id to it.nome }
