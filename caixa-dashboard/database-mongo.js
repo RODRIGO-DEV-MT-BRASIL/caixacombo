@@ -337,18 +337,16 @@ async function migrateData(data) {
 async function saveData() {
   if (!isConnected) return;
   try {
-    // Usar bulkWrite com replace + upsert para cada collection
-    // NUNCA apagar tudo quando array está vazio - protege contra perda de dados se loadFromMongo falhar
-    const bulkSync = async (Model, items, keyField) => {
+    // Usar bulkWrite com update + upsert para preservar campos existentes no MongoDB
+    const bulkUpsert = async (Model, items, keyField) => {
       if (!items || items.length === 0) return; // Não apagar - pode ser falha de carregamento
       const ops = items.map(item => {
         const filter = {};
         filter[keyField] = item[keyField];
-        const doc = { ...item };
         return {
-          replaceOne: {
+          updateOne: {
             filter,
-            replacement: doc,
+            update: { $set: item },
             upsert: true
           }
         };
@@ -360,16 +358,15 @@ async function saveData() {
     };
 
     // Upsert-only: sincroniza sem apagar registros antigos que não estão em memória
-    const bulkSyncUpsert = async (Model, items, keyField) => {
+    const bulkUpsertOnly = async (Model, items, keyField) => {
       if (!items || items.length === 0) return; // Não apagar - pode haver registros antigos no MongoDB
       const ops = items.map(item => {
         const filter = {};
         filter[keyField] = item[keyField];
-        const doc = { ...item };
         return {
-          replaceOne: {
+          updateOne: {
             filter,
-            replacement: doc,
+            update: { $set: item },
             upsert: true
           }
         };
@@ -377,19 +374,19 @@ async function saveData() {
       if (ops.length > 0) await Model.bulkWrite(ops, { ordered: false });
     };
 
-    await bulkSync(Produto, db.produtos, 'id');
-    await bulkSync(Categoria, db.categorias, 'id');
-    await bulkSyncUpsert(Venda, db.vendas, 'id'); // Upsert-only: preserva vendas antigas
-    await bulkSync(Usuario, db.usuarios, 'id');
-    await bulkSync(Dispositivo, db.dispositivos, 'deviceId');
-    await bulkSync(Empresa, db.empresas, 'id');
-    await bulkSync(Cliente, db.clientes, 'id');
-    await bulkSync(Funcionario, db.funcionarios, 'id');
+    await bulkUpsert(Produto, db.produtos, 'id');
+    await bulkUpsert(Categoria, db.categorias, 'id');
+    await bulkUpsertOnly(Venda, db.vendas, 'id'); // Upsert-only: preserva vendas antigas
+    await bulkUpsert(Usuario, db.usuarios, 'id');
+    await bulkUpsert(Dispositivo, db.dispositivos, 'deviceId');
+    await bulkUpsert(Empresa, db.empresas, 'id');
+    await bulkUpsert(Cliente, db.clientes, 'id');
+    await bulkUpsert(Funcionario, db.funcionarios, 'id'); // Usa $set para preservar campos existentes
 
     // Operações e auditoria: upsert-only para preservar registros antigos
-    await bulkSyncUpsert(Operacao, db.operacoes, 'id');
-    await bulkSyncUpsert(AuditoriaDoc, db.auditoria, 'id');
-    await bulkSyncUpsert(CaixaSessao, db.caixaSessoes, 'id');
+    await bulkUpsertOnly(Operacao, db.operacoes, 'id');
+    await bulkUpsertOnly(AuditoriaDoc, db.auditoria, 'id');
+    await bulkUpsertOnly(CaixaSessao, db.caixaSessoes, 'id');
 
     // Config
     if (db.config && Object.keys(db.config).length) {
