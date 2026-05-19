@@ -287,6 +287,13 @@ fun HomeScreen(
                                             put("username", loginIdentifier)
                                             put("password", pin)
                                         }
+                                        // Enviar identificação do aparelho para registro do terminal
+                                        val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId()
+                                        val deviceName = android.os.Build.MODEL
+                                        val serialNumber = try { android.os.Build.SERIAL } catch (e: Exception) { null }
+                                        if (deviceId != null) put("deviceId", deviceId)
+                                        put("deviceName", deviceName)
+                                        if (serialNumber != null) put("serialNumber", serialNumber)
                                     }
                                     conn.outputStream.use { it.write(data.toString().toByteArray()) }
                                     val responseCode = conn.responseCode

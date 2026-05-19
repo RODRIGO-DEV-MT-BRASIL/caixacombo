@@ -139,8 +139,11 @@ class MainActivity : ComponentActivity() {
         val model = android.os.Build.MODEL
         val deviceName = "${manufacturer.capitalize()} $model"
         val serialNumber = android.os.Build.SERIAL ?: "UNKNOWN"
+        
+        android.util.Log.e("POLL_DEBUG", "📱 Configurando deviceInfo - deviceId: $deviceId, deviceName: $deviceName, serialNumber: $serialNumber")
         PollingService.setDeviceInfo(deviceId, deviceName, serialNumber)
         PollingService.loadServerUrl(this)
+        android.util.Log.e("POLL_DEBUG", "📱 Server URL carregado: ${PollingService.getServerUrl()}")
         
         // Aplicar configuração de whitelabel estática baseada no flavor
         applyFlavorWhitelabelConfig()
@@ -279,6 +282,7 @@ class MainActivity : ComponentActivity() {
         
         val webSocketIntent = Intent(this, PollingService::class.java)
         startService(webSocketIntent)
+        android.util.Log.e("POLL_DEBUG", "🚀 PollingService iniciado via startService")
 
         // Garantir que existe pelo menos um usuário admin no banco
         ensureAdminUserExists()

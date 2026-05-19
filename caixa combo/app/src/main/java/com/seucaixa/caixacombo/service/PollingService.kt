@@ -395,14 +395,15 @@ class PollingService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        val notification = createNotification()
-        startForeground(1, notification)
         isRunning = true
+        Log.e("POLL_DEBUG", "🎬 onCreate - PollingService criado - deviceId: $pollingDeviceId, URL: $SERVER_URL")
+        startForeground(1, createNotification())
         Log.d(TAG, "PollingService iniciado como foreground service")
         startPolling()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.e("POLL_DEBUG", "🚀 onStartCommand chamado - isRunning: $isRunning, deviceId: $pollingDeviceId, URL: $SERVER_URL")
         return START_STICKY
     }
 
@@ -453,7 +454,9 @@ class PollingService : Service() {
     }
 
     private fun startPolling() {
+        Log.e("POLL_DEBUG", "🔄 startPolling chamado - deviceId: $pollingDeviceId, URL: $SERVER_URL")
         thread(name = "PollingThread") {
+            Log.e("POLL_DEBUG", "✅ PollingThread iniciado")
             while (isRunning) {
                 try {
                     val syncResult = doPoll()
@@ -471,6 +474,7 @@ class PollingService : Service() {
                     }
                 } catch (e: Exception) {
                     consecutiveErrors++
+                    Log.e("POLL_DEBUG", "❌ Poll erro #$consecutiveErrors: ${e.message}")
                     Log.e(TAG, "Poll erro #$consecutiveErrors: ${e.message}")
                     if (consecutiveErrors >= MAX_RETRIES) {
                         wasDisconnected = true
@@ -491,8 +495,13 @@ class PollingService : Service() {
 
     /** Retorna Triple(produtos, categorias, clientes) se houve sync, ou null */
     private fun doPoll(): Triple<Int, Int, Int>? {
-        val id = pollingDeviceId ?: return null
+        val id = pollingDeviceId ?: run {
+            Log.e("POLL_DEBUG", "❌ deviceId não configurado - polling cancelado")
+            return null
+        }
         val name = deviceName ?: "Dispositivo"
+
+        Log.d("POLL_DEBUG", "📡 Fazendo poll - deviceId: $id, deviceName: $name, URL: $SERVER_URL")
 
         val url = URL("$SERVER_URL/api/device/poll")
         val conn = url.openConnection() as HttpURLConnection
@@ -516,20 +525,27 @@ class PollingService : Service() {
             }
         }
 
+        Log.d("POLL_DEBUG", "📤 Enviando: $data")
+
         // Limpar caixa data após incluir no poll
         pendingCaixaData = null
 
         conn.outputStream.use { it.write(data.toString().toByteArray()) }
 
         val responseCode = conn.responseCode
+        Log.d("POLL_DEBUG", "📥 Response code: $responseCode")
+        
         if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw Exception("Poll HTTP $responseCode")
+            val errorBody = conn.errorStream?.bufferedReader()?.readText() ?: "Sem detalhes"
+            Log.e("POLL_DEBUG", "❌ Poll falhou - HTTP $responseCode: $errorBody")
+            throw Exception("Poll HTTP $responseCode: $errorBody")
         }
 
         val response = conn.inputStream.bufferedReader().readText()
         val json = JSONObject(response)
         val commands = json.optJSONArray("commands")
         Log.e("SYNC_DEBUG", "Poll OK - commands: ${commands?.length() ?: 0}")
+        Log.d("POLL_DEBUG", "✅ Poll response: ${response.take(200)}...")
 
         var syncProdutos = 0
         var syncCategorias = 0
