@@ -1179,7 +1179,7 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Primeiro dispositivos conectados
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
-      ? produtos.filter(p => p.empresaId === deviceInfo.empresaId)
+      ? produtos.filter(p => !p.empresaId || p.empresaId === deviceInfo.empresaId)
       : produtos;
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
@@ -1188,7 +1188,7 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Também dispositivos do banco que podem não estar conectados mas farão polling
   (db.dispositivos || []).forEach(d => {
     if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = produtos.filter(p => p.empresaId === d.empresaId);
+      const filtered = produtos.filter(p => !p.empresaId || p.empresaId === d.empresaId);
       console.log(`📤 [BROADCAST] Dispositivo banco: ${d.deviceId}, empresaId: ${d.empresaId}, produtos filtrados: ${filtered.length}`);
       if (filtered.length > 0) {
         enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
@@ -1217,7 +1217,7 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
   // Primeiro dispositivos conectados
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
-      ? categorias.filter(c => c.empresaId === deviceInfo.empresaId)
+      ? categorias.filter(c => !c.empresaId || c.empresaId === deviceInfo.empresaId)
       : categorias;
     enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: filtered });
     deviceIds.push(deviceId);
@@ -1225,7 +1225,7 @@ function broadcastCategoriasSync(action = 'sync', data = null) {
   // Também dispositivos do banco que podem não estar conectados mas farão polling
   (db.dispositivos || []).forEach(d => {
     if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = categorias.filter(c => c.empresaId === d.empresaId);
+      const filtered = categorias.filter(c => !c.empresaId || c.empresaId === d.empresaId);
       if (filtered.length > 0) {
         enqueueDeviceCommand(d.deviceId, 'categorias_sync', { categorias: filtered });
       }
