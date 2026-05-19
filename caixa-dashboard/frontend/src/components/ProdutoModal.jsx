@@ -103,12 +103,21 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
 
       if (user?.role === 'admin') {
         if (!form.empresaId) {
+          setLoading(false)
           alert('Selecione uma empresa para cadastrar o produto')
           return
         }
+        const empresaSelecionada = empresas?.find(e => e.id === form.empresaId)
+        if (!empresaSelecionada) {
+          setLoading(false)
+          alert('Empresa selecionada inválida')
+          return
+        }
         produtoData.empresaId = form.empresaId
+        console.log(`📦 [PRODUTO] Admin criando produto para empresa: ${empresaSelecionada.nome} (ID: ${form.empresaId})`)
       } else {
         produtoData.empresaId = user?.empresaId
+        console.log(`📦 [PRODUTO] Empresa criando produto - empresaId: ${user?.empresaId}`)
       }
 
       await onSave(produtoData)
