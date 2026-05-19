@@ -309,17 +309,29 @@ export default function Terminais() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setApproveModal(null)}>
           <div className="glass p-6 w-full max-w-sm glow-blue" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Building2 size={20} className="text-emerald-400" /> Aprovar Terminal</h3>
-            <p className="text-sm text-gray-400 mb-4">Selecione a empresa para associar este terminal:</p>
-            <select value={selectedEmpresa} onChange={e => setSelectedEmpresa(e.target.value)} className="input-field mb-4">
-              <option value="">Selecione uma empresa...</option>
-              {empresas.filter(e => e.ativo !== false).map(e => (
-                <option key={e.id} value={e.id}>{e.nome} ({e.login})</option>
-              ))}
-            </select>
-            <div className="flex gap-3">
-              <button onClick={() => { setApproveModal(null); setSelectedEmpresa('') }} className="btn-ghost flex-1">Cancelar</button>
-              <button onClick={() => { if (selectedEmpresa) handleApprove(approveModal, selectedEmpresa) }} disabled={!selectedEmpresa} className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed">Aprovar</button>
-            </div>
+            {user?.role === 'admin' ? (
+              <>
+                <p className="text-sm text-gray-400 mb-4">Selecione a empresa para associar este terminal:</p>
+                <select value={selectedEmpresa} onChange={e => setSelectedEmpresa(e.target.value)} className="input-field mb-4">
+                  <option value="">Selecione uma empresa...</option>
+                  {empresas.filter(e => e.ativo !== false).map(e => (
+                    <option key={e.id} value={e.id}>{e.nome} ({e.login})</option>
+                  ))}
+                </select>
+                <div className="flex gap-3">
+                  <button onClick={() => { setApproveModal(null); setSelectedEmpresa('') }} className="btn-ghost flex-1">Cancelar</button>
+                  <button onClick={() => { if (selectedEmpresa) handleApprove(approveModal, selectedEmpresa) }} disabled={!selectedEmpresa} className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed">Aprovar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-400 mb-4">Aprovar terminal para sua empresa?</p>
+                <div className="flex gap-3">
+                  <button onClick={() => { setApproveModal(null); setSelectedEmpresa('') }} className="btn-ghost flex-1">Cancelar</button>
+                  <button onClick={() => handleApprove(approveModal, user?.empresaId)} className="btn-primary flex-1">Aprovar</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
