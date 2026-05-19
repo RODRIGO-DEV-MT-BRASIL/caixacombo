@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/Toast'
-import { Building2, Plus, Edit2, Trash2, Check, X, Key, Shield, Users, Phone, Mail, MapPin, Search, ArrowLeft, Palette, Globe, Eye, Layout, Save, Loader2, Upload, ChevronRight, UserCog, BadgeCheck, Settings, Printer } from 'lucide-react'
+import { Building2, Plus, Edit2, Trash2, Check, X, Key, Shield, Users, Phone, Mail, MapPin, Search, ArrowLeft, Palette, Globe, Eye, Layout, Save, Loader2, Upload, ChevronRight, UserCog, BadgeCheck } from 'lucide-react'
 
 const defaultFormData = {
   nome: '', tipoPessoa: 'juridica', cnpj: '', email: '', telefone: '', login: '', senha: '',
@@ -500,9 +500,9 @@ export default function Empresas() {
             { id: 'vendas', label: 'Vendas' },
             { id: 'caixa', label: 'Caixa' },
             { id: 'fechamento', label: 'Fechamento' },
-            { id: 'empresas', label: 'Funcionarios/Clientes' },
-            { id: 'config', label: 'Config' },
-            { id: 'impressao', label: 'Impressão' }
+            { id: 'empresas', label: 'Funcionarios Clientes' },
+            { id: 'impressao', label: 'Impressão' },
+            { id: 'config', label: 'Config' }
           ].map(pg => {
             const active = (formData.paginasPermitidas || []).includes(pg.id)
             return (
