@@ -67,6 +67,8 @@ class PollingService : Service() {
         private var pendingCaixaData: JSONObject? = null
         private var needsProductSync = true // Solicitar sync de produtos na primeira conexão
         private var wasDisconnected = false  // Rastrear se estava desconectado para detectar reconexão
+        private var terminalToken: String? = null // Token de autenticação do terminal
+        private var terminalCompanyId: String? = null // companyId do terminal
 
         fun configureServer(url: String) {
             SERVER_URL = url.trimEnd('/')
@@ -698,6 +700,107 @@ class PollingService : Service() {
             else -> {
                 Log.w(TAG, "Comando desconhecido: $command")
                 onCommandReceived?.invoke(command, params)
+            }
+        }
+    }
+
+    // ==================== TERMINAL ACTIVATION & SYNC ====================
+
+    /**
+     * Ativa o terminal com código de ativação e recebe companyId + token
+     */
+    fun activateTerminal(activationCode: String, callback: (Boolean, String?, String?, String?) -> Unit) {
+        thread {
+            try {
+                val serverUrl = SERVER_URL
+                if (serverUrl == null) {
+                    callback(false, null, null, "Server URL não configurado")
+                    return@thread
+                }
+
+                val url = URL("$serverUrl/api/terminal/activate")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+
+                val data = JSONObject().apply {
+                    put("activationCode", activationCode)
+                    put("deviceId", pollingDeviceId)
+                    put("deviceName", deviceName)
+                    put("deviceType", "Android")
+                    serialNumber?.let { put("serialNumber", it) }
+                }
+
+                conn.outputStream.use { it.write(data.toString().toByteArray()) }
+
+                if (conn.responseCode == 200) {
+                    val response = conn.inputStream.bufferedReader().readText()
+                    val json = JSONObject(response)
+
+                    terminalToken = json.optString("token", null)
+                    terminalCompanyId = json.optString("companyId", null)
+                    val companyName = json.optString("companyName", "")
+
+                    Log.e("TERMINAL_DEBUG", "✅ Terminal ativado - companyId: $terminalCompanyId, company: $companyName")
+
+                    callback(true, terminalCompanyId, companyName, terminalToken)
+                } else {
+                    val error = conn.errorStream?.bufferedReader()?.readText() ?: "Erro na ativação"
+                    Log.e("TERMINAL_DEBUG", "❌ Falha na ativação: $error")
+                    callback(false, null, null, error)
+                }
+            } catch (e: Exception) {
+                Log.e("TERMINAL_DEBUG", "❌ Erro na ativação: ${e.message}")
+                callback(false, null, null, e.message)
+            }
+        }
+    }
+
+    /**
+     * Sincroniza dados do terminal usando o novo endpoint /api/terminal/sync
+     */
+    fun syncTerminalData(callback: ((JSONObject?) -> Unit)? = null) {
+        thread {
+            try {
+                val serverUrl = SERVER_URL
+                val token = terminalToken
+                if (serverUrl == null || token == null) {
+                    Log.w("TERMINAL_DEBUG", "⚠️ Terminal não ativado ou sem token")
+                    callback?.invoke(null)
+                    return@thread
+                }
+
+                val url = URL("$serverUrl/api/terminal/sync")
+                val conn = url.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Authorization", "Bearer $token")
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+
+                if (conn.responseCode == 200) {
+                    val response = conn.inputStream.bufferedReader().readText()
+                    val json = JSONObject(response)
+
+                    Log.e("TERMINAL_DEBUG", "📦 Sync OK - companyId: ${terminalCompanyId}")
+                    Log.e("TERMINAL_DEBUG", "📦 Produtos: ${json.optJSONArray("products")?.length() ?: 0}")
+                    Log.e("TERMINAL_DEBUG", "📦 Categorias: ${json.optJSONArray("categories")?.length() ?: 0}")
+
+                    // Enviar dados para os callbacks existentes
+                    json.optJSONArray("products")?.let { onProdutosReceived?.invoke(it) }
+                    json.optJSONArray("categories")?.let { onCategoriasReceived?.invoke(it) }
+                    json.optJSONArray("customers")?.let { onClientesReceived?.invoke(it) }
+
+                    callback?.invoke(json)
+                } else {
+                    Log.e("TERMINAL_DEBUG", "❌ Sync falhou - HTTP ${conn.responseCode}")
+                    callback?.invoke(null)
+                }
+            } catch (e: Exception) {
+                Log.e("TERMINAL_DEBUG", "❌ Erro no sync: ${e.message}")
+                callback?.invoke(null)
             }
         }
     }
