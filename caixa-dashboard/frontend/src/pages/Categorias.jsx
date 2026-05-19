@@ -65,9 +65,14 @@ export default function Categorias() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const body = { nome: form.nome, descricao: form.descricao }
-    if (user?.role === 'admin' && form.empresaId) {
+    if (user?.role === 'admin') {
+      if (!form.empresaId) {
+        alert('Selecione uma empresa para cadastrar a categoria')
+        return
+      }
       body.empresaId = form.empresaId
     }
+    // Empresa usa automaticamente sua propria empresaId (enviado pelo backend via token)
 
     if (editing) {
       await fetch(apiUrl(`/api/categorias/${editing.id}`), {
