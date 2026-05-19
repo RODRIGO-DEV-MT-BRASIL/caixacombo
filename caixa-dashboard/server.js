@@ -1197,7 +1197,7 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Primeiro dispositivos conectados
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
-      ? produtos.filter(p => p.empresaId === deviceInfo.empresaId)
+      ? produtos.filter(p => p.empresaId && String(p.empresaId) === String(deviceInfo.empresaId))
       : produtos;
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
@@ -1206,7 +1206,7 @@ function broadcastProdutosSync(action = 'sync', data = null) {
   // Também dispositivos do banco que podem não estar conectados mas farão polling
   (db.dispositivos || []).forEach(d => {
     if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = produtos.filter(p => p.empresaId === d.empresaId);
+      const filtered = produtos.filter(p => p.empresaId && String(p.empresaId) === String(d.empresaId));
       console.log(`📤 [BROADCAST] Dispositivo banco: ${d.deviceId}, empresaId: ${d.empresaId}, produtos filtrados: ${filtered.length}`);
       if (filtered.length > 0) {
         enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
@@ -2205,10 +2205,10 @@ app.post('/api/device/poll', async (req, res) => {
   console.log(`📦 [POLL] existing=${JSON.stringify(existing?.empresaId)}, existingDb=${JSON.stringify(existingDb?.empresaId)}`);
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados SOMENTE da empresa
-    const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId === pollEmpresaId);
-    console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id})`).join(', ')}`);
-    const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId === pollEmpresaId);
-    const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === pollEmpresaId);
+    const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(pollEmpresaId));
+    console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id}) emp=${p.empresaId}`).join(', ')}`);
+    const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId && String(c.empresaId) === String(pollEmpresaId));
+    const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(pollEmpresaId));
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
     if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
     if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
