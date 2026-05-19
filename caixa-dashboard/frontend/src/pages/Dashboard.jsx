@@ -21,7 +21,9 @@ import Empresas from './Empresas'
 import ClientesFuncionarios from './ClientesFuncionarios'
 import Terminais from './Terminais'
 import Configuracoes from './Configuracoes'
+import ConfiguracoesImpressao from './ConfiguracoesImpressao'
 import DashboardCharts from './DashboardCharts'
+import { Printer } from 'lucide-react'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
@@ -35,6 +37,7 @@ const navItems = [
   { id: 'fechamento', label: 'Fechamento', icon: Lock, permission: 'caixa' },
   { id: 'auditoria', label: 'Auditoria', icon: History, permission: 'auditoria' },
   { id: 'config', label: 'Config', icon: Settings, permission: 'config' },
+  { id: 'impressao', label: 'Impressão', icon: Printer, permission: 'config' },
 ]
 
 export default function Dashboard() {
@@ -261,6 +264,7 @@ export default function Dashboard() {
           {page === 'fechamento' && <FechamentoGeral onBack={() => setPage('caixa')} />}
           {page === 'auditoria' && <Auditoria />}
           {page === 'config' && <Configuracoes />}
+          {page === 'impressao' && <ConfiguracoesImpressao />}
         </div>
       </main>
     </div>

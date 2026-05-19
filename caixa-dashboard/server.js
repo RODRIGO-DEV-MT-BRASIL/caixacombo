@@ -739,6 +739,44 @@ app.post('/api/config', authenticateToken, async (req, res) => {
   res.json({ success: true, config: db.config });
 });
 
+// ==================== TEMPLATE DE IMPRESSÃO ====================
+const defaultImpressaoTemplate = {
+  cabecalho: { nomeEmpresa: true, cnpj: true, endereco: true, telefone: true, email: true, cidade: true },
+  logo: { enabled: false, width: 120, height: 60, spacingTop: 10, spacingBottom: 10 },
+  itens: { nome: true, quantidade: true, valorUnitario: true, valorTotal: true, separador: true },
+  adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true },
+  rodape: { linha1: 'Agradecemos sua vinda', linha2: 'Volte sempre', linha3: '', linha4: '' },
+  estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 }
+}
+
+function getEmpresaTemplate(empresaId) {
+  const empresa = (db.empresas || []).find(e => e.id === empresaId)
+  if (empresa?.impressaoTemplate) return empresa.impressaoTemplate
+  return db.impressaoTemplate || defaultImpressaoTemplate
+}
+
+function setEmpresaTemplate(empresaId, template) {
+  if (empresaId) {
+    const empresa = (db.empresas || []).find(e => e.id === empresaId)
+    if (empresa) empresa.impressaoTemplate = template
+  } else {
+    db.impressaoTemplate = template
+  }
+  debouncedSaveData()
+}
+
+app.get('/api/impressao/template', authenticateToken, (req, res) => {
+  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.query.empresaId || null)
+  res.json(getEmpresaTemplate(empresaId))
+})
+
+app.post('/api/impressao/template', authenticateToken, (req, res) => {
+  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null)
+  setEmpresaTemplate(empresaId, req.body)
+  addAuditoria('impressao', null, 'Template de impressão atualizado', req.user.username)
+  res.json({ success: true })
+})
+
 app.get('/api/auditoria', authenticateToken, (req, res) => {
   const { limit = 50, tipo, deviceId } = req.query;
   let logs = db.auditoria;
