@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
-import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building, DollarSign, Receipt } from 'lucide-react'
+import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building, DollarSign, Receipt, FileText, CreditCard, ShoppingBag, QrCode } from 'lucide-react'
 import { useToast } from '../components/Toast'
 
 const PAPER_FORMATS = {
@@ -11,21 +11,156 @@ const PAPER_FORMATS = {
   '57mm': { label: '57mm', width: 142 },
 }
 
+const TEMPLATE_TYPES = {
+  venda: { label: 'Comprovante de Venda', icon: ShoppingBag },
+  nfce: { label: 'NFC-e (Cupom Fiscal)', icon: FileText },
+  fechamento: { label: 'Fechamento de Caixa', icon: Receipt },
+  sangria: { label: 'Sangria', icon: DollarSign },
+  suprimento: { label: 'Suprimento', icon: DollarSign },
+  abertura: { label: 'Abertura de Caixa', icon: Receipt },
+}
+
 const defaultTemplate = {
-  empresa: { nome: 'Rodrigo Dev MT', cnpj: '12.345.678/0001-90', ie: '', endereco: '', telefone: '', email: '', cidade: '' },
+  tipo: 'venda',
+  empresa: { nome: 'Rodrigo Dev MT', cnpj: '12.345.678/0001-90', ie: '', endereco: '', telefone: '', email: '', cidade: '', cep: '' },
   logo: { enabled: false, width: 120, height: 60, spacingTop: 10, spacingBottom: 10, base64: null },
   cabecalho: { titulo: 'COMPROVANTE DE VENDA', subtitulo: '' },
-  itens: { nome: true, quantidade: true, valorUnitario: true, valorTotal: true, separador: true },
-  adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true },
+  nfce: {
+    inscricaoMunicipal: '', regimeTributario: 'Simples Nacional',
+    csc: '', cscId: '000001',
+    numeroNFCe: '', serie: '001',
+  },
+  itens: { nome: true, quantidade: true, valorUnitario: true, valorTotal: true, separador: true, un: true },
+  adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true, hora: true },
+  pagamento: {
+    dinheiro: true, pix: true, credito: true, debito: true,
+    troco: true, valorTotal: true, cpfCnpj: true
+  },
+  imposto: { Tributos: true, totalTributos: 0, icms: true, pis: true, cofins: true, ibnpt: true },
+  qrCode: { enabled: false, url: '' },
   rodape: { linha1: 'Agradecemos sua vinda', linha2: 'Volte sempre', linha3: '', linha4: '' },
   estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 },
   tamanhos: {
     empresa: 28, titulo: 32, subtitulo: 24, corpo: 22,
-    numeroVenda: 18, dataHora: 18, itensTitulo: 20,
-    itensNome: 20, itensValores: 16,
+    numeroNFCe: 18, serie: 16, dataHora: 18,
+    itensTitulo: 20, itensNome: 20, itensValores: 16,
     subtotal: 18, desconto: 18, total: 24,
-    formaPagamento: 18, valorRecebido: 18, troco: 18, rodape: 20
+    formaPagamento: 18, valorRecebido: 18, troco: 18,
+    tributos: 14, qrCode: 12, rodape: 20
   }
+}
+
+function PreviewNFCe({ template, paperFormat = '80mm' }) {
+  const exampleVenda = { id: 123, data: '19/05/2026', hora: '15:45:00', itens: [{ nome: 'Coca-Cola 350ml', un: 'UN', qtd: 2, valorUnit: 3.00, total: 6.00 }, { nome: 'Sanduíche Natural', un: 'UN', qtd: 1, valorUnit: 8.00, total: 8.00 }], subtotal: 14.00, desconto: 0.00, total: 14.00, formaPagamento: 'DINHEIRO', valorRecebido: 20.00, troco: 6.00, cpf: '' }
+  const fs = { pequeno: 9, medio: 11, grande: 13 }[template.estilo?.tamanhoFonte] || 11
+  const t = template.tamanhos || {}
+  const paperWidth = PAPER_FORMATS[paperFormat]?.width || 200
+  const alignClass = { esquerda: 'text-left', direita: 'text-right', centro: 'text-center' }[template.estilo?.alinhamento] || 'text-center'
+
+  return (
+    <div className="bg-white text-black rounded font-mono overflow-hidden" style={{ width: paperWidth, fontSize: fs, lineHeight: 1.4, padding: '10px 6px' }}>
+      {template.logo?.enabled && template.logo?.base64 && (
+        <div className="flex justify-center mb-1" style={{ marginBottom: template.logo.spacingTop || 10 }}>
+          <img src={template.logo.base64} alt="Logo" style={{ width: template.logo.width, height: template.logo.height, objectFit: 'contain' }} />
+        </div>
+      )}
+      {template.logo?.enabled && !template.logo?.base64 && (
+        <div className="flex justify-center mb-1" style={{ marginBottom: template.logo.spacingTop || 10 }}>
+          <div className="bg-gray-200 flex items-center justify-center rounded text-gray-500" style={{ width: template.logo.width, height: template.logo.height, fontSize: fs - 2 }}>[LOGO]</div>
+        </div>
+      )}
+      <div className={alignClass}>
+        <div className="font-bold" style={{ fontSize: (t.empresa || 28) * 0.4 }}>{template.empresa?.nome || 'Empresa'}</div>
+        {template.empresa?.cnpj && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>CNPJ: {template.empresa.cnpj}</div>}
+        {template.empresa?.ie && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>IE: {template.empresa.ie}</div>}
+        {template.empresa?.endereco && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.endereco}</div>}
+        {template.empresa?.cidade && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.cidade}{template.empresa?.cep ? ` - ${template.empresa.cep}` : ''}</div>}
+        {template.empresa?.telefone && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>FONE: {template.empresa.telefone}</div>}
+        {template.empresa?.email && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.email}</div>}
+        {template.nfce?.inscricaoMunicipal && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>IM: {template.nfce.inscricaoMunicipal}</div>}
+      </div>
+      
+      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: (t.titulo || 32) * 0.4 }}>
+        {template.cabecalho?.titulo || 'DADOS DA NFC-e'}
+      </div>
+      
+      <div className={alignClass}>
+        {template.nfce?.numeroNFCe && <div style={{ fontSize: (t.numeroNFCe || 18) * 0.38 }}>NFC-e N° {exampleVenda.id.toString().padStart(9, '0')}</div>}
+        {template.nfce?.serie && <div style={{ fontSize: (t.serie || 16) * 0.38 }}>Série: {template.nfce.serie}</div>}
+        {template.adicionais?.dataHora && <div style={{ fontSize: (t.dataHora || 18) * 0.38 }}>Dt: {exampleVenda.data} {template.adicionais?.hora ? exampleVenda.hora : ''}</div>}
+      </div>
+      
+      <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
+        <div className="font-bold" style={{ fontSize: (t.itensTitulo || 20) * 0.4 }}>ITENS:</div>
+        {exampleVenda.itens.map((item, i) => (
+          <div key={i} className="mt-1">
+            {template.itens?.nome && <div style={{ fontSize: (t.itensNome || 20) * 0.38 }}>{item.nome}</div>}
+            {template.itens?.separador && <div>----------------------------</div>}
+            <div style={{ fontSize: (t.itensValores || 16) * 0.38 }}>
+              {template.itens?.un && <span>{item.un} </span>}
+              {template.itens?.quantidade && `${item.qtd}`}
+              {template.itens?.valorUnitario && ` x R$ ${item.valorUnit.toFixed(2)}`}
+              {template.itens?.valorTotal && ` R$ ${item.total.toFixed(2)}`}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
+        {template.adicionais?.subtotal && (
+          <div className="flex justify-between" style={{ fontSize: (t.subtotal || 18) * 0.38 }}>
+            <span>Subtotal:</span><span>R$ {exampleVenda.subtotal.toFixed(2)}</span>
+          </div>
+        )}
+        {template.adicionais?.desconto && (
+          <div className="flex justify-between" style={{ fontSize: (t.desconto || 18) * 0.38 }}>
+            <span>Desconto:</span><span>R$ {exampleVenda.desconto.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-bold border-t border-gray-600 mt-1 pt-1" style={{ fontSize: (t.total || 24) * 0.4 }}>
+          <span>TOTAL:</span><span>R$ {exampleVenda.total.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
+        {template.pagamento?.dinheiro && <div style={{ fontSize: (t.formaPagamento || 18) * 0.38 }}>Dinheiro: R$ {exampleVenda.total.toFixed(2)}</div>}
+        {template.pagamento?.valorTotal && (
+          <div className="font-bold" style={{ fontSize: (t.formaPagamento || 18) * 0.38 }}>
+            Valor Total: R$ {exampleVenda.total.toFixed(2)}
+          </div>
+        )}
+        {template.adicionais?.valorRecebido && <div style={{ fontSize: (t.valorRecebido || 18) * 0.38 }}>Dinheiro: R$ {exampleVenda.valorRecebido.toFixed(2)}</div>}
+        {template.adicionais?.troco && <div style={{ fontSize: (t.troco || 18) * 0.38 }}>Troco: R$ {exampleVenda.troco.toFixed(2)}</div>}
+        {template.pagamento?.cpfCnpj && exampleVenda.cpf && <div style={{ fontSize: (t.formaPagamento || 18) * 0.38 }}>Consumidor: {exampleVenda.cpf}</div>}
+      </div>
+
+      {template.imposto?.Tributos && (
+        <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`} style={{ fontSize: (t.tributos || 14) * 0.38 }}>
+          <div>Tributos Totais Incidentes (Lei 12.741/12)</div>
+          {template.imposto?.ibpt && <div>IBPT: R$ {(exampleVenda.total * 0.12).toFixed(2)}</div>}
+          {template.imposto?.icms && <div>ICMS: R$ {(exampleVenda.total * 0.08).toFixed(2)}</div>}
+          {template.imposto?.pis && <div>PIS: R$ {(exampleVenda.total * 0.02).toFixed(2)}</div>}
+          {template.imposto?.cofins && <div>COFINS: R$ {(exampleVenda.total * 0.02).toFixed(2)}</div>}
+        </div>
+      )}
+
+      {template.qrCode?.enabled && (
+        <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
+          <div className="border border-gray-400 p-2 rounded flex items-center justify-center" style={{ fontSize: (t.qrCode || 12) * 0.38 }}>
+            <div className="w-16 h-16 bg-gray-300 flex items-center justify-center mx-auto">QR</div>
+          </div>
+          {template.nfce?.csc && <div style={{ fontSize: (t.qrCode || 12) * 0.35 }}> CSC: {template.nfce.csc}</div>}
+        </div>
+      )}
+
+      <div className={`${alignClass} mt-3 pt-2 border-t border-dashed border-gray-400`}>
+        {template.rodape?.linha1 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha1}</div>}
+        {template.rodape?.linha2 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha2}</div>}
+        {template.rodape?.linha3 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha3}</div>}
+        {template.rodape?.linha4 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha4}</div>}
+      </div>
+    </div>
+  )
 }
 
 function PreviewComprovante({ template, paperFormat = '80mm' }) {
@@ -59,7 +194,7 @@ function PreviewComprovante({ template, paperFormat = '80mm' }) {
       <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: (t.titulo || 32) * 0.4 }}>
         {template.cabecalho?.titulo || 'COMPROVANTE DE VENDA'}
       </div>
-      {template.cabecalho?.subtitulo && <div className={`${alignClass}`} style={{ fontSize: (t.subtitulo || 24) * 0.35 }}>{template.cabecalho.subtitulo}</div>}
+      {template.cabecalho?.subtitulo && <div className={alignClass} style={{ fontSize: (t.subtitulo || 24) * 0.35 }}>{template.cabecalho.subtitulo}</div>}
       <div className={alignClass}>
         {template.adicionais?.numeroVenda && <div style={{ fontSize: (t.numeroVenda || 18) * 0.38 }}>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
         {template.adicionais?.dataHora && <div style={{ fontSize: (t.dataHora || 18) * 0.38 }}>DATA: {exampleVenda.data}</div>}
@@ -167,7 +302,7 @@ export default function ConfiguracoesImpressao() {
   const [template, setTemplate] = useState(defaultTemplate)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('empresa')
+  const [activeTab, setActiveTab] = useState('tipo')
   const [showPreview, setShowPreview] = useState(true)
   const [paperFormat, setPaperFormat] = useState('80mm')
 
@@ -196,6 +331,7 @@ export default function ConfiguracoesImpressao() {
   }
 
   const updateEmpresa = (field, value) => setTemplate(prev => ({ ...prev, empresa: { ...prev.empresa, [field]: value } }))
+  const updateNfce = (field, value) => setTemplate(prev => ({ ...prev, nfce: { ...prev.nfce, [field]: value } }))
   const updateCabecalho = (field, value) => setTemplate(prev => ({ ...prev, cabecalho: { ...prev.cabecalho, [field]: value } }))
   const updateField = (section, field, value) => setTemplate(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }))
   const updateSize = (field, value) => setTemplate(prev => ({ ...prev, tamanhos: { ...prev.tamanhos, [field]: value } }))
@@ -212,10 +348,14 @@ export default function ConfiguracoesImpressao() {
   if (loading) return <div className="glass p-12 text-center"><Loader2 size={32} className="animate-spin mx-auto text-blue-400 mb-3" /><p className="text-gray-400">Carregando template...</p></div>
 
   const tabs = [
+    { id: 'tipo', label: 'Tipo', icon: FileText },
     { id: 'empresa', label: 'Empresa', icon: Building },
+    { id: 'nfce', label: 'NFC-e', icon: Receipt },
     { id: 'logo', label: 'Logo', icon: Image },
-    { id: 'cabecalho', label: 'Cabeçalho', icon: Edit3 },
     { id: 'itens', label: 'Itens', icon: List },
+    { id: 'pagamento', label: 'Pagamento', icon: CreditCard },
+    { id: 'imposto', label: 'Tributos', icon: DollarSign },
+    { id: 'qrcode', label: 'QR Code', icon: QrCode },
     { id: 'rodape', label: 'Rodapé', icon: List },
     { id: 'estilo', label: 'Estilo', icon: Palette },
     { id: 'tamanhos', label: 'Tamanhos', icon: Type },
@@ -250,6 +390,21 @@ export default function ConfiguracoesImpressao() {
 
       {/* Editor */}
       <div className="space-y-3">
+        {/* Tipo de Template */}
+        {activeTab === 'tipo' && (
+          <SectionCard title="Tipo de Comprovante" icon={FileText}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {Object.entries(TEMPLATE_TYPES).map(([key, { label, icon: Icon }]) => (
+                <button key={key} onClick={() => setTemplate(prev => ({ ...prev, tipo: key }))}
+                  className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-2 ${template.tipo === key ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'border-gray-700 text-gray-400 hover:bg-white/5'}`}>
+                  <Icon size={24} />
+                  <span className="text-xs text-center">{label}</span>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
         {/* Empresa */}
         {activeTab === 'empresa' && (
           <SectionCard title="Dados da Empresa" icon={Building}>
@@ -274,17 +429,65 @@ export default function ConfiguracoesImpressao() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin size={12} /> Cidade/UF</label>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><MapPin size={12} /> Cidade/UF - CEP</label>
                   <input type="text" value={template.empresa?.cidade || ''} onChange={e => updateEmpresa('cidade', e.target.value)} className="input-field text-sm" placeholder="Cidade - UF" />
                 </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Hash size={12} /> CEP</label>
+                  <input type="text" value={template.empresa?.cep || ''} onChange={e => updateEmpresa('cep', e.target.value)} className="input-field text-sm" placeholder="00000-000" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Phone size={12} /> Telefone</label>
                   <input type="text" value={template.empresa?.telefone || ''} onChange={e => updateEmpresa('telefone', e.target.value)} className="input-field text-sm" placeholder="(00) 00000-0000" />
                 </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Mail size={12} /> E-mail</label>
+                  <input type="text" value={template.empresa?.email || ''} onChange={e => updateEmpresa('email', e.target.value)} className="input-field text-sm" placeholder="contato@empresa.com" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1 flex items-center gap-1"><Mail size={12} /> E-mail</label>
-                <input type="text" value={template.empresa?.email || ''} onChange={e => updateEmpresa('email', e.target.value)} className="input-field text-sm" placeholder="contato@empresa.com" />
+            </div>
+          </SectionCard>
+        )}
+
+        {/* NFC-e Config */}
+        {activeTab === 'nfce' && (
+          <SectionCard title="Configurações NFC-e" icon={Receipt}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Inscrição Municipal (IM)</label>
+                  <input type="text" value={template.nfce?.inscricaoMunicipal || ''} onChange={e => updateNfce('inscricaoMunicipal', e.target.value)} className="input-field text-sm" placeholder="00000000" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Regime Tributário</label>
+                  <DarkSelect value={template.nfce?.regimeTributario || 'Simples Nacional'} onChange={v => updateNfce('regimeTributario', v)} options={[
+                    { value: 'Simples Nacional', label: 'Simples Nacional' },
+                    { value: 'Simples Nacional - Excesso', label: 'Simples Nacional - Excesso' },
+                    { value: 'Regime Normal', label: 'Regime Normal' },
+                  ]} className="w-full" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">CSC (Código de Segurança)</label>
+                  <input type="text" value={template.nfce?.csc || ''} onChange={e => updateNfce('csc', e.target.value)} className="input-field text-sm" placeholder="Código de Segurança" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">CSC ID</label>
+                  <input type="text" value={template.nfce?.cscId || '000001'} onChange={e => updateNfce('cscId', e.target.value)} className="input-field text-sm" placeholder="000001" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Nr. NFC-e Inicial</label>
+                  <input type="number" value={template.nfce?.numeroNFCe || ''} onChange={e => updateNfce('numeroNFCe', e.target.value)} className="input-field text-sm" placeholder="000000001" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Série</label>
+                  <input type="text" value={template.nfce?.serie || '001'} onChange={e => updateNfce('serie', e.target.value)} className="input-field text-sm" placeholder="001" />
+                </div>
               </div>
             </div>
           </SectionCard>
@@ -334,27 +537,11 @@ export default function ConfiguracoesImpressao() {
           </SectionCard>
         )}
 
-        {/* Cabeçalho */}
-        {activeTab === 'cabecalho' && (
-          <SectionCard title="Título e Subtítulo do Comprovante" icon={Edit3}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Título Principal</label>
-                <input type="text" value={template.cabecalho?.titulo || ''} onChange={e => updateCabecalho('titulo', e.target.value)} className="input-field text-sm" placeholder="COMPROVANTE DE VENDA" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Subtítulo (opcional)</label>
-                <input type="text" value={template.cabecalho?.subtitulo || ''} onChange={e => updateCabecalho('subtitulo', e.target.value)} className="input-field text-sm" placeholder="Ex: Via do Cliente" />
-              </div>
-            </div>
-          </SectionCard>
-        )}
-
         {/* Itens */}
         {activeTab === 'itens' && (
           <SectionCard title="Campos dos Itens" icon={List}>
             <div className="grid grid-cols-2 gap-2">
-              {[['nome', 'Nome do Produto'], ['quantidade', 'Quantidade'], ['valorUnitario', 'Valor Unitário'], ['valorTotal', 'Subtotal do Item'], ['separador', 'Linha Separadora']].map(([key, label]) => (
+              {[['nome', 'Nome do Produto'], ['un', 'Unidade (UN)'], ['quantidade', 'Quantidade'], ['valorUnitario', 'Valor Unitário'], ['valorTotal', 'Subtotal do Item'], ['separador', 'Linha Separadora']].map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                   <input type="checkbox" checked={template.itens?.[key] ?? true} onChange={() => toggleField('itens', key)} className="rounded" />
                   <span className="text-sm text-gray-300">{label}</span>
@@ -364,7 +551,7 @@ export default function ConfiguracoesImpressao() {
             <div className="mt-4 pt-4 border-t border-white/5">
               <h4 className="text-sm font-medium text-gray-300 mb-3">Campos Adicionais</h4>
               <div className="grid grid-cols-2 gap-2">
-                {[['subtotal', 'Subtotal'], ['desconto', 'Desconto'], ['total', 'TOTAL'], ['formaPagamento', 'Forma de Pagamento'], ['valorRecebido', 'Valor Recebido'], ['troco', 'Troco'], ['numeroVenda', 'Número da Venda'], ['dataHora', 'Data/Hora']].map(([key, label]) => (
+                {[['subtotal', 'Subtotal'], ['desconto', 'Desconto'], ['total', 'TOTAL'], ['numeroVenda', 'Número NFC-e'], ['dataHora', 'Data/Hora'], ['hora', 'Hora']].map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
                     <input type="checkbox" checked={template.adicionais?.[key] ?? true} onChange={() => toggleField('adicionais', key)} className="rounded" />
                     <span className="text-sm text-gray-300">{label}</span>
@@ -372,6 +559,72 @@ export default function ConfiguracoesImpressao() {
                 ))}
               </div>
             </div>
+          </SectionCard>
+        )}
+
+        {/* Pagamento */}
+        {activeTab === 'pagamento' && (
+          <SectionCard title="Formas de Pagamento" icon={CreditCard}>
+            <div className="grid grid-cols-2 gap-2">
+              {[['dinheiro', 'Dinheiro'], ['pix', 'PIX'], ['credito', 'Crédito'], ['debito', 'Débito']].map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
+                  <input type="checkbox" checked={template.pagamento?.[key] ?? true} onChange={() => toggleField('pagamento', key)} className="rounded" />
+                  <span className="text-sm text-gray-300">{label}</span>
+                </label>
+              ))}
+              {[['valorTotal', 'Valor Total'], ['troco', 'Troco'], ['cpfCnpj', 'CPF/CNPJ Consumidor']].map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
+                  <input type="checkbox" checked={template.pagamento?.[key] ?? true} onChange={() => toggleField('pagamento', key)} className="rounded" />
+                  <span className="text-sm text-gray-300">{label}</span>
+                </label>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {/* Imposto/Tributos */}
+        {activeTab === 'imposto' && (
+          <SectionCard title="Informações de Tributos (OBRIGATÓRIO NFC-e)" icon={DollarSign}>
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
+                <input type="checkbox" checked={template.imposto?.Tributos ?? true} onChange={() => toggleField('imposto', 'Tributos')} className="rounded" />
+                <span className="text-sm text-gray-300">Mostrar Total de Tributos</span>
+              </label>
+            </div>
+            {template.imposto?.Tributos && (
+              <div className="grid grid-cols-2 gap-2">
+                {[['icms', 'ICMS'], ['pis', 'PIS'], ['cofins', 'COFINS'], ['ibnpt', 'IBPT (Lei 12.741/12)']].map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white/5">
+                    <input type="checkbox" checked={template.imposto?.[key] ?? true} onChange={() => toggleField('imposto', key)} className="rounded" />
+                    <span className="text-sm text-gray-300">{label}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </SectionCard>
+        )}
+
+        {/* QR Code */}
+        {activeTab === 'qrcode' && (
+          <SectionCard title="QR Code (Obrigatório NFC-e)" icon={QrCode}>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-gray-300">Exibir QR Code</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={template.qrCode?.enabled ?? false} onChange={() => updateField('qrCode', 'enabled', !template.qrCode?.enabled)} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-blue-500/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+            {template.qrCode?.enabled && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">URL do QR Code (opcional)</label>
+                  <input type="text" value={template.qrCode?.url || ''} onChange={e => updateField('qrCode', 'url', e.target.value)} className="input-field text-sm" placeholder="https://..." />
+                </div>
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-xs text-blue-400">O QR Code contém a chave de acesso da NFC-e e hash para verificação fiscal. Configure o CSC nas abas NFC-e.</p>
+                </div>
+              </div>
+            )}
           </SectionCard>
         )}
 
@@ -423,22 +676,21 @@ export default function ConfiguracoesImpressao() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <RangeSlider label="Nome da Empresa" value={template.tamanhos?.empresa || 28} onChange={v => updateSize('empresa', v)} min={16} max={48} />
                 <RangeSlider label="Título do Comprovante" value={template.tamanhos?.titulo || 32} onChange={v => updateSize('titulo', v)} min={20} max={48} />
-                <RangeSlider label="Subtítulo" value={template.tamanhos?.subtitulo || 24} onChange={v => updateSize('subtitulo', v)} min={16} max={36} />
+                <RangeSlider label="Nr. NFC-e" value={template.tamanhos?.numeroNFCe || 18} onChange={v => updateSize('numeroNFCe', v)} min={12} max={28} />
+                <RangeSlider label="Série" value={template.tamanhos?.serie || 16} onChange={v => updateSize('serie', v)} min={12} max={28} />
+                <RangeSlider label="Data/Hora" value={template.tamanhos?.dataHora || 18} onChange={v => updateSize('dataHora', v)} min={12} max={28} />
                 <RangeSlider label="Corpo (dados empresa)" value={template.tamanhos?.corpo || 22} onChange={v => updateSize('corpo', v)} min={14} max={32} />
               </div>
-              
               <div className="border-t border-white/10 pt-4">
-                <h4 className="text-xs text-gray-400 mb-3 flex items-center gap-2"><Receipt size={14} /> Campos do Comprovante</h4>
+                <h4 className="text-xs text-gray-400 mb-3">Campos do Comprovante</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <RangeSlider label="Nr. Venda / Data/Hora" value={template.tamanhos?.numeroVenda || 18} onChange={v => updateSize('numeroVenda', v)} min={12} max={28} />
                   <RangeSlider label="Título ITENS" value={template.tamanhos?.itensTitulo || 20} onChange={v => updateSize('itensTitulo', v)} min={14} max={32} />
                   <RangeSlider label="Nome dos Produtos" value={template.tamanhos?.itensNome || 20} onChange={v => updateSize('itensNome', v)} min={14} max={32} />
                   <RangeSlider label="Valores dos Itens" value={template.tamanhos?.itensValores || 16} onChange={v => updateSize('itensValores', v)} min={12} max={28} />
                 </div>
               </div>
-              
               <div className="border-t border-white/10 pt-4">
-                <h4 className="text-xs text-gray-400 mb-3 flex items-center gap-2"><DollarSign size={14} /> Totais e Pagamento</h4>
+                <h4 className="text-xs text-gray-400 mb-3">Totais e Pagamento</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <RangeSlider label="Subtotal" value={template.tamanhos?.subtotal || 18} onChange={v => updateSize('subtotal', v)} min={12} max={28} />
                   <RangeSlider label="Desconto" value={template.tamanhos?.desconto || 18} onChange={v => updateSize('desconto', v)} min={12} max={28} />
@@ -448,9 +700,12 @@ export default function ConfiguracoesImpressao() {
                   <RangeSlider label="Troco" value={template.tamanhos?.troco || 18} onChange={v => updateSize('troco', v)} min={12} max={28} />
                 </div>
               </div>
-              
               <div className="border-t border-white/10 pt-4">
-                <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <RangeSlider label="Tributos" value={template.tamanhos?.tributos || 14} onChange={v => updateSize('tributos', v)} min={10} max={22} />
+                  <RangeSlider label="QR Code" value={template.tamanhos?.qrCode || 12} onChange={v => updateSize('qrCode', v)} min={10} max={20} />
+                  <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
+                </div>
               </div>
             </div>
           </SectionCard>
@@ -470,7 +725,7 @@ export default function ConfiguracoesImpressao() {
             </div>
           </div>
           <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 flex justify-center overflow-x-auto">
-            <PreviewComprovante template={template} paperFormat={paperFormat} />
+            {template.tipo === 'nfce' ? <PreviewNFCe template={template} paperFormat={paperFormat} /> : <PreviewComprovante template={template} paperFormat={paperFormat} />}
           </div>
         </div>
       )}
