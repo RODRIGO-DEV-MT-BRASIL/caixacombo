@@ -102,6 +102,12 @@ fun ProdutosScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        PollingService.requestProductSync()
+                        Toast.makeText(context, "Sincronizando produtos...", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(Icons.Default.Refresh, "Sincronizar Produtos")
+                    }
                     Box {
                         IconButton(onClick = { showExportMenu = true }) {
                             Icon(Icons.Default.MoreVert, "Opções")

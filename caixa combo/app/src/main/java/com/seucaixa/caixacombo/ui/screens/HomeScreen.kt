@@ -154,6 +154,18 @@ fun HomeScreen(
                 ) {
                     Text("Tentar Novamente")
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(
+                    onClick = {
+                        com.seucaixa.caixacombo.service.PollingService.requestProductSync()
+                        android.widget.Toast.makeText(context, "Sincronizando produtos...", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
+                ) {
+                    Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sincronizar Produtos")
+                }
             }
         }
     } else {
@@ -412,16 +424,21 @@ fun HomeScreen(
                                             erro = ""
                                         }
                                     } else {
-                                        val errorResponse = conn.errorStream?.bufferedReader()?.readText()
-                                        val errorMsg = try {
-                                            org.json.JSONObject(errorResponse ?: "").optString("error", "Credenciais inválidas")
+                                        val errorResponse = conn.errorStream?.bufferedReader()?.readText() ?: ""
+                                        var errorMsg = "Credenciais inválidas"
+                                        try {
+                                            errorMsg = org.json.JSONObject(errorResponse).optString("error", errorMsg)
                                         } catch (e: Exception) {
-                                            "Credenciais inválidas"
+                                            // Se não conseguir parsear JSON, usar o texto bruto
+                                            if (errorResponse.isNotBlank()) {
+                                                errorMsg = errorResponse
+                                            }
                                         }
+                                        android.util.Log.e("LOGIN_DEBUG", "❌ Login falhou: code=$responseCode, msg=$errorMsg, response=$errorResponse")
                                         withContext(Dispatchers.Main) {
                                             isLoading = false
                                             // Verificar se é erro de terminal pendente
-                                            if (errorMsg.contains("aguardando aprovação") || errorMsg.contains("Terminal")) {
+                                            if (errorMsg.contains("aguardando") || errorMsg.contains("aprovação")) {
                                                 terminalPendente = true
                                                 erro = ""
                                             } else {
@@ -461,23 +478,6 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(if (isSmallScreen) 12.dp else 24.dp))
-
-            // Botão atualizar produtos (aparece após login no sistema)
-            if (SecurePrefs.getOperatorId(context) > 0) {
-                OutlinedButton(
-                    onClick = {
-                        com.seucaixa.caixacombo.service.PollingService.requestProductSync()
-                        android.widget.Toast.makeText(context, "Sincronizando produtos...", android.widget.Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor)
-                ) {
-                    Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Atualizar Produtos")
-                }
-                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
-            }
 
             // Rodapé
             if (rodape.isNotEmpty()) {
