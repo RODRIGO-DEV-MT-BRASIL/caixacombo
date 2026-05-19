@@ -808,15 +808,24 @@ app.post('/api/admin/clear-old-data', authenticateToken, async (req, res) => {
 
 app.post('/api/produtos', authenticateToken, async (req, res) => {
   let empresaId = null;
+  let empresaNome = 'desconhecida';
+  
   if (req.user.role === 'empresa') {
     empresaId = req.user.empresaId;
-    console.log(`📦 [DEBUG-PRODUTO] Empresa criando produto - req.user.empresaId=${empresaId}, role=${req.user.role}, tokenEmpresaId=${req.user.empresaId}`);
+    const empresa = (db.empresas || []).find(e => e.id === empresaId);
+    empresaNome = empresa?.nome || 'não encontrada';
+    console.log(`📦 [DEBUG-PRODUTO] Empresa criando produto - empresaId=${empresaId} (${empresaNome}), role=${req.user.role}`);
   } else if (req.user.role === 'admin') {
     empresaId = req.body.empresaId || null;
     if (!empresaId) {
       return res.status(400).json({ error: 'Admin deve selecionar uma empresa para cadastrar o produto' });
     }
+    const empresa = (db.empresas || []).find(e => e.id === empresaId);
+    empresaNome = empresa?.nome || 'não encontrada';
+    console.log(`📦 [DEBUG-PRODUTO] Admin criando produto - empresaId=${empresaId} (${empresaNome}), produtoNome=${req.body.nome}`);
   }
+  
+  console.log(`📦 [PRODUTO-CRIADO] nome=${req.body.nome}, empresaId=${empresaId}, empresa=${empresaNome}, role=${req.user.role}`);
   const produto = {
     id: generateId(),
     nome: req.body.nome,
@@ -2202,8 +2211,8 @@ app.post('/api/device/poll', async (req, res) => {
   const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
   
   // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
-  console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}`);
-  console.log(`📦 [POLL] existing=${JSON.stringify(existing?.empresaId)}, existingDb=${JSON.stringify(existingDb?.empresaId)}`);
+  const empresaDoTerminal = (db.empresas || []).find(e => String(e.id) === String(pollEmpresaId));
+  console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId} (${empresaDoTerminal?.nome || 'não encontrada'})`);
   console.log(`📦 [POLL-DEBUG] Todos os produtos no db:`, (db.produtos || []).map(p => ({ id: p.id, nome: p.nome, empresaId: p.empresaId, tipo: typeof p.empresaId })));
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados SOMENTE da empresa
