@@ -1390,26 +1390,33 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
     logoUrl: empresa.logoUrl || ''
   };
   const produtosEmpresa = db.produtos.filter(p => p.empresaId && String(p.empresaId) === String(targetEmpresaId));
+  const produtosGlobais = db.produtos.filter(p => !p.empresaId);
+  const todosProdutos = [...produtosEmpresa, ...produtosGlobais];
   const categoriasEmpresa = db.categorias.filter(c => c.empresaId && String(c.empresaId) === String(targetEmpresaId));
+  const categoriasGlobais = db.categorias.filter(c => !c.empresaId);
   const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(targetEmpresaId));
+  const clientesGlobais = (db.clientes || []).filter(c => !c.empresaId);
 
   // Via WebSocket (se conectado)
   const deviceSocket = device?.socketId ? io.sockets.sockets.get(device.socketId) : null;
   if (deviceSocket) {
     deviceSocket.emit('approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
     deviceSocket.emit('empresa_config', empresaConfig);
-    deviceSocket.emit('produtos_sync', { produtos: produtosEmpresa, timestamp: new Date() });
-    deviceSocket.emit('categorias_sync', { categorias: categoriasEmpresa, timestamp: new Date() });
-    deviceSocket.emit('clientes_sync', clientesEmpresa);
+    deviceSocket.emit('produtos_sync', { produtos: todosProdutos, timestamp: new Date() });
+    const todasCategorias = [...categoriasEmpresa, ...categoriasGlobais];
+    deviceSocket.emit('categorias_sync', { categorias: todasCategorias, timestamp: new Date() });
+    deviceSocket.emit('clientes_sync', [...clientesEmpresa, ...clientesGlobais]);
   }
 
   // Via Polling (garantir entrega para terminais SUNMI)
   enqueueDeviceCommand(deviceId, 'approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
   enqueueDeviceCommand(deviceId, 'empresa_config', empresaConfig);
-  enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
-  if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
-  if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
-  console.log(`✅ Terminal ${deviceId} aprovado - empresa ${empresa.nome} (${targetEmpresaId}) - ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias (WS+Poll)`);
+  enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: todosProdutos });
+  const todasCategorias = [...categoriasEmpresa, ...categoriasGlobais];
+  if (todasCategorias.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: todasCategorias });
+  const todosClientes = [...clientesEmpresa, ...clientesGlobais];
+  if (todosClientes.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: todosClientes });
+  console.log(`✅ Terminal ${deviceId} aprovado - empresa ${empresa.nome} (${targetEmpresaId}) - ${todosProdutos.length} produtos (${produtosEmpresa.length} empresa + ${produtosGlobais.length} globais), ${todasCategorias.length} categorias`);
 
   // Auditoria
   addAuditoria('mudanca_status', deviceId, `Dispositivo aprovado e associado à empresa ${empresa.nome}`, dashboardInfo?.usuario || req.user?.username);
@@ -2254,14 +2261,20 @@ app.get('/api/terminal/sync', authenticateTerminalToken, async (req, res) => {
     return res.status(404).json({ error: 'Empresa não encontrada' });
   }
   
-  // Produtos da empresa
-  const produtos = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(companyId));
+  // Produtos da empresa + produtos globais (sem empresaId)
+  const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(companyId));
+  const produtosGlobais = (db.produtos || []).filter(p => !p.empresaId);
+  const todosProdutos = [...produtosEmpresa, ...produtosGlobais];
   
-  // Categorias da empresa
-  const categorias = (db.categorias || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  // Categorias da empresa + categorias globais
+  const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  const categoriasGlobais = (db.categorias || []).filter(c => !c.empresaId);
+  const todasCategorias = [...categoriasEmpresa, ...categoriasGlobais];
   
-  // Clientes da empresa
-  const clientes = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  // Clientes da empresa + clientes globais
+  const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(companyId));
+  const clientesGlobais = (db.clientes || []).filter(c => !c.empresaId);
+  const todosClientes = [...clientesEmpresa, ...clientesGlobais];
   
   // Configurações da empresa
   const settings = {
@@ -2271,7 +2284,7 @@ app.get('/api/terminal/sync', authenticateTerminalToken, async (req, res) => {
     logoUrl: empresa.logoUrl || ''
   };
   
-  console.log(`📱 [TERMINAL-SYNC] ${companyId}: ${produtos.length} produtos, ${categorias.length} categorias, ${clientes.length} clientes`);
+  console.log(`📱 [TERMINAL-SYNC] ${companyId}: ${todosProdutos.length} produtos (${produtosEmpresa.length} empresa + ${produtosGlobais.length} globais), ${todasCategorias.length} categorias, ${todosClientes.length} clientes`);
   
   res.json({
     company: {
@@ -2279,9 +2292,9 @@ app.get('/api/terminal/sync', authenticateTerminalToken, async (req, res) => {
       name: empresa.nome,
       settings
     },
-    products: produtos,
-    categories: categorias,
-    customers: clientes,
+    products: todosProdutos,
+    categories: todasCategorias,
+    customers: todosClientes,
     updatedAt: new Date().toISOString()
   });
 });
@@ -2417,14 +2430,27 @@ app.post('/api/device/poll', async (req, res) => {
   console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId} (${empresaDoTerminal?.nome || 'não encontrada'})`);
   console.log(`📦 [POLL-DEBUG] Todos os produtos no db:`, (db.produtos || []).map(p => ({ id: p.id, nome: p.nome, empresaId: p.empresaId, tipo: typeof p.empresaId })));
   if (isApproved && pollEmpresaId) {
-    // Terminal aprovado: enviar dados SOMENTE da empresa
+    // Terminal aprovado: enviar dados da empresa + produtos globais (sem empresaId)
+    // Produtos da empresa específica
     const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(pollEmpresaId));
-    console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id}) emp=${p.empresaId}`).join(', ')}`);
+    // Produtos GLOBAIS (sem empresaId - criados pelo admin sem selecionar empresa)
+    const produtosGlobais = (db.produtos || []).filter(p => !p.empresaId);
+    // Combinar produtos da empresa + globais
+    const todosProdutos = [...produtosEmpresa, ...produtosGlobais];
+    console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos empresa + ${produtosGlobais.length} produtos globais = ${todosProdutos.length} total`);
+    console.log(`📦 [POLL-SYNC] Produtos empresa: ${produtosEmpresa.map(p => `${p.nome}(emp=${p.empresaId})`).join(', ')}`);
+    if (produtosGlobais.length > 0) {
+      console.log(`📦 [POLL-SYNC] Produtos globais: ${produtosGlobais.map(p => `${p.nome}(emp=null)`).join(', ')}`);
+    }
     const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId && String(c.empresaId) === String(pollEmpresaId));
+    const categoriasGlobais = (db.categorias || []).filter(c => !c.empresaId);
     const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId && String(c.empresaId) === String(pollEmpresaId));
-    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
-    if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
-    if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
+    const clientesGlobais = (db.clientes || []).filter(c => !c.empresaId);
+    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: todosProdutos });
+    const todasCategorias = [...categoriasEmpresa, ...categoriasGlobais];
+    if (todasCategorias.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: todasCategorias });
+    const todosClientes = [...clientesEmpresa, ...clientesGlobais];
+    if (todosClientes.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: todosClientes });
     // Enviar config da empresa (whitelabel)
     const empresa = (db.empresas || []).find(e => e.id === pollEmpresaId);
     if (empresa) {
