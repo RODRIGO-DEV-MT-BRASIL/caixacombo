@@ -40,8 +40,9 @@ function formatTime(seconds) {
 
 export default function Terminais() {
   const { user, token } = useAuth()
-  const { devices, connected, lockDevice, unlockDevice, setUsageTime, timeUpdates, socket } = useSocket()
+  const { devices: socketDevices, connected, lockDevice, unlockDevice, setUsageTime, timeUpdates, socket } = useSocket()
   const { success } = useToast()
+  const [devices, setDevices] = useState([]) // Estado local de dispositivos (inicializa vazio)
   const [usageModal, setUsageModal] = useState(null)
   const [usageMinutes, setUsageMinutes] = useState('')
   const [lockModal, setLockModal] = useState(null)
