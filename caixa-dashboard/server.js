@@ -2187,10 +2187,11 @@ app.post('/api/device/poll', async (req, res) => {
   console.log(`📦 [POLL] existing=${JSON.stringify(existing?.empresaId)}, existingDb=${JSON.stringify(existingDb?.empresaId)}`);
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados filtrados pela empresa
-    const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId === pollEmpresaId);
+    // Inclui: produtos da empresa + produtos sem empresaId (admin)
+    const produtosEmpresa = (db.produtos || []).filter(p => !p.empresaId || p.empresaId === pollEmpresaId);
     console.log(`📦 [POLL-SYNC] ${deviceId} - empresa ${pollEmpresaId}: ${produtosEmpresa.length} produtos - ${produtosEmpresa.map(p => `${p.nome}(id=${p.id})`).join(', ')}`);
-    const categoriasEmpresa = (db.categorias || []).filter(c => c.empresaId === pollEmpresaId);
-    const clientesEmpresa = (db.clientes || []).filter(c => c.empresaId === pollEmpresaId);
+    const categoriasEmpresa = (db.categorias || []).filter(c => !c.empresaId || c.empresaId === pollEmpresaId);
+    const clientesEmpresa = (db.clientes || []).filter(c => !c.empresaId || c.empresaId === pollEmpresaId);
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
     if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
     if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
