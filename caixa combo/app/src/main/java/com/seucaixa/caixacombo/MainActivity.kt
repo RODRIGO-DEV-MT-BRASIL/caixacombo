@@ -252,6 +252,9 @@ class MainActivity : ComponentActivity() {
                     if (empresaId != null) {
                         com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(applicationContext, empresaId)
                         android.util.Log.d("MainActivity", "EmpresaId salvo: $empresaId")
+                        android.util.Log.e("EMPRESA_DEBUG", "═══════════════════════════════════════════")
+                        android.util.Log.e("EMPRESA_DEBUG", "🏢 EMPRESA DO TERMINAL: $empresaId")
+                        android.util.Log.e("EMPRESA_DEBUG", "═══════════════════════════════════════════")
                     }
                     if (!approved) {
                         showApprovalPendingScreen()
@@ -1353,7 +1356,21 @@ class MainActivity : ComponentActivity() {
      */
     private fun updateProdutosFromServer(produtos: org.json.JSONArray) {
         try {
-            android.util.Log.e("SYNC_DEBUG", "Atualizando ${produtos.length()} produtos do servidor")
+            val empresaIdDoTerminal = com.seucaixa.caixacombo.data.SecurePrefs.getOperadorEmpresaId(applicationContext)
+            android.util.Log.e("SYNC_DEBUG", "═══════════════════════════════════════════")
+            android.util.Log.e("SYNC_DEBUG", "📦 Sync de produtos - Terminal empresaId: $empresaIdDoTerminal")
+            android.util.Log.e("SYNC_DEBUG", "📦 Total de produtos recebidos: ${produtos.length()}")
+            if (produtos.length() > 0) {
+                android.util.Log.e("SYNC_DEBUG", "📋 Produtos do servidor:")
+                for (i in 0 until minOf(produtos.length(), 5)) {
+                    val p = produtos.getJSONObject(i)
+                    android.util.Log.e("SYNC_DEBUG", "   ${i+1}. ${p.optString("nome", "?")} - empresaId: ${p.optString("empresaId", "sem id")}")
+                }
+                if (produtos.length() > 5) {
+                    android.util.Log.e("SYNC_DEBUG", "   ... e mais ${produtos.length() - 5} produtos")
+                }
+            }
+            android.util.Log.e("SYNC_DEBUG", "═══════════════════════════════════════════")
             
             // Converter JSONArray para lista de produtos
             val produtosList = mutableListOf<Produto>()
