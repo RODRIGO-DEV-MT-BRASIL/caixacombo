@@ -101,8 +101,14 @@ export default function ProdutoModal({ isOpen, onClose, onSave, produto, categor
         imagem: imagemData || null
       }
 
-      if (user?.role === 'admin' && form.empresaId) {
+      if (user?.role === 'admin') {
+        if (!form.empresaId) {
+          alert('Selecione uma empresa para cadastrar o produto')
+          return
+        }
         produtoData.empresaId = form.empresaId
+      } else {
+        produtoData.empresaId = user?.empresaId
       }
 
       await onSave(produtoData)

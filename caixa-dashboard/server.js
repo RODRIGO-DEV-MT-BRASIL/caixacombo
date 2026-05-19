@@ -617,6 +617,15 @@ app.get('/api/categorias', authenticateToken, (req, res) => {
 });
 
 app.post('/api/categorias', authenticateToken, async (req, res) => {
+  let empresaId = null;
+  if (req.user.role === 'empresa') {
+    empresaId = req.user.empresaId;
+  } else if (req.user.role === 'admin') {
+    empresaId = req.body.empresaId || null;
+    if (!empresaId) {
+      return res.status(400).json({ error: 'Admin deve selecionar uma empresa para cadastrar a categoria' });
+    }
+  }
   const categoria = {
     id: generateId(),
     nome: req.body.nome,
@@ -625,7 +634,7 @@ app.post('/api/categorias', authenticateToken, async (req, res) => {
     icone: req.body.icone || null,
     ordem: req.body.ordem || 0,
     ativa: req.body.ativa !== false,
-    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null),
+    empresaId,
     createdAt: new Date()
   };
   db.categorias.push(categoria);
@@ -798,6 +807,15 @@ app.post('/api/admin/clear-old-data', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/produtos', authenticateToken, async (req, res) => {
+  let empresaId = null;
+  if (req.user.role === 'empresa') {
+    empresaId = req.user.empresaId;
+  } else if (req.user.role === 'admin') {
+    empresaId = req.body.empresaId || null;
+    if (!empresaId) {
+      return res.status(400).json({ error: 'Admin deve selecionar uma empresa para cadastrar o produto' });
+    }
+  }
   const produto = {
     id: generateId(),
     nome: req.body.nome,
@@ -808,7 +826,7 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
     estoque: req.body.estoque || 0,
     unidade: req.body.unidade || 'un',
     imagem: (req.body.imagem && (req.body.imagem.startsWith('/uploads/') || req.body.imagem.startsWith('data:image/'))) ? req.body.imagem : null,
-    empresaId: req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null),
+    empresaId,
     createdAt: new Date()
   };
   db.produtos.push(produto);
