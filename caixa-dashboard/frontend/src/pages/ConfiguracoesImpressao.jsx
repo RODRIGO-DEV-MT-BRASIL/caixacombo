@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { apiUrl } from '../utils/api'
-import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building } from 'lucide-react'
+import { Printer, Save, Loader2, Image, Building2, List, Eye, ChevronDown, Type, Ruler, Palette, AlignLeft, AlignCenter, AlignRight, Upload, Trash2, Edit3, Phone, Mail, MapPin, Hash, Building, DollarSign, Receipt } from 'lucide-react'
 import { useToast } from '../components/Toast'
 
 const PAPER_FORMATS = {
@@ -19,14 +19,19 @@ const defaultTemplate = {
   adicionais: { subtotal: true, desconto: true, total: true, formaPagamento: true, valorRecebido: true, troco: true, numeroVenda: true, dataHora: true },
   rodape: { linha1: 'Agradecemos sua vinda', linha2: 'Volte sempre', linha3: '', linha4: '' },
   estilo: { alinhamento: 'centro', tamanhoFonte: 'medio', espacoEntreLinhas: 8 },
-  tamanhos: { titulo: 32, subtitulo: 24, corpo: 22, rodape: 20, empresa: 28 }
+  tamanhos: {
+    empresa: 28, titulo: 32, subtitulo: 24, corpo: 22,
+    numeroVenda: 18, dataHora: 18, itensTitulo: 20,
+    itensNome: 20, itensValores: 16,
+    subtotal: 18, desconto: 18, total: 24,
+    formaPagamento: 18, valorRecebido: 18, troco: 18, rodape: 20
+  }
 }
 
 function PreviewComprovante({ template, paperFormat = '80mm' }) {
   const exampleVenda = { id: 123, data: '19/05/2026 15:45', itens: [{ nome: 'Coca-Cola 350ml', qtd: 2, valorUnit: 3.00, total: 6.00 }, { nome: 'Sanduíche Natural', qtd: 1, valorUnit: 8.00, total: 8.00 }], subtotal: 14.00, desconto: 0.00, total: 14.00, formaPagamento: 'DINHEIRO', valorRecebido: 20.00, troco: 6.00 }
   const fs = { pequeno: 9, medio: 11, grande: 13 }[template.estilo?.tamanhoFonte] || 11
-  const tituloFs = (template.tamanhos?.titulo || 32) * 0.35
-  const empresaFs = (template.tamanhos?.empresa || 28) * 0.4
+  const t = template.tamanhos || {}
   const paperWidth = PAPER_FORMATS[paperFormat]?.width || 200
   const alignClass = { esquerda: 'text-left', direita: 'text-right', centro: 'text-center' }[template.estilo?.alinhamento] || 'text-center'
 
@@ -43,49 +48,63 @@ function PreviewComprovante({ template, paperFormat = '80mm' }) {
         </div>
       )}
       <div className={alignClass}>
-        <div className="font-bold" style={{ fontSize: empresaFs }}>{template.empresa?.nome || 'Empresa'}</div>
-        {template.empresa?.cnpj && <div>CNPJ: {template.empresa.cnpj}</div>}
-        {template.empresa?.ie && <div>IE: {template.empresa.ie}</div>}
-        {template.empresa?.endereco && <div>{template.empresa.endereco}</div>}
-        {template.empresa?.cidade && <div>{template.empresa.cidade}</div>}
-        {template.empresa?.telefone && <div>Tel: {template.empresa.telefone}</div>}
-        {template.empresa?.email && <div>{template.empresa.email}</div>}
+        <div className="font-bold" style={{ fontSize: (t.empresa || 28) * 0.4 }}>{template.empresa?.nome || 'Empresa'}</div>
+        {template.empresa?.cnpj && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>CNPJ: {template.empresa.cnpj}</div>}
+        {template.empresa?.ie && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>IE: {template.empresa.ie}</div>}
+        {template.empresa?.endereco && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.endereco}</div>}
+        {template.empresa?.cidade && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.cidade}</div>}
+        {template.empresa?.telefone && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>Tel: {template.empresa.telefone}</div>}
+        {template.empresa?.email && <div style={{ fontSize: (t.corpo || 22) * 0.35 }}>{template.empresa.email}</div>}
       </div>
-      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: tituloFs }}>
+      <div className={`${alignClass} my-2 border-t border-b border-dashed border-gray-400 py-1`} style={{ fontSize: (t.titulo || 32) * 0.4 }}>
         {template.cabecalho?.titulo || 'COMPROVANTE DE VENDA'}
       </div>
-      {template.cabecalho?.subtitulo && <div className={`${alignClass} text-xs`}>{template.cabecalho.subtitulo}</div>}
+      {template.cabecalho?.subtitulo && <div className={`${alignClass}`} style={{ fontSize: (t.subtitulo || 24) * 0.35 }}>{template.cabecalho.subtitulo}</div>}
       <div className={alignClass}>
-        {template.adicionais?.numeroVenda && <div>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
-        {template.adicionais?.dataHora && <div>DATA: {exampleVenda.data}</div>}
+        {template.adicionais?.numeroVenda && <div style={{ fontSize: (t.numeroVenda || 18) * 0.38 }}>Nr: {exampleVenda.id.toString().padStart(6, '0')}</div>}
+        {template.adicionais?.dataHora && <div style={{ fontSize: (t.dataHora || 18) * 0.38 }}>DATA: {exampleVenda.data}</div>}
       </div>
       <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
-        <div className="font-bold">ITENS:</div>
+        <div className="font-bold" style={{ fontSize: (t.itensTitulo || 20) * 0.4 }}>ITENS:</div>
         {exampleVenda.itens.map((item, i) => (
           <div key={i} className="mt-1">
-            {template.itens?.nome && <div>{item.nome}</div>}
+            {template.itens?.nome && <div style={{ fontSize: (t.itensNome || 20) * 0.38 }}>{item.nome}</div>}
             {template.itens?.separador && <div>----------------------------</div>}
             {(template.itens?.quantidade || template.itens?.valorUnitario || template.itens?.valorTotal) && (
-              <div>{template.itens?.quantidade && `QTD: ${item.qtd}`}{template.itens?.valorUnitario && ` x R$ ${item.valorUnit.toFixed(2)}`}{template.itens?.valorTotal && ` = R$ ${item.total.toFixed(2)}`}</div>
+              <div style={{ fontSize: (t.itensValores || 16) * 0.38 }}>
+                {template.itens?.quantidade && `QTD: ${item.qtd}`}
+                {template.itens?.valorUnitario && ` x R$ ${item.valorUnit.toFixed(2)}`}
+                {template.itens?.valorTotal && ` = R$ ${item.total.toFixed(2)}`}
+              </div>
             )}
           </div>
         ))}
       </div>
       <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
-        {template.adicionais?.subtotal && <div className="flex justify-between"><span>SUBTOTAL:</span><span>R$ {exampleVenda.subtotal.toFixed(2)}</span></div>}
-        {template.adicionais?.desconto && <div className="flex justify-between"><span>DESCONTO:</span><span>R$ {exampleVenda.desconto.toFixed(2)}</span></div>}
-        <div className="flex justify-between font-bold border-t border-gray-600 mt-1 pt-1"><span>TOTAL:</span><span>R$ {exampleVenda.total.toFixed(2)}</span></div>
+        {template.adicionais?.subtotal && (
+          <div className="flex justify-between" style={{ fontSize: (t.subtotal || 18) * 0.38 }}>
+            <span>SUBTOTAL:</span><span>R$ {exampleVenda.subtotal.toFixed(2)}</span>
+          </div>
+        )}
+        {template.adicionais?.desconto && (
+          <div className="flex justify-between" style={{ fontSize: (t.desconto || 18) * 0.38 }}>
+            <span>DESCONTO:</span><span>R$ {exampleVenda.desconto.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-bold border-t border-gray-600 mt-1 pt-1" style={{ fontSize: (t.total || 24) * 0.4 }}>
+          <span>TOTAL:</span><span>R$ {exampleVenda.total.toFixed(2)}</span>
+        </div>
       </div>
       <div className={`${alignClass} my-2 border-t border-dashed border-gray-400 pt-1`}>
-        {template.adicionais?.formaPagamento && <div>FORMA: {exampleVenda.formaPagamento}</div>}
-        {template.adicionais?.valorRecebido && <div>RECEBIDO: R$ {exampleVenda.valorRecebido.toFixed(2)}</div>}
-        {template.adicionais?.troco && <div>TROCO: R$ {exampleVenda.troco.toFixed(2)}</div>}
+        {template.adicionais?.formaPagamento && <div style={{ fontSize: (t.formaPagamento || 18) * 0.38 }}>FORMA: {exampleVenda.formaPagamento}</div>}
+        {template.adicionais?.valorRecebido && <div style={{ fontSize: (t.valorRecebido || 18) * 0.38 }}>RECEBIDO: R$ {exampleVenda.valorRecebido.toFixed(2)}</div>}
+        {template.adicionais?.troco && <div style={{ fontSize: (t.troco || 18) * 0.38 }}>TROCO: R$ {exampleVenda.troco.toFixed(2)}</div>}
       </div>
       <div className={`${alignClass} mt-3 pt-2 border-t border-dashed border-gray-400`}>
-        {template.rodape?.linha1 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha1}</div>}
-        {template.rodape?.linha2 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha2}</div>}
-        {template.rodape?.linha3 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha3}</div>}
-        {template.rodape?.linha4 && <div style={{ fontSize: (template.tamanhos?.rodape || 20) * 0.4 }}>{template.rodape.linha4}</div>}
+        {template.rodape?.linha1 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha1}</div>}
+        {template.rodape?.linha2 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha2}</div>}
+        {template.rodape?.linha3 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha3}</div>}
+        {template.rodape?.linha4 && <div style={{ fontSize: (t.rodape || 20) * 0.38 }}>{template.rodape.linha4}</div>}
       </div>
     </div>
   )
@@ -399,13 +418,40 @@ export default function ConfiguracoesImpressao() {
 
         {/* Tamanhos */}
         {activeTab === 'tamanhos' && (
-          <SectionCard title="Tamanhos dos Títulos" icon={Type}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RangeSlider label="Nome da Empresa" value={template.tamanhos?.empresa || 28} onChange={v => updateSize('empresa', v)} min={16} max={48} />
-              <RangeSlider label="Título Principal" value={template.tamanhos?.titulo || 32} onChange={v => updateSize('titulo', v)} min={20} max={48} />
-              <RangeSlider label="Subtítulo" value={template.tamanhos?.subtitulo || 24} onChange={v => updateSize('subtitulo', v)} min={16} max={36} />
-              <RangeSlider label="Corpo do Texto" value={template.tamanhos?.corpo || 22} onChange={v => updateSize('corpo', v)} min={14} max={32} />
-              <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
+          <SectionCard title="Tamanhos dos Textos" icon={Type}>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <RangeSlider label="Nome da Empresa" value={template.tamanhos?.empresa || 28} onChange={v => updateSize('empresa', v)} min={16} max={48} />
+                <RangeSlider label="Título do Comprovante" value={template.tamanhos?.titulo || 32} onChange={v => updateSize('titulo', v)} min={20} max={48} />
+                <RangeSlider label="Subtítulo" value={template.tamanhos?.subtitulo || 24} onChange={v => updateSize('subtitulo', v)} min={16} max={36} />
+                <RangeSlider label="Corpo (dados empresa)" value={template.tamanhos?.corpo || 22} onChange={v => updateSize('corpo', v)} min={14} max={32} />
+              </div>
+              
+              <div className="border-t border-white/10 pt-4">
+                <h4 className="text-xs text-gray-400 mb-3 flex items-center gap-2"><Receipt size={14} /> Campos do Comprovante</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <RangeSlider label="Nr. Venda / Data/Hora" value={template.tamanhos?.numeroVenda || 18} onChange={v => updateSize('numeroVenda', v)} min={12} max={28} />
+                  <RangeSlider label="Título ITENS" value={template.tamanhos?.itensTitulo || 20} onChange={v => updateSize('itensTitulo', v)} min={14} max={32} />
+                  <RangeSlider label="Nome dos Produtos" value={template.tamanhos?.itensNome || 20} onChange={v => updateSize('itensNome', v)} min={14} max={32} />
+                  <RangeSlider label="Valores dos Itens" value={template.tamanhos?.itensValores || 16} onChange={v => updateSize('itensValores', v)} min={12} max={28} />
+                </div>
+              </div>
+              
+              <div className="border-t border-white/10 pt-4">
+                <h4 className="text-xs text-gray-400 mb-3 flex items-center gap-2"><DollarSign size={14} /> Totais e Pagamento</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <RangeSlider label="Subtotal" value={template.tamanhos?.subtotal || 18} onChange={v => updateSize('subtotal', v)} min={12} max={28} />
+                  <RangeSlider label="Desconto" value={template.tamanhos?.desconto || 18} onChange={v => updateSize('desconto', v)} min={12} max={28} />
+                  <RangeSlider label="TOTAL (destaque)" value={template.tamanhos?.total || 24} onChange={v => updateSize('total', v)} min={16} max={40} />
+                  <RangeSlider label="Forma Pagamento" value={template.tamanhos?.formaPagamento || 18} onChange={v => updateSize('formaPagamento', v)} min={12} max={28} />
+                  <RangeSlider label="Valor Recebido" value={template.tamanhos?.valorRecebido || 18} onChange={v => updateSize('valorRecebido', v)} min={12} max={28} />
+                  <RangeSlider label="Troco" value={template.tamanhos?.troco || 18} onChange={v => updateSize('troco', v)} min={12} max={28} />
+                </div>
+              </div>
+              
+              <div className="border-t border-white/10 pt-4">
+                <RangeSlider label="Rodapé" value={template.tamanhos?.rodape || 20} onChange={v => updateSize('rodape', v)} min={12} max={28} />
+              </div>
             </div>
           </SectionCard>
         )}
