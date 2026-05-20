@@ -1701,6 +1701,17 @@ app.delete('/api/dispositivos/:deviceId', authenticateToken, async (req, res) =>
     return res.status(403).json({ error: 'Apenas admin ou empresa pode excluir dispositivos' });
   }
 
+  // Notificar terminal que foi excluído - via WebSocket E Polling
+  const deviceSocket = device?.socketId ? io.sockets.sockets.get(device.socketId) : null;
+  if (deviceSocket) {
+    deviceSocket.emit('approval_status', { approved: false, status: 'pending', empresaId: null });
+    deviceSocket.emit('produtos_sync', { produtos: [], timestamp: new Date() });
+    deviceSocket.disconnect(true);
+  }
+  enqueueDeviceCommand(deviceId, 'approval_status', { approved: false, status: 'pending', empresaId: null });
+  enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: [] });
+  enqueueDeviceCommand(deviceId + '_new', 'approval_status', { approved: false, status: 'pending', empresaId: null });
+
   if (device) {
     connectedDevices.delete(deviceId);
   }
