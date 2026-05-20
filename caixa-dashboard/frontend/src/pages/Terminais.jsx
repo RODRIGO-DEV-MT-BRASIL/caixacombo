@@ -69,9 +69,10 @@ export default function Terminais() {
       .then(r => r.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.data || []
+        console.log(`[Terminais] loaded ${list.length} devices, pending: ${list.filter(d => d.status === 'pending').length}`, list)
         setDevices(list)
       })
-      .catch(() => {})
+      .catch(e => console.error('[Terminais] failed to load devices', e))
   }, [token])
 
   // Combinar devices da API com updates do socket
@@ -145,6 +146,8 @@ export default function Terminais() {
     return () => { window.removeEventListener('device_unlocked', h); window.removeEventListener('device_locked', h) }
   }, [success])
 
+  console.log(`[Terminais] devices=${devices.length}, pending=${pending.length}`, devices)
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -160,7 +163,7 @@ export default function Terminais() {
             <select
               value={filterEmpresa}
               onChange={(e) => setFilterEmpresa(e.target.value)}
-              className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
             >
               <option value="">Todas as Empresas</option>
               {empresas.map(emp => (
@@ -171,13 +174,29 @@ export default function Terminais() {
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar terminal..."
-              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all w-48" />
+              className="pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all w-48" />
           </div>
           <button onClick={handleSync} className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1">
             <RotateCw size={14} /> Sincronizar
           </button>
         </div>
       </div>
+
+      {/* Debug: mostrar todos os status quando não há pendentes visíveis */}
+      {pending.length === 0 && devices.length > 0 && (
+        <div className="glass p-4 border border-gray-500/20">
+          <p className="text-xs text-gray-400 mb-2">Debug — Todos os dispositivos ({devices.length}):</p>
+          <div className="space-y-1">
+            {devices.map(d => (
+              <div key={d.deviceId} className="flex items-center gap-2 text-xs">
+                <span className="font-mono text-gray-300">{d.deviceId?.slice(0, 12)}…</span>
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${d.status === 'pending' ? 'bg-yellow-400/20 text-yellow-400' : d.status === 'online' ? 'bg-emerald-400/20 text-emerald-400' : d.status === 'locked' ? 'bg-red-400/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>{d.status}</span>
+                <span className="text-gray-500">emp={d.empresaId || 'null'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Terminais Pendentes - Aprovação */}
       {pending.length > 0 && (user?.role === 'admin' || user?.role === 'empresa') && (
