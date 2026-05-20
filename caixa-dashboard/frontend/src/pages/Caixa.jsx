@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
 import { apiUrl } from '../utils/api'
-import { DollarSign, Search, Loader2, TrendingUp, Monitor, ChevronDown, ChevronUp, Plus, ArrowUpCircle, ArrowDownCircle, Lock, LockOpen, Wallet, CreditCard, Smartphone, PiggyBank } from 'lucide-react'
+import { useToast } from '../components/Toast'
+import { DollarSign, Search, Loader2, TrendingUp, Monitor, ChevronDown, ChevronUp, Plus, ArrowUpCircle, ArrowDownCircle, Lock, LockOpen, Wallet, CreditCard, Smartphone, PiggyBank, Printer, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 
 export default function Caixa({ onNavigateToFechamento }) {
   const { user, token } = useAuth()
@@ -17,7 +18,7 @@ export default function Caixa({ onNavigateToFechamento }) {
   const [expandedDevice, setExpandedDevice] = useState(null)
   const [expandedVenda, setExpandedVenda] = useState(null)
   const [showModal, setShowModal] = useState(false)
-  const [showFechamentoModal, setShowFechamentoModal] = useState(false)
+
   const [dispositivosConectados, setDispositivosConectados] = useState([])
   const [form, setForm] = useState({ tipo: 'abertura', valor: '', deviceId: '' })
   const [selectedTab, setSelectedTab] = useState(0)
@@ -26,6 +27,9 @@ export default function Caixa({ onNavigateToFechamento }) {
   const [sessoes, setSessoes] = useState([])
   const [faturamento, setFaturamento] = useState([])
   const [periodoFaturamento, setPeriodoFaturamento] = useState('diario')
+  const [showFecharCaixaModal, setShowFecharCaixaModal] = useState(false)
+  const [fechandoCaixa, setFechandoCaixa] = useState(false)
+  const toast = useToast()
 
   useEffect(() => {
     fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
@@ -353,74 +357,99 @@ export default function Caixa({ onNavigateToFechamento }) {
       .then(data => setOperacoes(data))
   }
 
-  const handleFechamentoGeral = async () => {
-    // Verificar se há caixas abertos antes de permitir fechamento geral
-    const dispositivosComCaixaAberto = dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto)
-    
-    if (dispositivosComCaixaAberto.length > 0) {
-      alert(`⚠️ ATENÇÃO: Existem ${dispositivosComCaixaAberto.length} caixas abertos:\n\n${dispositivosComCaixaAberto.map(d => `- ${d.deviceId === 'geral' ? 'Geral' : d.deviceId}`).join('\n')}\n\nFaça o fechamento individual dos caixas antes do fechamento geral.`)
+  // Fechar caixas abertos por terminal + imprimir
+  const handleFecharCaixa = async () => {
+    const dispositivosAbertos = dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto)
+
+    if (dispositivosAbertos.length === 0) {
+      toast.warning('Nenhum caixa aberto para fechar')
+      setShowFecharCaixaModal(false)
       return
     }
-    
-    const totalVendas = vendas.reduce((sum, v) => sum + (v.total || 0), 0)
-    const totalAbertura = operacoes.filter(o => o.tipo === 'abertura').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const totalSuprimento = operacoes.filter(o => o.tipo === 'suprimento').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const totalSangria = operacoes.filter(o => o.tipo === 'sangria').reduce((sum, o) => sum + (o.valor || 0), 0)
-    const totalFechamento = operacoes.filter(o => o.tipo === 'fechamento').reduce((sum, o) => sum + (o.valor || 0), 0)
-    
-    const saldoFinal = totalAbertura + totalSuprimento - totalSangria - totalFechamento
-    
-    console.log('Cálculo Fechamento Geral:', {
-      totalAbertura,
-      totalSuprimento,
-      totalSangria,
-      totalFechamento,
-      saldoFinal,
-      totalVendas
-    })
-    
-    // 1. Criar operação de fechamento geral
-    const body = {
-      tipo: 'fechamento',
-      valor: saldoFinal,
-      deviceId: null,
-      observacao: `Fechamento geral - Vendas: R$ ${totalVendas.toFixed(2)}`
+
+    setFechandoCaixa(true)
+    let fechados = 0
+    let erros = 0
+
+    for (const dispositivo of dispositivosAbertos) {
+      const sessao = caixaAtual[dispositivo.deviceId]
+      const opsSessao = getOpsSessao(dispositivo.deviceId)
+      const vendasSessao = getVendasSessao(dispositivo.deviceId)
+
+      const totalAberturaSessao = opsSessao.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalSuprimentoSessao = opsSessao.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalSangriaSessao = opsSessao.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalVendasSessao = vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
+
+      const saldo = totalAberturaSessao + totalSuprimentoSessao - totalSangriaSessao + totalVendasSessao
+
+      try {
+        const res = await fetch(apiUrl('/api/operacoes'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            tipo: 'fechamento',
+            valor: saldo,
+            deviceId: dispositivo.deviceId,
+            observacao: `Fechamento automático - Vendas: R$ ${totalVendasSessao.toFixed(2)}`
+          })
+        })
+        if (res.ok) fechados++
+        else erros++
+      } catch {
+        erros++
+      }
     }
 
-    const response = await fetch(apiUrl('/api/operacoes'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(body)
-    })
+    // Recarregar dados
+    const [opsRes, vendasRes] = await Promise.all([
+      fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(apiUrl('/api/vendas'), { headers: { Authorization: `Bearer ${token}` } })
+    ])
+    const opsData = await opsRes.json()
+    const vendasData = await vendasRes.json()
+    const novasOperacoes = Array.isArray(opsData) ? opsData : opsData.operacoes || []
+    const novasVendas = Array.isArray(vendasData) ? vendasData : vendasData.data || []
+    setOperacoes(novasOperacoes)
+    setVendas(novasVendas)
 
-    if (response.ok) {
-      // 2. Gerar PDF do fechamento
+    // Gerar PDF consolidado
+    if (fechados > 0) {
+      const totalAbertura = novasOperacoes.filter(o => o.tipo === 'abertura').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalSuprimento = novasOperacoes.filter(o => o.tipo === 'suprimento').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalSangria = novasOperacoes.filter(o => o.tipo === 'sangria').reduce((s, o) => s + (o.valor || 0), 0)
+      const totalVendas = novasVendas.reduce((s, v) => s + (v.total || 0), 0)
+      const saldo = totalAbertura + totalSuprimento - totalSangria
+
       await gerarPDFFechamento({
         totalAbertura,
         totalSuprimento,
         totalSangria,
-        totalFechamento: saldoFinal,
+        totalFechamento: saldo,
         totalVendas,
         dataHora: new Date().toLocaleString('pt-BR'),
-        operacoes: operacoes.filter(o => o.tipo !== 'fechamento'),
-        vendas: vendas
+        operacoes: novasOperacoes.filter(o => o.tipo !== 'fechamento'),
+        vendas: novasVendas
       })
 
-      // 3. Enviar comando de fechamento para dispositivos Android
+      // Notificar dispositivos
       if (socket) {
         socket.emit('fechamento_geral', {
-          valor: saldoFinal,
+          valor: saldo,
           totalVendas,
-          dataHora: new Date().toISOString(),
-          observacao: `Fechamento geral - Vendas: R$ ${totalVendas.toFixed(2)}`
+          dataHora: new Date().toISOString()
         })
       }
     }
 
-    setShowFechamentoModal(false)
-    fetch(apiUrl('/api/operacoes'), { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => setOperacoes(data))
+    setFechandoCaixa(false)
+    setShowFecharCaixaModal(false)
+
+    if (erros === 0) {
+      toast.success(`${fechados} caixa(s) fechado(s) com sucesso! PDF gerado.`)
+    } else {
+      toast.warning(`${fechados} fechado(s), ${erros} erro(s)`)
+    }
   }
 
   // Função para gerar PDF do fechamento
@@ -452,92 +481,125 @@ export default function Caixa({ onNavigateToFechamento }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards - Operações de Caixa */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <ArrowUpCircle size={24} className="text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalAbertura.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Total Abertura</p>
-          </div>
+    <div className="space-y-5">
+      {/* Summary Bar */}
+      <div className="glass px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-4 text-sm">
+          <span className="text-gray-400">Caixas:</span>
+          <span className="text-emerald-400 font-medium flex items-center gap-1">
+            <LockOpen size={14} /> {dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length} abertos
+          </span>
+          <span className="text-gray-500">/</span>
+          <span className="text-gray-400 font-medium flex items-center gap-1">
+            <Lock size={14} /> {dispositivos.filter(d => caixaAtual[d.deviceId] && !caixaAtual[d.deviceId].aberto).length} fechados
+          </span>
         </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-            <ArrowDownCircle size={24} className="text-red-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalFechamento.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Total Fechamento</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-            <PiggyBank size={24} className="text-blue-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalSuprimento.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Total Suprimento</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-            <Wallet size={24} className="text-amber-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalSangria.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Total Sangria</p>
-          </div>
+        <div className="flex items-center gap-4 text-sm">
+          <span className="text-blue-400 font-medium">R$ {totalVendas.toFixed(2)} vendas</span>
+          <span className="text-gray-500">|</span>
+          <span className="text-gray-400">{dispositivos.length} dispositivo(s)</span>
         </div>
       </div>
 
-      {/* Stats Cards - Vendas por Forma de Pagamento */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <DollarSign size={24} className="text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalVendas.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Total Vendas</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-            <DollarSign size={24} className="text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalDinheiro.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Dinheiro</p>
+      {/* Stats Cards Consolidados */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <ArrowUpCircle size={16} className="text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalAbertura.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Abertura</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-            <Smartphone size={24} className="text-blue-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalPix.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">PIX</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
-            <CreditCard size={24} className="text-amber-400" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalCredito.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Crédito</p>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+              <ArrowDownCircle size={16} className="text-red-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalFechamento.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Fechamento</p>
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-            <CreditCard size={24} className="text-cyan-400" />
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+              <PiggyBank size={16} className="text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalSuprimento.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Suprimento</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-white">R$ {totalDebito.toFixed(2)}</p>
-            <p className="text-xs text-gray-400">Débito</p>
+        </div>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+              <Wallet size={16} className="text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalSangria.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Sangria</p>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <DollarSign size={16} className="text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalDinheiro.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Dinheiro</p>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+              <Smartphone size={16} className="text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalPix.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">PIX</p>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+              <CreditCard size={16} className="text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalCredito.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Crédito</p>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card !p-3 !min-h-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+              <CreditCard size={16} className="text-cyan-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalDebito.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Débito</p>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card !p-3 !min-h-0" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+              <DollarSign size={16} className="text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">R$ {totalVendas.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">Total Vendas</p>
+            </div>
           </div>
         </div>
       </div>
@@ -579,7 +641,7 @@ export default function Caixa({ onNavigateToFechamento }) {
               <select
                 value={filterEmpresa}
                 onChange={(e) => setFilterEmpresa(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Todas as Empresas</option>
                 {empresas.map(emp => (
@@ -589,7 +651,7 @@ export default function Caixa({ onNavigateToFechamento }) {
               <select
                 value={filterTerminal}
                 onChange={(e) => setFilterTerminal(e.target.value)}
-                className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                className="px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Todos os Terminais</option>
                 {dispositivosConectados.map(d => (
@@ -610,8 +672,22 @@ export default function Caixa({ onNavigateToFechamento }) {
           <button onClick={() => { setShowHistorico(!showHistorico); setShowFaturamento(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showHistorico ? 'bg-amber-600 text-white' : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/20'}`}>
             <Wallet size={16} /> Histórico
           </button>
-          <button onClick={onNavigateToFechamento} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors">
-            <Lock size={16} /> Fechamento Geral
+          <button
+            onClick={() => setShowFecharCaixaModal(true)}
+            disabled={fechandoCaixa}
+            className="relative bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/20"
+          >
+            {fechandoCaixa ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Printer size={16} />
+            )}
+            {fechandoCaixa ? 'Fechando...' : 'Fechar Caixa'}
+            {!fechandoCaixa && dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-400 text-[10px] font-bold text-black flex items-center justify-center shadow-lg">
+                {dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length}
+              </span>
+            )}
           </button>
           <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 text-sm">
             <Plus size={16} /> Nova Operação
@@ -1018,6 +1094,68 @@ export default function Caixa({ onNavigateToFechamento }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal Fechar Caixa */}
+      {showFecharCaixaModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => !fechandoCaixa && setShowFecharCaixaModal(false)}>
+          <div className="glass p-6 w-full max-w-md glow-red max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {fechandoCaixa ? (
+              <div className="text-center py-8">
+                <Loader2 size={40} className="animate-spin mx-auto text-red-400 mb-4" />
+                <p className="text-white font-medium">Fechando caixas...</p>
+                <p className="text-gray-500 text-sm mt-1">Processando fechamento dos terminais</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Printer size={20} className="text-red-400" /> Fechar Caixa
+                  </h3>
+                  <button onClick={() => setShowFecharCaixaModal(false)} className="text-gray-400 hover:text-white">
+                    <Plus size={20} className="rotate-45" />
+                  </button>
+                </div>
+                <p className="text-gray-400 text-sm mb-4">
+                  Serão fechados os caixas dos terminais abaixo. Um PDF consolidado será gerado automaticamente.
+                </p>
+                <div className="space-y-2 mb-6 max-h-60 overflow-y-auto">
+                  {dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).map(d => {
+                    const vendasSessao = getVendasSessao(d.deviceId)
+                    const totalVendas = vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
+                    return (
+                      <div key={d.deviceId} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                            <Monitor size={16} className="text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">{d.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(dc => dc.deviceId === d.deviceId)?.deviceName || d.deviceId}</p>
+                            <p className="text-xs text-gray-500">{vendasSessao.length} venda(s)</p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-bold text-emerald-400">R$ {totalVendas.toFixed(2)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+                {dispositivos.filter(d => !caixaAtual[d.deviceId]?.aberto && caixaAtual[d.deviceId]?.aberturaTimestamp).length > 0 && (
+                  <p className="text-xs text-gray-500 mb-4 flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-gray-500" />
+                    {dispositivos.filter(d => !caixaAtual[d.deviceId]?.aberto && caixaAtual[d.deviceId]?.aberturaTimestamp).length} caixa(s) já fechado(s) — serão ignorados
+                  </p>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setShowFecharCaixaModal(false)} className="btn-ghost flex-1">Cancelar</button>
+                  <button onClick={handleFecharCaixa} className="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all shadow-lg shadow-red-600/20">
+                    <Printer size={16} />
+                    Fechar & Imprimir
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
