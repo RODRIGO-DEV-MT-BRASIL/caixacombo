@@ -2601,6 +2601,7 @@ app.post('/api/device/poll', async (req, res) => {
     if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
     // Enviar config da empresa (whitelabel)
     const empresa = (db.empresas || []).find(e => e.id === pollEmpresaId);
+    const impressaoTemplate = db.impressaoTemplates?.find(t => t.empresaId === pollEmpresaId);
     if (empresa) {
       enqueueDeviceCommand(deviceId, 'empresa_config', {
         empresaId: empresa.id, nome: empresa.nome,
@@ -2609,7 +2610,6 @@ app.post('/api/device/poll', async (req, res) => {
         designApp: impressaoTemplate?.designApp || { tipo: 'mercado' }
       });
     }
-    const impressaoTemplate = db.impressaoTemplates?.find(t => t.empresaId === pollEmpresaId);
     if (impressaoTemplate) {
       enqueueDeviceCommand(deviceId, 'print_config_sync', { config: impressaoTemplate });
     }
