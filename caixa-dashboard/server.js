@@ -23,9 +23,6 @@ app.use(express.json({ limit: '10mb' }));
 // Servir arquivos estáticos da pasta uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Servir arquivos estáticos do frontend (após build)
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
-
 // Criar pasta uploads se não existir
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -3711,6 +3708,9 @@ io.on('connection', (socket) => {
 });
 
 // ==================== SPA CATCH-ALL ====================
+// Servir arquivos estáticos do frontend (após build)
+app.use(express.static(path.join(__dirname, 'frontend/dist')));
+
 // Serve o index.html para todas as rotas que não são de API (para React Router)
 app.get('*', (req, res) => {
   // Ignorar rotas de API e uploads
