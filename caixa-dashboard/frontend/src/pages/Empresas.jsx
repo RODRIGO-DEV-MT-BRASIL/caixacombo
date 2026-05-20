@@ -7,7 +7,7 @@ const defaultFormData = {
   nome: '', tipoPessoa: 'juridica', cnpj: '', email: '', telefone: '', login: '', senha: '',
   permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
   primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '',
-  paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
+  paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao'],
   slug: ''
 }
 

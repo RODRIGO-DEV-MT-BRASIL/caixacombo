@@ -110,30 +110,30 @@ export default function Dashboard() {
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-3 space-y-1">
+          <nav className="flex-1 px-2 space-y-0.5">
             {filteredNavItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
-                className={`w-full flex items-center gap-3 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2'} rounded-lg text-sm font-medium transition-all duration-200 ${
                   page === item.id 
                     ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
                 title={sidebarCollapsed ? item.label : ''}
               >
-                <item.icon size={18} className="shrink-0" />
+                <item.icon size={16} className="shrink-0" />
                 {!sidebarCollapsed && item.label}
               </button>
             ))}
           </nav>
 
           {/* Connection Status */}
-          <div className="px-3 mb-3">
-            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5'} rounded-xl text-xs font-medium ${
+          <div className="px-2 mb-2">
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2'} rounded-lg text-xs font-medium ${
               connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
             }`}>
-              {connected ? <Wifi size={14} className="shrink-0" /> : <WifiOff size={14} className="shrink-0" />}
+              {connected ? <Wifi size={12} className="shrink-0" /> : <WifiOff size={12} className="shrink-0" />}
               {!sidebarCollapsed && (connected ? 'WebSocket Conectado' : 'WebSocket Desconectado')}
             </div>
           </div>
