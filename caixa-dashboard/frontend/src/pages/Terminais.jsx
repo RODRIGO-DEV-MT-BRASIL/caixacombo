@@ -144,15 +144,6 @@ export default function Terminais() {
     } catch { success('Erro ao excluir terminal', 5000) }
   }
 
-  const handleSync = async () => {
-    if (socket && connected) socket.emit('dashboard_connect', { token })
-    else if (socket) socket.connect()
-    try {
-      await fetch('/api/force-sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
-      success('Sincronizado', 3000)
-    } catch { success('Reconectando...', 3000) }
-  }
-
   useEffect(() => {
     const h = (e) => success(`Terminal ${e.type === 'device_unlocked' ? 'desbloqueado' : 'bloqueado'}: ${e.detail.deviceName}`, 5000)
     window.addEventListener('device_unlocked', h)
@@ -190,9 +181,7 @@ export default function Terminais() {
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar terminal..."
               className="pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all w-48" />
           </div>
-          <button onClick={handleSync} className="px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1">
-            <RotateCw size={14} /> Sincronizar
-          </button>
+
         </div>
       </div>
 
