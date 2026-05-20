@@ -64,6 +64,7 @@ class PollingService : Service() {
         private var onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null  // approved, status, empresaId
         private var onEmpresaConfig: ((JSONObject) -> Unit)? = null       // empresa config (whitelabel)
         private var onFuncionariosReceived: ((JSONArray) -> Unit)? = null  // funcionarios do servidor
+        private var onPrintConfigReceived: ((JSONObject) -> Unit)? = null
 
         private var isRunning = false
         private var consecutiveErrors = 0
@@ -126,7 +127,8 @@ class PollingService : Service() {
             onSyncComplete: ((Int, Int, Int) -> Unit)? = null,
             onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null,
             onEmpresaConfig: ((JSONObject) -> Unit)? = null,
-            onFuncionariosReceived: ((JSONArray) -> Unit)? = null
+            onFuncionariosReceived: ((JSONArray) -> Unit)? = null,
+            onPrintConfigReceived: ((JSONObject) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -143,6 +145,7 @@ class PollingService : Service() {
             this.onApprovalStatus = onApprovalStatus
             this.onEmpresaConfig = onEmpresaConfig
             this.onFuncionariosReceived = onFuncionariosReceived
+            this.onPrintConfigReceived = onPrintConfigReceived
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -734,6 +737,12 @@ class PollingService : Service() {
                 Log.d(TAG, "funcionarios_sync recebido: ${funcionarios?.length() ?: 0} funcionarios")
                 if (funcionarios != null) {
                     onFuncionariosReceived?.invoke(funcionarios)
+                }
+            }
+            "print_config_sync" -> {
+                Log.d(TAG, "print_config_sync recebido")
+                if (params != null) {
+                    onPrintConfigReceived?.invoke(params)
                 }
             }
             else -> {

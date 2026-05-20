@@ -756,24 +756,41 @@ function getEmpresaTemplate(empresaId) {
 }
 
 function setEmpresaTemplate(empresaId, template) {
+  console.log(`[PRINT] setEmpresaTemplate empresaId=${empresaId}, empresas count=${(db.empresas || []).length}`)
+  let saved = false
   if (empresaId) {
     const empresa = (db.empresas || []).find(e => e.id === empresaId)
-    if (empresa) empresa.impressaoTemplate = template
+    console.log(`[PRINT] Empresa ${empresaId}: ${empresa ? 'encontrada=' + empresa.nome : 'NAO ENCONTRADA'}`)
+    if (empresa) {
+      empresa.impressaoTemplate = template
+      saved = true
+    }
   } else {
     db.impressaoTemplate = template
+    saved = true
   }
   debouncedSaveData()
+  return saved ? 'OK' : 'NOT_FOUND'
 }
 
 app.get('/api/impressao/template', authenticateToken, (req, res) => {
-  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.query.empresaId || null)
-  res.json(getEmpresaTemplate(empresaId))
+  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.user.empresaId || req.query.empresaId || null)
+  console.log(`[PRINT] GET empresaId=${empresaId}, role=${req.user.role}, user keys=${Object.keys(req.user || {})}`)
+  const template = getEmpresaTemplate(empresaId)
+  console.log(`[PRINT] Template: keys=${Object.keys(template || {}).length}`)
+  res.json(template)
 })
 
 app.post('/api/impressao/template', authenticateToken, (req, res) => {
-  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.body.empresaId || null)
-  setEmpresaTemplate(empresaId, req.body)
+  const empresaId = req.user.role === 'empresa' ? req.user.empresaId : (req.user.empresaId || req.body.empresaId || null)
+  console.log(`[PRINT] POST empresaId=${empresaId}, role=${req.user.role}`)
+  console.log(`[PRINT] req.user keys: ${Object.keys(req.user || {})}`)
+  const result = setEmpresaTemplate(empresaId, req.body)
+  console.log(`[PRINT] Result: ${result}`)
   addAuditoria('impressao', null, 'Template de impressão atualizado', req.user.username)
+  if (result === 'NOT_FOUND') {
+    return res.status(404).json({ error: 'Empresa não encontrada', empresaId })
+  }
   res.json({ success: true })
 })
 
@@ -2591,8 +2608,13 @@ app.post('/api/device/poll', async (req, res) => {
       enqueueDeviceCommand(deviceId, 'empresa_config', {
         empresaId: empresa.id, nome: empresa.nome,
         primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4',
-        accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || ''
+        accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || '',
+        designApp: impressaoTemplate?.designApp || { tipo: 'mercado' }
       });
+    }
+    const impressaoTemplate = db.impressaoTemplates?.find(t => t.empresaId === pollEmpresaId);
+    if (impressaoTemplate) {
+      enqueueDeviceCommand(deviceId, 'print_config_sync', { config: impressaoTemplate });
     }
   } else {
     // Terminal pendente: sem dados
