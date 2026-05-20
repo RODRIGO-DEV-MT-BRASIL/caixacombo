@@ -464,8 +464,10 @@ app.post('/api/auth/login', async (req, res) => {
         // Se já aprovado (online), permite login sem resetar
         if (terminalNoBanco.status === 'online') {
           terminalNoBanco.lastPoll = new Date();
+          terminalNoBanco.lastLogin = new Date();
+          terminalNoBanco.lastLoginUser = funcionarioByCodigo?.nome || 'desconhecido';
           const cd = connectedDevices.get(deviceId);
-          if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario }
+          if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario; cd.lastLogin = new Date(); cd.lastLoginUser = funcionarioByCodigo?.nome || 'desconhecido' }
           debouncedSaveData();
           console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
         } else {
@@ -549,8 +551,10 @@ app.post('/api/auth/login', async (req, res) => {
       // Se já aprovado (online), permite login sem resetar
       if (terminalNoBanco.status === 'online') {
         terminalNoBanco.lastPoll = new Date();
+        terminalNoBanco.lastLogin = new Date();
+        terminalNoBanco.lastLoginUser = funcionario?.nome || 'desconhecido';
         const cd = connectedDevices.get(deviceId);
-        if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario }
+        if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario; cd.lastLogin = new Date(); cd.lastLoginUser = funcionario?.nome || 'desconhecido' }
         debouncedSaveData();
         console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
       } else {

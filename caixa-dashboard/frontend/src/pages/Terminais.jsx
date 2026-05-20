@@ -185,22 +185,6 @@ export default function Terminais() {
         </div>
       </div>
 
-      {/* Debug: mostrar todos os status quando não há pendentes visíveis */}
-      {pending.length === 0 && devices.length > 0 && (
-        <div className="glass p-4 border border-gray-500/20">
-          <p className="text-xs text-gray-400 mb-2">Debug — Todos os dispositivos ({devices.length}):</p>
-          <div className="space-y-1">
-            {devices.map(d => (
-              <div key={d.deviceId} className="flex items-center gap-2 text-xs">
-                <span className="font-mono text-gray-300">{d.deviceId?.slice(0, 12)}…</span>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${d.status === 'pending' ? 'bg-yellow-400/20 text-yellow-400' : d.status === 'online' ? 'bg-emerald-400/20 text-emerald-400' : d.status === 'locked' ? 'bg-red-400/20 text-red-400' : 'bg-gray-500/20 text-gray-400'}`}>{d.status}</span>
-                <span className="text-gray-500">emp={d.empresaId || 'null'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Terminais Pendentes - Aprovação */}
       {pending.length > 0 && (user?.role === 'admin' || user?.role === 'empresa') && (
         <div className="space-y-3">
@@ -265,10 +249,9 @@ export default function Terminais() {
                   </div>
                   <div>
                     <p className="font-semibold text-white text-sm">{device.deviceName || device.deviceId}</p>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                    <div className="flex flex-col gap-0.5 text-[11px] text-gray-500 mt-0.5">
                       <span className="font-mono">{device.serialNumber || device.deviceId}</span>
-                      <span>·</span>
-                      <span>{getConnectedTime(device.connectedAt)}</span>
+                      <span>📅 {device.lastLogin ? new Date(device.lastLogin).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'} · 👤 {device.lastLoginUser || '-'}</span>
                     </div>
                   </div>
                 </div>
