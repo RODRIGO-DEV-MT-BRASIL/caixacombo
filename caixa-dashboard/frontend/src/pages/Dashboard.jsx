@@ -94,9 +94,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 glass border-r border-white/5 transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-y-auto">
           {/* Logo */}
-          <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'p-1.5 justify-center' : 'p-3'}`}>
+          <div className={`flex items-center gap-2 shrink-0 ${sidebarCollapsed ? 'p-1.5 justify-center' : 'p-3'}`}>
             <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-7 h-7' : 'w-10 h-10'} rounded-lg object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
             {!sidebarCollapsed && (
               <div>
@@ -139,7 +139,7 @@ export default function Dashboard() {
           </div>
 
           {/* User */}
-          <div className="px-1.5 border-t border-white/5">
+          <div className="px-1.5 border-t border-white/5 shrink-0">
             <div className={`flex items-center gap-1.5 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-1.5 py-1'}`}>
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                 {user?.username?.charAt(0).toUpperCase()}
