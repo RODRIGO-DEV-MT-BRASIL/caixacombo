@@ -55,6 +55,8 @@ import com.seucaixa.caixacombo.ui.screens.configuracao.ConfiguracaoImpressaoScre
 import com.seucaixa.caixacombo.ui.screens.configuracao.ConfiguracaoTipoImpressaoScreen
 import com.seucaixa.caixacombo.ui.screens.checkout.CheckoutScreenMobile
 import com.seucaixa.caixacombo.ui.screens.checkout.CheckoutScreenPOS
+import com.seucaixa.caixacombo.ui.screens.checkout.CheckoutScreenMaster
+import com.seucaixa.caixacombo.ui.screens.checkout.CheckoutScreenPremium
 import com.seucaixa.caixacombo.ui.theme.CaixaComboTheme
 import com.seucaixa.caixacombo.ui.theme.DeviceType
 import com.seucaixa.caixacombo.ui.theme.rememberDeviceType
@@ -277,6 +279,12 @@ class MainActivity : ComponentActivity() {
                     android.util.Log.d("MainActivity", "Recebidos ${funcionariosJson.length()} funcionários do servidor")
                     syncFuncionariosFromServer(funcionariosJson)
                 }
+            },
+            onPrintConfigReceived = { configJson ->
+                runOnUiThread {
+                    android.util.Log.d("MainActivity", "Print config recebida do servidor")
+                    syncPrintConfigFromServer(configJson)
+                }
             }
         )
         
@@ -379,35 +387,24 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("checkout") {
-                            // Seleciona layout baseado no dispositivo
-                            when (deviceType) {
-                                DeviceType.POS, DeviceType.TABLET -> {
-                                    // SUNMI V1/V2 e D2S/VI/V2 - Layout POS (tela grande)
-                                    CheckoutScreenPOS(
+                            val designTipo = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).getString("design_app_tipo", "mercado") ?: "mercado"
+                            val checkoutDesign = when {
+                                deviceType == DeviceType.MOBILE -> "master"
+                                else -> designTipo
+                            }
+                            when (checkoutDesign) {
+                                "master" -> {
+                                    CheckoutScreenMaster(
                                         viewModel = checkoutViewModel,
                                         caixaAberto = caixaAberto,
                                         deviceType = deviceType,
-                                        onNavigateToHome = {
-                                            navController.navigate("home")
-                                        },
-                                        onNavigateToProdutos = {
-                                            navController.navigate("produtos")
-                                        },
-                                        onNavigateToVendas = {
-                                            navController.navigate("vendas")
-                                        },
-                                        onNavigateToCaixa = {
-                                            navController.navigate("caixa")
-                                        },
-                                        onNavigateToConfiguracaoTipoImpressao = {
-                                            navController.navigate("configuracao_tipo_impressao")
-                                        },
-                                        onNavigateToAcessos = {
-                                            navController.navigate("acessos")
-                                        },
-                                        onNavigateToCadastro = {
-                                            navController.navigate("cadastro")
-                                        },
+                                        onNavigateToHome = { navController.navigate("home") },
+                                        onNavigateToProdutos = { navController.navigate("produtos") },
+                                        onNavigateToVendas = { navController.navigate("vendas") },
+                                        onNavigateToCaixa = { navController.navigate("caixa") },
+                                        onNavigateToConfiguracaoTipoImpressao = { navController.navigate("configuracao_tipo_impressao") },
+                                        onNavigateToAcessos = { navController.navigate("acessos") },
+                                        onNavigateToCadastro = { navController.navigate("cadastro") },
                                         onSendStonePayment = { amount, transactionType, installmentType, orderId, callback ->
                                             stonePaymentCallback = callback
                                             StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, installmentType, 0, orderId)
@@ -415,53 +412,83 @@ class MainActivity : ComponentActivity() {
                                         onLogout = {
                                             com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
                                             getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
-                                                .remove("operador_nome")
-                                                .remove("operador_cargo")
-                                                .remove("operador_id")
-                                                .apply()
-                                            navController.navigate("home") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
+                                                .remove("operador_nome").remove("operador_cargo").remove("operador_id").apply()
+                                            navController.navigate("home") { popUpTo(0) { inclusive = true } }
                                         },
-                                        onNavigateToDashboard = {
-                                            dashboardViewModel.refresh()
-                                            navController.navigate("dashboard")
-                                        }
+                                        onNavigateToDashboard = { dashboardViewModel.refresh(); navController.navigate("dashboard") }
                                     )
                                 }
-                                else -> {
-                                    // Mobile - Layout compacto
-                                    CheckoutScreenMobile(
+                                "premium" -> {
+                                    CheckoutScreenPremium(
                                         viewModel = checkoutViewModel,
                                         caixaAberto = caixaAberto,
-                                        onNavigateToHome = {
-                                            navController.navigate("home")
-                                        },
-                                        onNavigateToProdutos = {
-                                            navController.navigate("produtos")
-                                        },
-                                        onNavigateToVendas = {
-                                            navController.navigate("vendas")
-                                        },
-                                        onNavigateToCaixa = {
-                                            navController.navigate("caixa")
+                                        deviceType = deviceType,
+                                        onNavigateToHome = { navController.navigate("home") },
+                                        onNavigateToProdutos = { navController.navigate("produtos") },
+                                        onNavigateToVendas = { navController.navigate("vendas") },
+                                        onNavigateToCaixa = { navController.navigate("caixa") },
+                                        onNavigateToConfiguracaoTipoImpressao = { navController.navigate("configuracao_tipo_impressao") },
+                                        onNavigateToAcessos = { navController.navigate("acessos") },
+                                        onNavigateToCadastro = { navController.navigate("cadastro") },
+                                        onSendStonePayment = { amount, transactionType, installmentType, orderId, callback ->
+                                            stonePaymentCallback = callback
+                                            StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, installmentType, 0, orderId)
                                         },
                                         onLogout = {
                                             com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
                                             getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
-                                                .remove("operador_nome")
-                                                .remove("operador_cargo")
-                                                .remove("operador_id")
-                                                .apply()
-                                            navController.navigate("home") {
-                                                popUpTo(0) { inclusive = true }
-                                            }
+                                                .remove("operador_nome").remove("operador_cargo").remove("operador_id").apply()
+                                            navController.navigate("home") { popUpTo(0) { inclusive = true } }
                                         },
-                                        onNavigateToDashboard = {
-                                            dashboardViewModel.refresh()
-                                            navController.navigate("dashboard")
-                                        }
+                                        onNavigateToDashboard = { dashboardViewModel.refresh(); navController.navigate("dashboard") }
                                     )
+                                }
+                                else -> {
+                                    // Mercado (padrão) - Layout POS ou Mobile
+                                    when (deviceType) {
+                                        DeviceType.POS, DeviceType.TABLET -> {
+                                            CheckoutScreenPOS(
+                                                viewModel = checkoutViewModel,
+                                                caixaAberto = caixaAberto,
+                                                deviceType = deviceType,
+                                                onNavigateToHome = { navController.navigate("home") },
+                                                onNavigateToProdutos = { navController.navigate("produtos") },
+                                                onNavigateToVendas = { navController.navigate("vendas") },
+                                                onNavigateToCaixa = { navController.navigate("caixa") },
+                                                onNavigateToConfiguracaoTipoImpressao = { navController.navigate("configuracao_tipo_impressao") },
+                                                onNavigateToAcessos = { navController.navigate("acessos") },
+                                                onNavigateToCadastro = { navController.navigate("cadastro") },
+                                                onSendStonePayment = { amount, transactionType, installmentType, orderId, callback ->
+                                                    stonePaymentCallback = callback
+                                                    StoneDeeplinkService.sendPayment(this@MainActivity, amount, transactionType, installmentType, 0, orderId)
+                                                },
+                                                onLogout = {
+                                                    com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
+                                                    getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
+                                                        .remove("operador_nome").remove("operador_cargo").remove("operador_id").apply()
+                                                    navController.navigate("home") { popUpTo(0) { inclusive = true } }
+                                                },
+                                                onNavigateToDashboard = { dashboardViewModel.refresh(); navController.navigate("dashboard") }
+                                            )
+                                        }
+                                        else -> {
+                                            CheckoutScreenMobile(
+                                                viewModel = checkoutViewModel,
+                                                caixaAberto = caixaAberto,
+                                                onNavigateToHome = { navController.navigate("home") },
+                                                onNavigateToProdutos = { navController.navigate("produtos") },
+                                                onNavigateToVendas = { navController.navigate("vendas") },
+                                                onNavigateToCaixa = { navController.navigate("caixa") },
+                                                onLogout = {
+                                                    com.seucaixa.caixacombo.data.SecurePrefs.clearOperator(this@MainActivity)
+                                                    getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
+                                                        .remove("operador_nome").remove("operador_cargo").remove("operador_id").apply()
+                                                    navController.navigate("home") { popUpTo(0) { inclusive = true } }
+                                                },
+                                                onNavigateToDashboard = { dashboardViewModel.refresh(); navController.navigate("dashboard") }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -920,6 +947,7 @@ class MainActivity : ComponentActivity() {
             val logoUrl = config.optString("logoUrl", "")
             val nome = config.optString("nome", "")
             val empresaId = config.optString("empresaId", "")
+            val designApp = config.optJSONObject("designApp")?.optString("tipo", "mercado") ?: "mercado"
 
             val prefs = getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
             prefs.edit()
@@ -929,13 +957,13 @@ class MainActivity : ComponentActivity() {
                 .putString("logo_url", logoUrl)
                 .putString("empresa_nome", nome)
                 .putString("empresa_id", empresaId)
-                // Também salvar como int para compatibilidade com código existente
+                .putString("design_app_tipo", designApp)
                 .putInt("primary_color", parseColor(primaryColor))
                 .putInt("secondary_color", parseColor(secondaryColor))
                 .putInt("tertiary_color", parseColor(accentColor))
                 .apply()
 
-            android.util.Log.d("MainActivity", "Whitelabel aplicado: nome=$nome, primary=$primaryColor, logo=$logoUrl")
+            android.util.Log.d("MainActivity", "Whitelabel aplicado: nome=$nome, primary=$primaryColor, designApp=$designApp")
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel", e)
         }
@@ -1509,6 +1537,66 @@ class MainActivity : ComponentActivity() {
             android.util.Log.d("MainActivity", "✅ ${funcionariosJson.length()} funcionários sincronizados do servidor")
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao sincronizar funcionários", e)
+        }
+    }
+
+    /**
+     * Sincroniza configuração de impressão recebida do servidor para o banco local
+     */
+    private fun syncPrintConfigFromServer(configJson: org.json.JSONObject) {
+        try {
+            val template = configJson.optJSONObject("config") ?: configJson
+            android.util.Log.d("MainActivity", "Processando print config sync: ${template.keys().asSequence().joinToString()}")
+            
+            val app = application as CaixaApplication
+            val repository = app.configuracaoImpressaoRepository
+            
+            thread {
+                val existing = kotlinx.coroutines.runBlocking { repository.getConfiguracaoSemLogo() }
+                val existingLogo = kotlinx.coroutines.runBlocking { repository.getLogoBase64() }
+                
+                val configuracao = com.seucaixa.caixacombo.data.model.ConfiguracaoImpressao(
+                    id = 1,
+                    titulo = template.optString("titulo", "COMPROVANTE"),
+                    cnpj = template.optJSONObject("empresa")?.optString("cnpj") ?: "",
+                    razaoSocial = template.optJSONObject("empresa")?.optString("nome") ?: "",
+                    inscricaoEstadual = template.optJSONObject("empresa")?.optString("ie") ?: "",
+                    telefone = template.optJSONObject("empresa")?.optString("telefone") ?: "",
+                    email = template.optJSONObject("empresa")?.optString("email") ?: "",
+                    endereco = template.optJSONObject("empresa")?.optString("endereco") ?: "",
+                    cidade = template.optJSONObject("empresa")?.optString("cidade") ?: "",
+                    cep = template.optJSONObject("empresa")?.optString("cep") ?: "",
+                    rodapeLinha1 = template.optJSONObject("rodape")?.optString("linha1") ?: "Agradecemos sua vinda",
+                    rodapeLinha2 = template.optJSONObject("rodape")?.optString("linha2") ?: "Volte sempre",
+                    rodapeLinha3 = template.optJSONObject("rodape")?.optString("linha3") ?: "",
+                    rodapeLinha4 = template.optJSONObject("rodape")?.optString("linha4") ?: "",
+                    logoBase64 = existingLogo ?: template.optJSONObject("logo")?.optString("base64") ?: "",
+                    logoHomeScreen = template.optJSONObject("logo")?.optBoolean("enabled") ?: false,
+                    logoAbertura = true,
+                    logoFechamento = true,
+                    logoVenda = true,
+                    logoSangria = true,
+                    logoSuprimento = true,
+                    logoFicha = true,
+                    logoCheckoutPDV = true,
+                    logoAltura = (template.optJSONObject("logo")?.optDouble("height", 80.0) ?: 80.0).toFloat(),
+                    logoLargura = (template.optJSONObject("logo")?.optDouble("width", 300.0) ?: 300.0).toFloat(),
+                    logoEspacamentoAcima = (template.optJSONObject("logo")?.optDouble("spacingTop", 16.0) ?: 16.0).toFloat(),
+                    logoEspacamentoAbaixo = (template.optJSONObject("logo")?.optDouble("spacingBottom", 16.0) ?: 16.0).toFloat()
+                )
+                
+                kotlinx.coroutines.runBlocking {
+                    if (existing != null) {
+                        repository.updateConfiguracao(configuracao)
+                    } else {
+                        repository.saveConfiguracao(configuracao)
+                    }
+                }
+                
+                android.util.Log.d("MainActivity", "✅ Configuração de impressão sincronizada do servidor")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Erro ao sincronizar print config", e)
         }
     }
 
