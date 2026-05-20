@@ -110,7 +110,7 @@ export default function Dashboard() {
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-1.5 space-y-0.5">
+          <nav className="px-1.5 pb-1">
             {filteredNavItems.map(item => (
               <button
                 key={item.id}
