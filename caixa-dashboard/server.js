@@ -1547,10 +1547,13 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
 
   // Atualizar no banco de dados
   const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+  console.log(`✅ [APROVAR] deviceId=${deviceId}, targetEmpresaId=${targetEmpresaId}, deviceIndex=${deviceIndex}, empresaId atual=${deviceIndex !== -1 ? db.dispositivos[deviceIndex].empresaId : 'N/A'}, status atual=${deviceIndex !== -1 ? db.dispositivos[deviceIndex].status : 'N/A'}`);
   if (deviceIndex !== -1) {
     db.dispositivos[deviceIndex].empresaId = targetEmpresaId;
     db.dispositivos[deviceIndex].status = 'online';
+    console.log(`✅ [APROVAR] After update: empresaId=${db.dispositivos[deviceIndex].empresaId}, status=${db.dispositivos[deviceIndex].status}`);
     debouncedSaveData();
+    console.log(`✅ [APROVAR] saveData enqueued for deviceId=${deviceId}`);
   } else {
     // Se dispositivo não existe no banco, criar
     db.dispositivos.push({
@@ -1594,6 +1597,7 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
 
   // Via Polling (garantir entrega para terminais SUNMI)
   enqueueDeviceCommand(deviceId, 'approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
+  enqueueDeviceCommand(deviceId + '_new', 'approval_status', { approved: true, status: 'online', empresaId: targetEmpresaId });
   enqueueDeviceCommand(deviceId, 'empresa_config', empresaConfig);
   enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
   if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
@@ -1647,6 +1651,7 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
   // Via Polling (garantir entrega)
   enqueueDeviceCommand(deviceId, 'approval_status', { approved: false, status: 'pending', empresaId: null });
   enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: [] });
+  enqueueDeviceCommand(deviceId + '_new', 'approval_status', { approved: false, status: 'pending', empresaId: null });
 
   emitDeviceEvent('device_status_update', { deviceId, empresaId: null, status: 'pending' });
 
@@ -2520,86 +2525,12 @@ app.post('/api/device/poll', async (req, res) => {
   // Registrar/atualizar dispositivo no mapa
   // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
-  const isApproved = !!(existing?.empresaId || existingDb?.empresaId);
-  // Usar empresaId do banco de dados (mais confiável) ou do mapa em memória
   const pollEmpresaId = existingDb?.empresaId || existing?.empresaId || null;
-  const pollStatus = isApproved ? (status || 'online') : 'pending';
+  const dbStatus = existingDb?.status || existing?.status || null;
+  const isApproved = !!(pollEmpresaId);
+  const pollStatus = (!isApproved || dbStatus === 'pending') ? 'pending' : (status || 'online');
   
-  console.log(`📱 [POLL-DEBUG] isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}, pollStatus=${pollStatus}`);
-
-  connectedDevices.set(deviceId, {
-    socketId: existing?.socketId || null,
-    deviceName: deviceName || existing?.deviceName || 'Dispositivo',
-    deviceType: deviceType || 'Android',
-    serialNumber: serialNumber || existing?.serialNumber || null,
-    status: pollStatus,
-    lockPassword: lockPassword,
-    lastPoll: new Date(),
-    empresaId: pollEmpresaId,
-    usageTimeLimit: existing?.usageTimeLimit || null,
-    usageStartTime: existing?.usageStartTime || null
-  });
-
-  // Salvar dispositivo no banco
-  if (!db.dispositivos) db.dispositivos = [];
-  const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
-  const deviceData = {
-    deviceId,
-    deviceName: deviceName || existing?.deviceName || 'Dispositivo',
-    deviceType: deviceType || 'Android',
-    serialNumber: serialNumber || existing?.serialNumber || null,
-    status: pollStatus,
-    lockPassword: lockPassword,
-    empresaId: pollEmpresaId,
-    lastPoll: new Date()
-  };
-  if (deviceIndex === -1) {
-    db.dispositivos.push(deviceData);
-  } else {
-    db.dispositivos[deviceIndex] = { ...db.dispositivos[deviceIndex], ...deviceData };
-  }
-  debouncedSaveData();
-
-  // Detectar mudança de status e notificar dashboards
-  const newStatus = pollStatus;
-  if (existing && existing.status !== newStatus) {
-    emitDeviceEvent('device_status_update', {
-      deviceId,
-      status: newStatus,
-      lockReason: connectedDevices.get(deviceId)?.lockReason,
-      lockedAt: connectedDevices.get(deviceId)?.lockedAt,
-      usageTimeLimit: connectedDevices.get(deviceId)?.usageTimeLimit,
-      usageStartTime: connectedDevices.get(deviceId)?.usageStartTime
-    });
-  }
-
-  // Processar dados de caixa se enviado
-  if (caixaData) {
-    emitDeviceEvent('caixa_data', { deviceId, caixa: caixaData });
-  }
-
-  // Notificar dashboards sobre o estado do dispositivo
-  const now = new Date();
-  const isPollingRecent = connectedDevices.get(deviceId)?.lastPoll && (now - new Date(connectedDevices.get(deviceId).lastPoll)) < 120000;
-  emitDeviceEvent('device_connected', { deviceId, ...connectedDevices.get(deviceId), online: true });
-
-  // Se dispositivo é novo, reconectando após cold start, ou não sincronizou desde o restart do servidor
-  // (equivalente ao que o WebSocket faz em device_connect com socket.emit('produtos_sync'))
-  const deviceLastPoll = existing?.lastPoll ? new Date(existing.lastPoll) : null;
-  const needsInitialSync = !existing || !existing.lastPoll || (deviceLastPoll && deviceLastPoll < serverStartTime);
-  const appRequestedSync = req.body.needsProductSync === true;
-  
-  // Sempre enviar sync se o servidor reiniciou recentemente (últimos 10 minutos) 
-  // e o dispositivo ainda não sincronizou com esta instância
-  const serverAgeMs = Date.now() - serverStartTime.getTime();
-  const serverJustStarted = serverAgeMs < 600000; // 10 minutos
-  const forceSyncOnRestart = serverJustStarted && (!deviceLastPoll || deviceLastPoll < serverStartTime);
-  
-  console.log(`📱 [POLL-DEBUG] deviceId=${deviceId}, serial=${serialNumber}`);
-  console.log(`📱 [POLL-DEBUG] existing no mapa: ${JSON.stringify(existing)}`);
-  console.log(`📱 [POLL-DEBUG] existingDb no banco: ${JSON.stringify(existingDb)}`);
-  
-  // Sempre enviar sync de produtos no poll para garantir que novos produtos sejam recebidos
+console.log(`📱 [POLL-DEBUG] isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}, pollStatus=${pollStatus}, dbStatus=${dbStatus}`);
   const empresaDoTerminal = (db.empresas || []).find(e => String(e.id) === String(pollEmpresaId));
   console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId} (${empresaDoTerminal?.nome || 'não encontrada'})`);
   if (isApproved && pollEmpresaId) {
@@ -2640,7 +2571,10 @@ app.post('/api/device/poll', async (req, res) => {
 
   // Retornar comandos pendentes para o dispositivo
   const commands = pendingCommands.get(deviceId) || [];
-  pendingCommands.delete(deviceId); // Limpar após enviar
+  pendingCommands.delete(deviceId);
+  const newCmds = pendingCommands.get(deviceId + '_new') || [];
+  pendingCommands.delete(deviceId + '_new');
+  commands.push(...newCmds);
   
   // Log detalhado dos comandos enviados
   if (commands.length > 0) {
