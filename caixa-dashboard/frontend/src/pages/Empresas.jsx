@@ -159,7 +159,7 @@ export default function Empresas() {
       secondaryColor: empresa.secondaryColor || '#06b6d4',
       accentColor: empresa.accentColor || '#10b981',
       logoUrl: empresa.logoUrl || '',
-      paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa']
+      paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao']
     })
     setCurrentStep(0)
     setView('form')

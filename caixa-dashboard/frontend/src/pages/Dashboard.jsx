@@ -96,78 +96,78 @@ export default function Dashboard() {
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 glass border-r border-white/5 transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'p-2 justify-center' : 'p-4'}`}>
-            <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-12 h-12'} rounded-lg object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
+          <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'p-1.5 justify-center' : 'p-3'}`}>
+            <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-7 h-7' : 'w-10 h-10'} rounded-lg object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-white text-base leading-tight">{user?.branding?.companyName || 'CaixaCombo'}</h1>
-                <p className="text-[10px] text-gray-500">{user?.role === 'empresa' ? user?.empresaNome || 'Empresa' : 'Dashboard v1.1'}</p>
+                <h1 className="font-bold text-white text-sm leading-tight">{user?.branding?.companyName || 'CaixaCombo'}</h1>
+                <p className="text-[9px] text-gray-500">{user?.role === 'empresa' ? user?.empresaNome || 'Empresa' : 'v1.1'}</p>
               </div>
             )}
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-gray-400 hover:text-white">
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-2 space-y-0.5">
+          <nav className="flex-1 px-1.5 space-y-0.5">
             {filteredNavItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
-                className={`w-full flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2'} rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`w-full flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-1.5 justify-center' : 'px-2 py-1.5'} rounded-lg text-sm font-medium transition-all duration-200 ${
                   page === item.id 
                     ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' 
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
                 title={sidebarCollapsed ? item.label : ''}
               >
-                <item.icon size={16} className="shrink-0" />
+                <item.icon size={15} className="shrink-0" />
                 {!sidebarCollapsed && item.label}
               </button>
             ))}
           </nav>
 
           {/* Connection Status */}
-          <div className="px-2 mb-2">
-            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 py-2 justify-center' : 'px-3 py-2'} rounded-lg text-xs font-medium ${
+          <div className="px-1.5">
+            <div className={`flex items-center gap-1.5 ${sidebarCollapsed ? 'px-0 py-1.5 justify-center' : 'px-2 py-1.5'} rounded-lg text-[10px] font-medium ${
               connected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
             }`}>
-              {connected ? <Wifi size={12} className="shrink-0" /> : <WifiOff size={12} className="shrink-0" />}
+              {connected ? <Wifi size={11} className="shrink-0" /> : <WifiOff size={11} className="shrink-0" />}
               {!sidebarCollapsed && (connected ? 'WebSocket Conectado' : 'WebSocket Desconectado')}
             </div>
           </div>
 
           {/* User */}
-          <div className="p-2 border-t border-white/5">
-            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-2 py-1'}`}>
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+          <div className="px-1.5 border-t border-white/5">
+            <div className={`flex items-center gap-1.5 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-1.5 py-1'}`}>
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
               {!sidebarCollapsed && (
                 <>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-white truncate">{user?.username}</p>
-                    <p className="text-[10px] text-gray-500 capitalize">{user?.role}</p>
+                    <p className="text-[9px] text-gray-500 capitalize">{user?.role}</p>
                   </div>
                   <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-                    <LogOut size={14} />
+                    <LogOut size={13} />
                   </button>
                 </>
               )}
               {sidebarCollapsed && (
                 <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-                  <LogOut size={14} />
+                  <LogOut size={13} />
                 </button>
               )}
             </div>
           </div>
 
           {/* Collapse Toggle */}
-          <div className="hidden lg:block p-2 border-t border-white/5">
+          <div className="hidden lg:block px-1.5 border-t border-white/5">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full flex items-center justify-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-white/5 transition-all"
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg text-[10px] text-gray-500 hover:text-white hover:bg-white/5 transition-all"
               title={sidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
             >
               <svg className={`w-3 h-3 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
