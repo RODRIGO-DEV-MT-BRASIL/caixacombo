@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary: #3b82f6;
+    --color-secondary: #06b6d4;
+    --color-accent: #10b981;
+  }
+
   * {
     scrollbar-width: thin;
     scrollbar-color: #334155 transparent;
@@ -81,5 +87,13 @@
   
   .stat-card {
     @apply glass p-6 flex items-center gap-4;
+  }
+
+  .text-primary { color: var(--color-primary); }
+  .bg-primary { background-color: var(--color-primary); }
+  .bg-primary-20 { background-color: color-mix(in srgb, var(--color-primary) 20%, transparent); }
+  .border-primary { border-color: var(--color-primary); }
+  .glow-primary {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 15%, transparent), 0 0 60px color-mix(in srgb, var(--color-primary) 5%, transparent);
   }
 }

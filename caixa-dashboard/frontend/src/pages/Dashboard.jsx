@@ -46,6 +46,30 @@ export default function Dashboard() {
   const [page, setPage] = useState('dashboard')
   const [stats, setStats] = useState({ vendasHoje: 0, qtdVendas: 0 })
 
+  // Aplicar cores do branding
+  useEffect(() => {
+    const root = document.documentElement
+    const b = user?.branding || {}
+    const primary = b.primaryColor || '#3b82f6'
+    const secondary = b.secondaryColor || '#06b6d4'
+    const accent = b.accentColor || '#10b981'
+    root.style.setProperty('--color-primary', primary)
+    root.style.setProperty('--color-secondary', secondary)
+    root.style.setProperty('--color-accent', accent)
+    root.style.setProperty('--color-primary-rgb', hexToRgb(primary))
+  }, [user?.branding])
+
+  const hexToRgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `${r}, ${g}, ${b}`
+  }
+
+  const primaryColor = user?.branding?.primaryColor || '#3b82f6'
+  const primaryBg = `${primaryColor}20`
+  const primaryBorder = `${primaryColor}33`
+
   // Calcular stats reais das vendas
   useEffect(() => {
     const hoje = new Date().toDateString()
@@ -116,9 +140,10 @@ export default function Dashboard() {
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-3 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
                   page === item.id 
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' 
+                    ? `text-[${primaryColor}]` 
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
+                style={page === item.id ? { backgroundColor: primaryBg, borderColor: primaryBorder, borderWidth: '1px' } : {}}
                 title={sidebarCollapsed ? item.label : ''}
               >
                 <item.icon size={18} className="shrink-0" />
@@ -194,7 +219,10 @@ export default function Dashboard() {
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={handleForceSync}
-              className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1"
+              style={{ backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}33`, borderWidth: '1px', color: primaryColor }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${primaryColor}30`}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${primaryColor}20`}
               title="Forçar sincronização dos dispositivos"
             >
               <RefreshCw size={14} />
@@ -209,9 +237,9 @@ export default function Dashboard() {
             <div className="space-y-6">
               {/* Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="stat-card glow-blue">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                    <Dollar size={24} className="text-blue-400" />
+                <div className="stat-card" style={{ boxShadow: `0 0 20px ${primaryColor}26, 0 0 60px ${primaryColor}0D` }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${primaryColor}33` }}>
+                    <Dollar size={24} style={{ color: primaryColor }} />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-white">R$ {stats.vendasHoje.toFixed(2).replace('.', ',')}</p>
