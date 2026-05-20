@@ -102,7 +102,7 @@ export default function Dashboard() {
     if (!hasPageAccess(item.id)) return false
     if (item.adminOnly && user?.role !== 'admin') return false
     if (item.empresaOnly && user?.role !== 'empresa') return false
-    if (item.permission && item.id !== 'terminais') return hasPermission(item.permission)
+    if (item.permission && item.id !== 'terminais' && user?.role !== 'empresa') return hasPermission(item.permission)
     return true
   })
 
