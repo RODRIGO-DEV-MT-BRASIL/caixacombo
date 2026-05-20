@@ -709,7 +709,6 @@ app.post('/api/vendas/:id/cancelar', authenticateToken, async (req, res) => {
 app.get('/api/dispositivos', authenticateToken, (req, res) => {
   const now = new Date()
   const seenIds = new Set()
-  // Combinar dispositivos do mapa em memória com os do banco de dados
   let list = Array.from(connectedDevices.entries())
     .filter(([id]) => !BLOCKED_DEVICE_IDS.includes(id))
     .map(([id, d]) => {
@@ -718,6 +717,20 @@ app.get('/api/dispositivos', authenticateToken, (req, res) => {
       const isOnline = d.socketId !== null || isPollingRecent
       return { deviceId: id, ...d, online: isOnline }
     })
+  if (db.dispositivos && db.dispositivos.length > 0) {
+    db.dispositivos.forEach(d => {
+      if (!seenIds.has(d.deviceId) && !BLOCKED_DEVICE_IDS.includes(d.deviceId)) {
+        list.push({ ...d, online: false })
+        seenIds.add(d.deviceId)
+      }
+    })
+  }
+  if (req.user.role === 'empresa' && req.user.empresaId) {
+    list = list.filter(d => d.empresaId === req.user.empresaId)
+  }
+  console.log(`[DISPOSITIVOS] role=${req.user.role}, empresaId=${req.user.empresaId}, total=${list.length}, pending=${list.filter(d => d.status === 'pending').length}`)
+  res.json(list)
+})
   // Adicionar do banco de dados dispositivos que não estão no mapa
   if (db.dispositivos && db.dispositivos.length > 0) {
     const mapEmpresaIds = new Set(list.map(d => d.empresaId))
