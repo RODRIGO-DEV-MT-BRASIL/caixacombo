@@ -1442,7 +1442,7 @@ function broadcastClientesSync() {
 // Função auxiliar: sincronizar produtos para todos os terminais
 function broadcastProdutosSync(action = 'sync', data = null) {
   const produtos = db.produtos || [];
-  console.log(`📤 [BROADCAST-PRODUTOS] Total no banco: ${produtos.length} produtos`);
+  console.log(`📤 [BROADCAST-PRODUTOS] Total no banco: ${produtos.length} produtos, action=${action}`);
   console.log(`📤 [BROADCAST-PRODUTOS] Detalhes:`, produtos.map(p => ({ id: p.id, nome: p.nome, empresaId: p.empresaId })));
   // Via WebSocket para dashboards - cada empresa só recebe seus produtos
   connectedDashboards.forEach((info, socketId) => {
@@ -1464,19 +1464,18 @@ function broadcastProdutosSync(action = 'sync', data = null) {
       : produtos;
     enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
     deviceIds.push(deviceId);
-    console.log(`📤 [BROADCAST] Dispositivo conectado: ${deviceId}, empresaId: ${deviceInfo.empresaId}, produtos filtrados: ${filtered.length} - ${filtered.map(p => p.nome).join(', ')}`);
+    console.log(`📤 [BROADCAST] Dispositivo conectado: ${deviceId}, empresaId: ${deviceInfo.empresaId}, produtos filtrados: ${filtered.length}`);
   });
   // Também dispositivos do banco que podem não estar conectados mas farão polling
   (db.dispositivos || []).forEach(d => {
     if (!deviceIds.includes(d.deviceId) && d.empresaId) {
       const filtered = produtos.filter(p => p.empresaId && String(p.empresaId) === String(d.empresaId));
       console.log(`📤 [BROADCAST] Dispositivo banco: ${d.deviceId}, empresaId: ${d.empresaId}, produtos filtrados: ${filtered.length}`);
-      if (filtered.length > 0) {
-        enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
-      }
+      enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
     }
   });
-  console.log(`📤 [BROADCAST-PRODUTOS] Total: ${deviceIds.length} conectados + ${(db.dispositivos || []).filter(d => !deviceIds.includes(d.deviceId) && d.empresaId).length} no banco`);
+  const totalDbDevices = (db.dispositivos || []).filter(d => !deviceIds.includes(d.deviceId) && d.empresaId).length;
+  console.log(`📤 [BROADCAST-PRODUTOS] Total: ${deviceIds.length} conectados + ${totalDbDevices} no banco`);
 }
 
 // Função auxiliar: sincronizar categorias para todos os terminais
