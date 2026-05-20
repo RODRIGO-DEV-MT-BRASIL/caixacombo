@@ -206,6 +206,8 @@ async function initializeApp() {
         status: d.status || 'online',
         lockPassword: d.lockPassword || null,
         lastPoll: d.lastPoll || null,
+        lastLogin: d.lastLogin || null,
+        lastLoginUser: d.lastLoginUser || null,
         empresaId: d.empresaId || null,
         usageTimeLimit: d.usageTimeLimit || null,
         usageStartTime: d.usageStartTime || null
@@ -741,7 +743,8 @@ app.get('/api/dispositivos', authenticateToken, (req, res) => {
       seenIds.add(id)
       const isPollingRecent = d.lastPoll && (now - new Date(d.lastPoll)) < 120000
       const isOnline = d.socketId !== null || isPollingRecent
-      return { deviceId: id, ...d, online: isOnline }
+      const dbEntry = db.dispositivos?.find(dd => dd.deviceId === id) || {}
+      return { deviceId: id, ...dbEntry, ...d, online: isOnline }
     })
   if (db.dispositivos && db.dispositivos.length > 0) {
     db.dispositivos.forEach(d => {
@@ -3078,6 +3081,8 @@ io.on('connection', (socket) => {
       deviceName: deviceName || 'Dispositivo',
       deviceType: deviceType || 'Android',
       serialNumber: serialNumber || deviceId,
+      lastLogin: existing?.lastLogin || existingDb?.lastLogin || null,
+      lastLoginUser: existing?.lastLoginUser || existingDb?.lastLoginUser || null,
       connectedAt: new Date(),
       status: deviceStatus,
       lockPassword: lockPassword,
