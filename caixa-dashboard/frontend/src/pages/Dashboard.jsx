@@ -139,11 +139,9 @@ export default function Dashboard() {
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false) }}
                 className={`w-full flex items-center gap-3 ${sidebarCollapsed ? 'px-0 py-2.5 justify-center' : 'px-3 py-2.5'} rounded-xl text-sm font-medium transition-all duration-200 ${
-                  page === item.id 
-                    ? `text-[${primaryColor}]` 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  page === item.id ? '' : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
-                style={page === item.id ? { backgroundColor: primaryBg, borderColor: primaryBorder, borderWidth: '1px' } : {}}
+                style={page === item.id ? { backgroundColor: primaryBg, borderColor: primaryBorder, borderWidth: '1px', color: primaryColor } : {}}
                 title={sidebarCollapsed ? item.label : ''}
               >
                 <item.icon size={18} className="shrink-0" />
