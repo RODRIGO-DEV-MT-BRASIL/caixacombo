@@ -51,6 +51,13 @@ export default function Configuracoes() {
     try {
       let res
       if (isEmpresa && empresaId) {
+        console.log(`[Config] Saving empresa ${empresaId}:`, JSON.stringify({
+          primaryColor: config.primaryColor,
+          secondaryColor: config.secondaryColor,
+          accentColor: config.accentColor,
+          logoUrl: config.logoUrl,
+          nome: config.companyName
+        }))
         res = await fetch(apiUrl(`/api/empresas/${empresaId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -62,6 +69,7 @@ export default function Configuracoes() {
             nome: config.companyName
           })
         })
+        console.log(`[Config] Response status: ${res.status}`)
       } else {
         res = await fetch(apiUrl('/api/config'), {
           method: 'POST',
@@ -70,14 +78,16 @@ export default function Configuracoes() {
         })
       }
       const data = await res.json()
+      console.log(`[Config] Response data:`, JSON.stringify(data).slice(0, 200))
       if (res.ok) {
         toast.success('✅ Configurações salvas com sucesso')
         applyColors(config)
       } else {
-        toast.error(data.error || '❌ Erro ao salvar')
+        toast.error(data.error || `❌ Erro ${res.status}: ${JSON.stringify(data)}`)
       }
     } catch (e) {
-      toast.error('❌ Erro ao salvar configurações')
+      console.error(`[Config] Error:`, e)
+      toast.error(`❌ Erro ao salvar: ${e.message}`)
     }
     setSaving(false)
   }
