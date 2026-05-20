@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
     private val syncResultState = androidx.compose.runtime.mutableStateOf<SyncResult?>(null)
 
     // Estado de aprovação do terminal
-    private val isApprovedState = androidx.compose.runtime.mutableStateOf(true) // Assume aprovado até saber o contrário
+    private val isApprovedState = androidx.compose.runtime.mutableStateOf(false)
     private var approvalDialog: android.app.Dialog? = null
 
     // Callback para resultado do Stone deeplink
