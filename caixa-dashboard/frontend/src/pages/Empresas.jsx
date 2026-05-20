@@ -503,32 +503,32 @@ export default function Empresas() {
     view === 'form' ? (
       <div className="min-h-[calc(100vh-140px)] -m-6">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
-          <aside className="bg-gray-950/70 border-b lg:border-b-0 lg:border-r border-white/5">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <aside className="bg-slate-950 border-b lg:border-b-0 lg:border-r border-slate-800">
+            <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
               <button
                 onClick={() => { setView('list'); setEditando(null); setCurrentStep(0) }}
-                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-[13px] text-slate-400 hover:text-white transition-colors"
               >
                 <ArrowLeft size={16} /> Voltar
               </button>
-              <span className="text-[11px] text-gray-600 uppercase tracking-widest">Cadastro</span>
+              <span className="text-[11px] text-slate-600 uppercase tracking-widest">Cadastro</span>
             </div>
-            <div className="p-4 space-y-2">
+            <div className="p-4 space-y-1">
               {STEPS.map((step, i) => (
                 <button
                   key={step.id}
                   type="button"
                   onClick={() => setCurrentStep(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${i === currentStep ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
+                  className={`w-full flex items-center gap-3 h-[52px] px-4 rounded-xl border transition-all ${i === currentStep ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${i < currentStep ? 'bg-emerald-500/15' : i === currentStep ? 'bg-blue-500/15' : 'bg-white/5'}`}>
-                    {i < currentStep ? <Check size={16} className="text-emerald-400" /> : <step.icon size={16} className={i === currentStep ? 'text-blue-400' : 'text-gray-500'} />}
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${i < currentStep ? 'bg-emerald-500/15' : i === currentStep ? 'bg-blue-500/15' : 'bg-white/5'}`}>
+                    {i < currentStep ? <Check size={15} className="text-emerald-400" /> : <step.icon size={15} className={i === currentStep ? 'text-blue-400' : 'text-gray-500'} />}
                   </div>
                   <div className="text-left">
-                    <p className={`text-sm font-medium ${i === currentStep ? 'text-blue-300' : 'text-gray-300'}`}>{step.label}</p>
-                    <p className="text-[10px] text-gray-600">Etapa {i + 1} de {STEPS.length}</p>
+                    <p className={`text-[13px] font-medium ${i === currentStep ? 'text-blue-300' : 'text-slate-300'}`}>{step.label}</p>
+                    <p className="text-[10px] text-slate-600">Etapa {i + 1} de {STEPS.length}</p>
                   </div>
-                  {i === currentStep && <ChevronRight size={16} className="ml-auto text-blue-400" />}
+                  {i === currentStep && <ChevronRight size={15} className="ml-auto text-blue-400" />}
                 </button>
               ))}
             </div>
