@@ -74,6 +74,17 @@ export default function Terminais() {
       .catch(() => {})
   }, [token])
 
+  // Combinar devices da API com updates do socket
+  useEffect(() => {
+    if (socketDevices && socketDevices.length > 0) {
+      setDevices(prev => {
+        const map = new Map(prev.map(d => [d.deviceId, d]))
+        socketDevices.forEach(sd => map.set(sd.deviceId, { ...map.get(sd.deviceId), ...sd }))
+        return Array.from(map.values())
+      })
+    }
+  }, [socketDevices])
+
   const handleApprove = async (deviceId, empresaId) => {
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}/aprovar`, {
