@@ -7,7 +7,7 @@ const defaultFormData = {
   nome: '', tipoPessoa: 'juridica', cnpj: '', email: '', telefone: '', login: '', senha: '',
   permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
   primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '',
-  paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao'],
+  paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
   slug: ''
 }
 
@@ -159,7 +159,7 @@ export default function Empresas() {
       secondaryColor: empresa.secondaryColor || '#06b6d4',
       accentColor: empresa.accentColor || '#10b981',
       logoUrl: empresa.logoUrl || '',
-      paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao']
+      paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config']
     })
     setCurrentStep(0)
     setView('form')
