@@ -96,16 +96,16 @@ export default function Dashboard() {
       <aside className={`fixed lg:static inset-y-0 left-0 z-40 glass border-r border-white/5 transform transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'p-4 justify-center' : 'p-6'}`}>
-            <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-14 h-14'} rounded-xl object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
+          <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'p-2 justify-center' : 'p-4'}`}>
+            <img src={user?.branding?.logoUrl || "/controle.png"} alt="Logo" className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-12 h-12'} rounded-lg object-contain shrink-0`} onError={(e) => { e.target.src = "/controle.png" }} />
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-white text-lg leading-tight">{user?.branding?.companyName || 'CaixaCombo'}</h1>
-                <p className="text-xs text-gray-500">{user?.role === 'empresa' ? user?.empresaNome || 'Empresa' : 'Dashboard v1.1'}</p>
+                <h1 className="font-bold text-white text-base leading-tight">{user?.branding?.companyName || 'CaixaCombo'}</h1>
+                <p className="text-[10px] text-gray-500">{user?.role === 'empresa' ? user?.empresaNome || 'Empresa' : 'Dashboard v1.1'}</p>
               </div>
             )}
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-gray-400 hover:text-white">
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
@@ -139,38 +139,38 @@ export default function Dashboard() {
           </div>
 
           {/* User */}
-          <div className="p-3 border-t border-white/5">
-            <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-3 py-2'} py-2`}>
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+          <div className="p-2 border-t border-white/5">
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'px-0 justify-center' : 'px-2 py-1'}`}>
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
               {!sidebarCollapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{user?.username}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                    <p className="text-xs font-medium text-white truncate">{user?.username}</p>
+                    <p className="text-[10px] text-gray-500 capitalize">{user?.role}</p>
                   </div>
                   <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-                    <LogOut size={16} />
+                    <LogOut size={14} />
                   </button>
                 </>
               )}
               {sidebarCollapsed && (
                 <button onClick={logout} className="text-gray-500 hover:text-red-400 transition-colors" title="Sair">
-                  <LogOut size={16} />
+                  <LogOut size={14} />
                 </button>
               )}
             </div>
           </div>
 
           {/* Collapse Toggle */}
-          <div className="hidden lg:block p-3 border-t border-white/5">
+          <div className="hidden lg:block p-2 border-t border-white/5">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-white hover:bg-white/5 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-white/5 transition-all"
               title={sidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
             >
-              <svg className={`w-4 h-4 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className={`w-3 h-3 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
               </svg>
               {!sidebarCollapsed && 'Recolher'}
