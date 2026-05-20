@@ -355,7 +355,7 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = if (com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
+                        startDestination = if (isApprovedState.value && com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
                             if (caixaAberto) "checkout" else "caixa"
                         } else "home"
                     ) {
