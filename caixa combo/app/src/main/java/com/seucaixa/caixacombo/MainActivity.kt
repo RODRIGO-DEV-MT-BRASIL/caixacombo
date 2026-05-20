@@ -91,12 +91,8 @@ class MainActivity : ComponentActivity() {
     private val syncResultState = androidx.compose.runtime.mutableStateOf<SyncResult?>(null)
 
     // Estado de aprovação do terminal
-    private val approvalPrefs by lazy { getSharedPreferences("approval_state", Context.MODE_PRIVATE) }
-    private val isApprovedState = androidx.compose.runtime.mutableStateOf(
-        approvalPrefs.getBoolean("is_approved", false)
-    )
-    private var approvalDialog: android.app.Dialog? = null
-
+    private lateinit var approvalPrefs: android.content.SharedPreferences
+    private val isApprovedState = androidx.compose.runtime.mutableStateOf(false)
     // Callback para resultado do Stone deeplink
     private var stonePaymentCallback: ((StoneDeeplinkService.PaymentResult?) -> Unit)? = null
     private var stoneCancelCallback: ((StoneDeeplinkService.CancelResult?) -> Unit)? = null
@@ -104,6 +100,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inicializar SharedPreferences de aprovação
+        approvalPrefs = getSharedPreferences("approval_state", Context.MODE_PRIVATE)
+        isApprovedState.value = approvalPrefs.getBoolean("is_approved", false)
 
         // Processar intent de deeplink Stone se recebido na criação
         processStoneDeeplinkIntent(intent)
@@ -258,22 +258,12 @@ class MainActivity : ComponentActivity() {
                     android.util.Log.d("MainActivity", "Approval status: approved=$approved, status=$status, empresaId=$empresaId")
                     isApprovedState.value = approved
                     approvalPrefs.edit().putBoolean("is_approved", approved).apply()
-                    if (approved) {
-                        hideApprovalPendingScreen()
-                    } else {
-                        showApprovalPendingScreen()
-                    }
                     if (empresaId != null) {
                         com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(applicationContext, empresaId)
                         android.util.Log.d("MainActivity", "EmpresaId salvo: $empresaId")
                         android.util.Log.e("EMPRESA_DEBUG", "═══════════════════════════════════════════")
                         android.util.Log.e("EMPRESA_DEBUG", "🏢 EMPRESA DO TERMINAL: $empresaId")
                         android.util.Log.e("EMPRESA_DEBUG", "═══════════════════════════════════════════")
-                    }
-                    if (!approved) {
-                        showApprovalPendingScreen()
-                    } else {
-                        hideApprovalPendingScreen()
                     }
                 }
             },
@@ -349,6 +339,17 @@ class MainActivity : ComponentActivity() {
                     val deviceType = rememberDeviceType()
                     val caixaAberto by caixaViewModel.caixaAberto.collectAsState()
 
+                    // Navegar automaticamente quando aprovado
+                    val isApproved by isApprovedState
+                    LaunchedEffect(isApproved) {
+                        if (isApproved && com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
+                            val destino = if (caixaAberto) "checkout" else "caixa"
+                            navController.navigate(destino) {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        }
+                    }
+
                     // Dialog de sincronização automática
                     val syncResult by syncResultState
                     SyncDialog(
@@ -356,21 +357,16 @@ class MainActivity : ComponentActivity() {
                         onDismiss = { syncResultState.value = null }
                     )
 
-                    // Tela de aguardando aprovação
-                    val isApproved by isApprovedState
-                    if (!isApproved) {
-                        ApprovalPendingScreen()
-                    }
-
                     NavHost(
                         navController = navController,
-                        startDestination = if (isApprovedState.value && com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
+                        startDestination = if (isApproved && com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this@MainActivity) > 0) {
                             if (caixaAberto) "checkout" else "caixa"
                         } else "home"
                     ) {
                         composable("home") {
                             HomeScreen(
                                 caixaAberto = caixaAberto,
+                                isApproved = isApproved,
                                 onNavigateToCheckout = {
                                     navController.navigate("checkout")
                                 },
@@ -886,64 +882,6 @@ class MainActivity : ComponentActivity() {
      */
     private var lockDialog: android.app.Dialog? = null
     private var currentLockPassword: String? = null
-    
-    /**
-     * Exibe tela de aguardando aprovação do admin
-     */
-    private fun showApprovalPendingScreen() {
-        if (approvalDialog?.isShowing == true) return
-        try {
-            val dialog = android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
-            dialog.setContentView(viewsApprovalPending())
-            dialog.setCancelable(false)
-            dialog.show()
-            approvalDialog = dialog
-        } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Erro ao mostrar tela de aprovação", e)
-        }
-    }
-    
-    private fun hideApprovalPendingScreen() {
-        approvalDialog?.dismiss()
-        approvalDialog = null
-    }
-    
-    private fun viewsApprovalPending(): android.view.View {
-        val context = this
-        val layout = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            setPadding(64, 0, 64, 0)
-            setBackgroundColor(android.graphics.Color.parseColor("#0F172A"))
-        }
-        val icon = android.widget.TextView(context).apply {
-            text = "⏳"
-            textSize = 64f
-            gravity = android.view.Gravity.CENTER
-        }
-        val title = android.widget.TextView(context).apply {
-            text = "Aguardando Aprovação"
-            setTextColor(android.graphics.Color.WHITE)
-            textSize = 24f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            gravity = android.view.Gravity.CENTER
-        }
-        val subtitle = android.widget.TextView(context).apply {
-            text = "Este terminal precisa ser aprovado\npelo administrador no dashboard.\n\nAguarde..."
-            setTextColor(android.graphics.Color.parseColor("#94A3B8"))
-            textSize = 16f
-            gravity = android.view.Gravity.CENTER
-        }
-        layout.addView(icon)
-        layout.addView(title)
-        val params = android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        params.topMargin = 24
-        layout.addView(subtitle, params)
-        return layout
-    }
     
     /**
      * Aplica configuração de whitelabel recebida do servidor
@@ -1842,42 +1780,3 @@ fun SyncDialog(
     )
 }
 
-@Composable
-fun ApprovalPendingScreen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0F172A))
-            .zIndex(999f),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "⏳",
-                fontSize = 64.sp
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Aguardando Aprovação",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Este terminal precisa ser aprovado\npelo administrador no dashboard.",
-                color = Color(0xFF94A3B8),
-                fontSize = 16.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            CircularProgressIndicator(
-                color = Color(0xFF3B82F6),
-                modifier = Modifier.size(32.dp)
-            )
-        }
-    }
-}

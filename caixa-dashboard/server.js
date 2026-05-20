@@ -461,25 +461,25 @@ app.post('/api/auth/login', async (req, res) => {
           return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
         }
         
-        // Sempre requer aprovação quando o terminal faz login (segurança)
-        if (terminalNoBanco.status !== 'pending') {
-          terminalNoBanco.status = 'pending';
+        // Se já aprovado (online), permite login sem resetar
+        if (terminalNoBanco.status === 'online') {
           terminalNoBanco.lastPoll = new Date();
           const cd = connectedDevices.get(deviceId);
-          if (cd) { cd.status = 'pending' }
+          if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario }
           debouncedSaveData();
-          console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+          console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
+        } else {
+          // Terminal pendente ou bloqueado - requer aprovação
+          if (terminalNoBanco.status !== 'pending') {
+            terminalNoBanco.status = 'pending';
+            terminalNoBanco.lastPoll = new Date();
+            const cd = connectedDevices.get(deviceId);
+            if (cd) { cd.status = 'pending' }
+            debouncedSaveData();
+            console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+          }
           return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
         }
-        
-        if (terminalNoBanco.status === 'pending') {
-          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-        }
-        
-        // Terminal aprovado - atualizar lastPoll
-        terminalNoBanco.lastPoll = new Date();
-        debouncedSaveData();
-        console.log(`✅ [LOGIN] Terminal ${deviceId} aprovado - empresa ${empresaDoFuncionario}`);
       }
 
       const token = jwt.sign({ id: funcionarioByCodigo.id, username: funcionarioByCodigo.nome, role: 'funcionario', empresaId: funcionarioByCodigo.empresaId, funcionarioId: funcionarioByCodigo.id, permissoes: funcionarioByCodigo.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
@@ -546,25 +546,25 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
       }
       
-      // Sempre requer aprovação quando o terminal faz login (segurança)
-      if (terminalNoBanco.status !== 'pending') {
-        terminalNoBanco.status = 'pending';
+      // Se já aprovado (online), permite login sem resetar
+      if (terminalNoBanco.status === 'online') {
         terminalNoBanco.lastPoll = new Date();
         const cd = connectedDevices.get(deviceId);
-        if (cd) { cd.status = 'pending' }
+        if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario }
         debouncedSaveData();
-        console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+        console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
+      } else {
+        // Terminal pendente ou bloqueado - requer aprovação
+        if (terminalNoBanco.status !== 'pending') {
+          terminalNoBanco.status = 'pending';
+          terminalNoBanco.lastPoll = new Date();
+          const cd = connectedDevices.get(deviceId);
+          if (cd) { cd.status = 'pending' }
+          debouncedSaveData();
+          console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+        }
         return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
       }
-      
-      if (terminalNoBanco.status === 'pending') {
-        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-      }
-      
-      // Terminal aprovado - atualizar lastPoll
-      terminalNoBanco.lastPoll = new Date();
-      debouncedSaveData();
-      console.log(`✅ [LOGIN] Terminal ${deviceId} aprovado - empresa ${empresaDoFuncionario}`);
     }
 
     const token = jwt.sign({ id: funcionario.id, username: funcionario.nome, role: 'funcionario', empresaId: funcionario.empresaId, funcionarioId: funcionario.id, permissoes: funcionario.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
