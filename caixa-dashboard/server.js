@@ -2518,21 +2518,15 @@ app.post('/api/device/poll', async (req, res) => {
     addAuditoria('bloqueio', deviceId, 'Novo dispositivo conectado sem serial válido; manter em pending', 'Sistema');
   }
 
-  console.log(`📱 [POLL-DEBUG] deviceId=${deviceId}, serial=${serialNumber}`);
-  console.log(`📱 [POLL-DEBUG] existing no mapa: ${JSON.stringify(existing)}`);
-  console.log(`📱 [POLL-DEBUG] existingDb no banco: ${JSON.stringify(existingDb)}`);
-  
   // Registrar/atualizar dispositivo no mapa
   // Preservar senha existente (do mapa ou do banco) - NÃO gerar nova senha no poll
   const lockPassword = existing?.lockPassword || existingDb?.lockPassword || null;
   const pollEmpresaId = existingDb?.empresaId || existing?.empresaId || null;
   const dbStatus = existingDb?.status || existing?.status || null;
-  const isApproved = !!(pollEmpresaId);
-  const pollStatus = (!isApproved || dbStatus === 'pending') ? 'pending' : (status || 'online');
+  const isApproved = pollEmpresaId && dbStatus !== 'pending';
+  const pollStatus = isApproved ? (dbStatus || 'online') : 'pending';
   
-console.log(`📱 [POLL-DEBUG] isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}, pollStatus=${pollStatus}, dbStatus=${dbStatus}`);
-  const empresaDoTerminal = (db.empresas || []).find(e => String(e.id) === String(pollEmpresaId));
-  console.log(`📦 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId} (${empresaDoTerminal?.nome || 'não encontrada'})`);
+console.log(`📱 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmpresaId=${pollEmpresaId}, dbStatus=${dbStatus}, pollStatus=${pollStatus}`);
   if (isApproved && pollEmpresaId) {
     // Terminal aprovado: enviar dados SOMENTE da empresa (NUNCA produtos globais)
     const produtosEmpresa = (db.produtos || []).filter(p => p.empresaId && String(p.empresaId) === String(pollEmpresaId));
