@@ -5,7 +5,7 @@ import { Building2, Plus, Edit2, Trash2, Check, X, Key, Shield, Users, Phone, Ma
 
 const defaultFormData = {
   nome: '', tipoPessoa: 'juridica', cnpj: '', email: '', telefone: '', login: '', senha: '',
-  permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false },
+  permissoes: { dashboard: false, produtos: false, categorias: false, vendas: false, caixa: false, auditoria: false, config: true },
   primaryColor: '#3b82f6', secondaryColor: '#06b6d4', accentColor: '#10b981', logoUrl: '',
   paginasPermitidas: ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'],
   slug: ''
@@ -154,7 +154,7 @@ export default function Empresas() {
       telefone: empresa.telefone,
       login: empresa.login,
       senha: '',
-      permissoes: empresa.permissoes || {},
+      permissoes: { ...(empresa.permissoes || {}), config: true },
       primaryColor: empresa.primaryColor || '#3b82f6',
       secondaryColor: empresa.secondaryColor || '#06b6d4',
       accentColor: empresa.accentColor || '#10b981',
