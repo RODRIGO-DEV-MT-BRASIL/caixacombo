@@ -461,6 +461,17 @@ app.post('/api/auth/login', async (req, res) => {
           return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
         }
         
+        // Sempre requer aprovação quando o terminal faz login (segurança)
+        if (terminalNoBanco.status !== 'pending') {
+          terminalNoBanco.status = 'pending';
+          terminalNoBanco.lastPoll = new Date();
+          const cd = connectedDevices.get(deviceId);
+          if (cd) { cd.status = 'pending' }
+          debouncedSaveData();
+          console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
+        }
+        
         if (terminalNoBanco.status === 'pending') {
           return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
         }
@@ -533,6 +544,17 @@ app.post('/api/auth/login', async (req, res) => {
       
       if (terminalNoBanco.status === 'blocked') {
         return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
+      }
+      
+      // Sempre requer aprovação quando o terminal faz login (segurança)
+      if (terminalNoBanco.status !== 'pending') {
+        terminalNoBanco.status = 'pending';
+        terminalNoBanco.lastPoll = new Date();
+        const cd = connectedDevices.get(deviceId);
+        if (cd) { cd.status = 'pending' }
+        debouncedSaveData();
+        console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
       }
       
       if (terminalNoBanco.status === 'pending') {
