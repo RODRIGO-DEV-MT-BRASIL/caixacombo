@@ -731,21 +731,6 @@ app.get('/api/dispositivos', authenticateToken, (req, res) => {
   console.log(`[DISPOSITIVOS] role=${req.user.role}, empresaId=${req.user.empresaId}, total=${list.length}, pending=${list.filter(d => d.status === 'pending').length}`)
   res.json(list)
 })
-  // Adicionar do banco de dados dispositivos que não estão no mapa
-  if (db.dispositivos && db.dispositivos.length > 0) {
-    const mapEmpresaIds = new Set(list.map(d => d.empresaId))
-    db.dispositivos.forEach(d => {
-      if (!seenIds.has(d.deviceId) && !BLOCKED_DEVICE_IDS.includes(d.deviceId)) {
-        list.push(d)
-        seenIds.add(d.deviceId)
-      }
-    })
-  }
-  if (req.user.role === 'empresa' && req.user.empresaId) {
-    list = list.filter(d => d.empresaId === req.user.empresaId)
-  }
-  res.json(list)
-})
 
 // ==================== CONFIGURAÇÕES WHITELABEL ====================
 app.get('/api/config', authenticateToken, (req, res) => {
