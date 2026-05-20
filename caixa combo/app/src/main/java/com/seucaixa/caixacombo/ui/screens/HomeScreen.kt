@@ -41,6 +41,7 @@ import java.util.*
 @Composable
 fun HomeScreen(
     caixaAberto: Boolean = false,
+    isApproved: Boolean = false,
     onNavigateToCheckout: () -> Unit,
     onNavigateToCaixa: () -> Unit,
     onNavigateToProdutos: () -> Unit,
@@ -58,11 +59,6 @@ fun HomeScreen(
     // Logo config do banco (atualiza automaticamente quando muda)
     val logoConfig by configDao.getLogoConfig().collectAsState(initial = null)
 
-    var terminalAprovado by remember { mutableStateOf(false) }
-
-    com.seucaixa.caixacombo.service.PollingService.setOnApprovalStatus { approved, _, _ ->
-        if (approved) terminalAprovado = true
-    }
     var logoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(Unit) {
         try {
@@ -110,6 +106,118 @@ fun HomeScreen(
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var terminalPendente by remember { mutableStateOf(false) }
+    var savedLoginType by remember { mutableStateOf("") }
+    var savedIdentifier by remember { mutableStateOf("") }
+    var savedPin by remember { mutableStateOf("") }
+
+    LaunchedEffect(isApproved) {
+        if (isApproved && savedIdentifier.isNotBlank()) {
+            terminalPendente = false
+            isLoading = true
+            val type = savedLoginType
+            val identifier = savedIdentifier
+            val password = savedPin
+            savedIdentifier = ""
+            savedPin = ""
+            withContext(Dispatchers.IO) {
+                try {
+                    val serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
+                    if (serverUrl != null) {
+                        val url = java.net.URL("$serverUrl/api/auth/login")
+                        val conn = url.openConnection() as java.net.HttpURLConnection
+                        conn.requestMethod = "POST"
+                        conn.setRequestProperty("Content-Type", "application/json")
+                        conn.doOutput = true
+                        conn.connectTimeout = 8000
+                        conn.readTimeout = 8000
+                        val data = org.json.JSONObject().apply {
+                            if (type == "funcionario") {
+                                put("email", identifier)
+                            } else {
+                                put("username", identifier)
+                            }
+                            put("password", password)
+                            val deviceId = com.seucaixa.caixacombo.service.PollingService.getDeviceId()
+                            val deviceName = android.os.Build.MODEL
+                            val serialNumber = try { android.os.Build.SERIAL } catch (e: Exception) { null }
+                            if (deviceId != null) put("deviceId", deviceId)
+                            put("deviceName", deviceName)
+                            if (serialNumber != null) put("serialNumber", serialNumber)
+                        }
+                        conn.outputStream.use { it.write(data.toString().toByteArray()) }
+                        val responseCode = conn.responseCode
+                        if (responseCode == 200) {
+                            val response = conn.inputStream.bufferedReader().readText()
+                            val json = org.json.JSONObject(response)
+                            val user = json.getJSONObject("user")
+                            val nome = user.optString("nome", user.optString("username", ""))
+                            val cargo = user.optString("cargo", user.optString("role", "caixa"))
+                            val permissoes = user.optJSONObject("permissoes")
+                            val funcId = user.optString("id", "-1").toLongOrNull() ?: -1L
+                            val empresaId = user.optString("empresaId", "")
+                            withContext(Dispatchers.Main) {
+                                SecurePrefs.saveOperator(context, nome, cargo, funcId)
+                                SecurePrefs.saveOperatorEmpresaId(context, empresaId)
+                                context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE).edit()
+                                    .putString("operador_nome", nome)
+                                    .putString("operador_cargo", cargo)
+                                    .putLong("operador_id", funcId)
+                                    .apply()
+                                val permPrefs = context.getSharedPreferences("funcionario_permissoes", Context.MODE_PRIVATE)
+                                permPrefs.edit()
+                                    .putString("cargo", cargo)
+                                    .putBoolean("vendas", permissoes?.optBoolean("vendas", true) ?: true)
+                                    .putBoolean("caixa", permissoes?.optBoolean("caixa", true) ?: true)
+                                    .putBoolean("produtos", permissoes?.optBoolean("produtos", false) ?: false)
+                                    .putBoolean("categorias", permissoes?.optBoolean("categorias", false) ?: false)
+                                    .putBoolean("relatorios", permissoes?.optBoolean("relatorios", false) ?: false)
+                                    .putBoolean("desconto", permissoes?.optBoolean("desconto", false) ?: false)
+                                    .putBoolean("cancelar_venda", permissoes?.optBoolean("cancelar_venda", false) ?: false)
+                                    .putBoolean("operacoes_caixa", permissoes?.optBoolean("operacoes_caixa", true) ?: true)
+                                    .apply()
+                                scope.launch(Dispatchers.IO) {
+                                    val dao = AppDatabase.getDatabase(context).usuarioDao()
+                                    val existente = dao.getUsuarioById(funcId)
+                                    val usuario = com.seucaixa.caixacombo.data.model.Usuario(
+                                        id = funcId,
+                                        nome = nome,
+                                        codigo = existente?.codigo ?: "",
+                                        email = identifier,
+                                        cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO,
+                                        ativo = true,
+                                        permVender = permissoes?.optBoolean("vendas", true) ?: true,
+                                        permCaixa = permissoes?.optBoolean("caixa", true) ?: true,
+                                        permProdutos = permissoes?.optBoolean("produtos", false) ?: false,
+                                        permVendas = permissoes?.optBoolean("vendas", true) ?: true,
+                                        permRelatorios = permissoes?.optBoolean("relatorios", false) ?: false,
+                                        permConfiguracoes = false,
+                                        permAcessos = false
+                                    )
+                                    dao.insert(usuario)
+                                    withContext(Dispatchers.Main) {
+                                        if (caixaAberto) {
+                                            onNavigateToCheckout()
+                                        } else {
+                                            onNavigateToCaixa()
+                                        }
+                                    }
+                                }
+                                isLoading = false
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                isLoading = false
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        isLoading = false
+                    }
+                }
+            }
+        }
+    }
 
     // Detectar se teclado está aberto
     val isKeyboardOpen = remember { mutableStateOf(false) }
@@ -446,6 +554,9 @@ fun HomeScreen(
                                             // Verificar se é erro de terminal pendente
                                             if (errorMsg.contains("aguardando") || errorMsg.contains("aprovação")) {
                                                 terminalPendente = true
+                                                savedLoginType = loginType
+                                                savedIdentifier = loginIdentifier
+                                                savedPin = pin
                                                 erro = ""
                                             } else {
                                                 erro = errorMsg
