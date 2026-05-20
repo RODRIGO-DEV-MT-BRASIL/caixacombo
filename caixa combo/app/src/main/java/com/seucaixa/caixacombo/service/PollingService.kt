@@ -59,6 +59,11 @@ class PollingService : Service() {
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
         private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
+        private var onTerminalApproved: ((String, String?) -> Unit)? = null // (companyId, companyName) callback
+
+        fun setOnTerminalApproved(cb: ((String, String?) -> Unit)?) {
+            onTerminalApproved = cb
+        }
         private var onEmpresasReceived: ((JSONArray) -> Unit)? = null     // empresas do servidor
         private var onSyncComplete: ((Int, Int, Int) -> Unit)? = null     // produtos, categorias, clientes
         private var onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null  // approved, status, empresaId

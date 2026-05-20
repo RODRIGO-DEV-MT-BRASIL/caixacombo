@@ -584,7 +584,7 @@ app.post('/api/auth/login', async (req, res) => {
           empresaId: empresa.id,
           slug: empresa.slug,
           permissoes: empresa.permissoes,
-          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
+          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'],
           branding: {
             primaryColor: empresa.primaryColor || '#3b82f6',
             secondaryColor: empresa.secondaryColor || '#06b6d4',
@@ -614,7 +614,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
   if (req.user.role === 'empresa' && req.user.empresaId) {
     const empresa = (db.empresas || []).find(e => e.id === req.user.empresaId);
     if (empresa) {
-      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'];
+      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'];
       userData.branding = {
         primaryColor: empresa.primaryColor || '#3b82f6',
         secondaryColor: empresa.secondaryColor || '#06b6d4',
