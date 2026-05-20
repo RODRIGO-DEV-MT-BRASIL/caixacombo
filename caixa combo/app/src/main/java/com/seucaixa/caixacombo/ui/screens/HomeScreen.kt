@@ -57,6 +57,12 @@ fun HomeScreen(
 
     // Logo config do banco (atualiza automaticamente quando muda)
     val logoConfig by configDao.getLogoConfig().collectAsState(initial = null)
+
+    var terminalAprovado by remember { mutableStateOf(false) }
+
+    com.seucaixa.caixacombo.service.PollingService.setOnApprovalStatus { approved, _, _ ->
+        if (approved) terminalAprovado = true
+    }
     var logoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(Unit) {
         try {
