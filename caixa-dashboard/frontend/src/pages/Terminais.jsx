@@ -4,7 +4,7 @@ import { useSocket } from '../contexts/SocketContext'
 import { useToast } from '../components/Toast'
 import {
   Monitor, Wifi, WifiOff, Lock, Unlock, Clock, AlertTriangle, CheckCircle2,
-  Eye, EyeOff, RefreshCw as RotateCw, Power, Play as PlayIcon, X as CloseIcon, Search, Shield, Check, Building2
+  Eye, EyeOff, RefreshCw as RotateCw, Power, Play as PlayIcon, X as CloseIcon, Search, Shield, Check, Building2, Trash2
 } from 'lucide-react'
 
 const statusConfig = {
@@ -62,8 +62,7 @@ export default function Terminais() {
     }
   }, [user, token])
 
-  // Buscar dispositivos via API para carregamento inicial
-  useEffect(() => {
+  const fetchDevices = useCallback(() => {
     if (!token) return
     fetch('/api/dispositivos', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
@@ -74,6 +73,9 @@ export default function Terminais() {
       })
       .catch(e => console.error('[Terminais] failed to load devices', e))
   }, [token])
+
+  // Buscar dispositivos via API para carregamento inicial
+  useEffect(() => { fetchDevices() }, [fetchDevices])
 
   // Combinar devices da API com updates do socket
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function Terminais() {
         body: JSON.stringify({ empresaId })
       })
       const data = await res.json()
-      if (res.ok) { success('Terminal aprovado com sucesso', 3000); setApproveModal(null); setSelectedEmpresa('') }
+      if (res.ok) { success('Terminal aprovado com sucesso', 3000); setApproveModal(null); setSelectedEmpresa(''); fetchDevices() }
       else success(data.error || 'Erro ao aprovar', 5000)
     } catch { success('Erro ao aprovar terminal', 5000) }
   }
@@ -129,6 +131,17 @@ export default function Terminais() {
       else success('Comando enviado', 3000)
     } catch { success('Erro ao enviar comando', 3000) }
   }, [token, success])
+
+  const handleDelete = async (deviceId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este terminal?')) return
+    try {
+      const res = await fetch(`/api/dispositivos/${deviceId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) { success('Terminal excluído', 3000); setDevices(prev => prev.filter(d => d.deviceId !== deviceId)) }
+      else success('Erro ao excluir', 5000)
+    } catch { success('Erro ao excluir terminal', 5000) }
+  }
 
   const handleSync = async () => {
     if (socket && connected) socket.emit('dashboard_connect', { token })
@@ -328,6 +341,8 @@ export default function Terminais() {
                   <button onClick={() => handleControl(device.deviceId, 'close_app')} className="p-1.5 bg-white/5 hover:bg-purple-600/20 border border-white/5 hover:border-purple-500/20 text-gray-500 hover:text-purple-400 rounded-md transition-all" title="Fechar"><CloseIcon size={12} /></button>
                   <button onClick={() => handleControl(device.deviceId, 'restart')} className="p-1.5 bg-white/5 hover:bg-orange-600/20 border border-white/5 hover:border-orange-500/20 text-gray-500 hover:text-orange-400 rounded-md transition-all" title="Reiniciar"><RotateCw size={12} /></button>
                   <button onClick={() => handleControl(device.deviceId, 'shutdown')} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Desligar"><Power size={12} /></button>
+                  <div className="w-px h-5 bg-white/10 mx-1" />
+                  <button onClick={() => handleDelete(device.deviceId)} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Excluir"><Trash2 size={12} /></button>
                 </div>
               </div>
             </div>

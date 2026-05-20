@@ -1682,6 +1682,38 @@ app.put('/api/dispositivos/:deviceId/rejeitar', authenticateToken, async (req, r
   res.json({ success: true, status: 'pending' });
 });
 
+// Rota para excluir dispositivo completamente
+app.delete('/api/dispositivos/:deviceId', authenticateToken, async (req, res) => {
+  const { deviceId } = req.params;
+  const device = connectedDevices.get(deviceId);
+  const deviceDb = db.dispositivos?.find(d => d.deviceId === deviceId);
+  const currentEmpresaId = device?.empresaId || deviceDb?.empresaId;
+
+  if (req.user?.role === 'empresa') {
+    if (String(currentEmpresaId) !== String(req.user.empresaId)) {
+      return res.status(403).json({ error: 'Empresa só pode excluir terminais da própria empresa' });
+    }
+  } else if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Apenas admin ou empresa pode excluir dispositivos' });
+  }
+
+  if (device) {
+    connectedDevices.delete(deviceId);
+  }
+
+  const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
+  if (deviceIndex !== -1) {
+    db.dispositivos.splice(deviceIndex, 1);
+    debouncedSaveData();
+  }
+
+  emitDeviceEvent('device_status_update', { deviceId, removed: true });
+
+  addAuditoria('excluir_dispositivo', deviceId, 'Dispositivo excluído', req.user?.username);
+
+  res.json({ success: true });
+});
+
 // ==================== ROTAS DE FUNCIONÁRIOS ====================
 
 // Listar funcionários (admin vê todos, empresa vê só os seus)
