@@ -132,13 +132,14 @@ export default function Terminais() {
     } catch { success('Erro ao enviar comando', 3000) }
   }, [token, success])
 
+  const [deleteModal, setDeleteModal] = useState(null) // deviceId
+
   const handleDelete = async (deviceId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este terminal?')) return
     try {
       const res = await fetch(`/api/dispositivos/${deviceId}`, {
         method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
       })
-      if (res.ok) { success('Terminal excluído', 3000); setDevices(prev => prev.filter(d => d.deviceId !== deviceId)) }
+      if (res.ok) { success('Terminal excluído', 3000); setDevices(prev => prev.filter(d => d.deviceId !== deviceId)); setDeleteModal(null) }
       else success('Erro ao excluir', 5000)
     } catch { success('Erro ao excluir terminal', 5000) }
   }
@@ -342,7 +343,7 @@ export default function Terminais() {
                   <button onClick={() => handleControl(device.deviceId, 'restart')} className="p-1.5 bg-white/5 hover:bg-orange-600/20 border border-white/5 hover:border-orange-500/20 text-gray-500 hover:text-orange-400 rounded-md transition-all" title="Reiniciar"><RotateCw size={12} /></button>
                   <button onClick={() => handleControl(device.deviceId, 'shutdown')} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Desligar"><Power size={12} /></button>
                   <div className="w-px h-5 bg-white/10 mx-1" />
-                  <button onClick={() => handleDelete(device.deviceId)} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Excluir"><Trash2 size={12} /></button>
+                  <button onClick={() => setDeleteModal(device.deviceId)} className="p-1.5 bg-white/5 hover:bg-red-600/20 border border-white/5 hover:border-red-500/20 text-gray-500 hover:text-red-400 rounded-md transition-all" title="Excluir"><Trash2 size={12} /></button>
                 </div>
               </div>
             </div>
@@ -408,6 +409,20 @@ export default function Terminais() {
             <div className="flex gap-3">
               <button onClick={() => setUsageModal(null)} className="btn-ghost flex-1">Cancelar</button>
               <button onClick={() => { if (usageMinutes > 0) { setUsageTime(usageModal, parseInt(usageMinutes)); setUsageModal(null); setUsageMinutes('') } }} className="btn-primary flex-1">Definir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Excluir Terminal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setDeleteModal(null)}>
+          <div className="glass p-6 w-full max-w-sm glow-red" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2"><Trash2 size={20} className="text-red-400" /> Excluir Terminal</h3>
+            <p className="text-sm text-gray-400 mb-4">Tem certeza que deseja excluir este terminal? Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteModal(null)} className="btn-ghost flex-1">Cancelar</button>
+              <button onClick={() => handleDelete(deleteModal)} className="btn-danger flex-1">Excluir</button>
             </div>
           </div>
         </div>
