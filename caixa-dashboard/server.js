@@ -587,7 +587,7 @@ app.post('/api/auth/login', async (req, res) => {
           empresaId: empresa.id,
           slug: empresa.slug,
           permissoes: empresa.permissoes,
-          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
+          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
           branding: {
             primaryColor: empresa.primaryColor || '#3b82f6',
             secondaryColor: empresa.secondaryColor || '#06b6d4',
@@ -1150,7 +1150,7 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
     secondaryColor: secondaryColor || '#06b6d4',
     accentColor: accentColor || '#10b981',
     logoUrl: logoUrl || '',
-    paginasPermitidas: paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
+    paginasPermitidas: paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
     ativo: true,
     createdAt: new Date()
   };
@@ -1215,7 +1215,7 @@ app.put('/api/empresas/:id', authenticateToken, async (req, res) => {
       secondaryColor: secondaryColor !== undefined ? secondaryColor : (db.empresas[index].secondaryColor || '#06b6d4'),
       accentColor: accentColor !== undefined ? accentColor : (db.empresas[index].accentColor || '#10b981'),
       logoUrl: logoUrl !== undefined ? logoUrl : (db.empresas[index].logoUrl || ''),
-      paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'],
+      paginasPermitidas: paginasPermitidas || db.empresas[index].paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
       ativo: ativo !== undefined ? ativo : (db.empresas[index].ativo !== undefined ? db.empresas[index].ativo : true),
       updatedAt: new Date()
     }
