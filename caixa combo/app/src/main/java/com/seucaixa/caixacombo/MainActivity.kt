@@ -91,7 +91,10 @@ class MainActivity : ComponentActivity() {
     private val syncResultState = androidx.compose.runtime.mutableStateOf<SyncResult?>(null)
 
     // Estado de aprovação do terminal
-    private val isApprovedState = androidx.compose.runtime.mutableStateOf(false)
+    private val approvalPrefs by lazy { getSharedPreferences("approval_state", Context.MODE_PRIVATE) }
+    private val isApprovedState = androidx.compose.runtime.mutableStateOf(
+        approvalPrefs.getBoolean("is_approved", false)
+    )
     private var approvalDialog: android.app.Dialog? = null
 
     // Callback para resultado do Stone deeplink
@@ -254,6 +257,12 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "Approval status: approved=$approved, status=$status, empresaId=$empresaId")
                     isApprovedState.value = approved
+                    approvalPrefs.edit().putBoolean("is_approved", approved).apply()
+                    if (approved) {
+                        hideApprovalPendingScreen()
+                    } else {
+                        showApprovalPendingScreen()
+                    }
                     if (empresaId != null) {
                         com.seucaixa.caixacombo.data.SecurePrefs.saveOperatorEmpresaId(applicationContext, empresaId)
                         android.util.Log.d("MainActivity", "EmpresaId salvo: $empresaId")
