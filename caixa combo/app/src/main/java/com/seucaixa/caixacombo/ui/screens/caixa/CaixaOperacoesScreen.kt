@@ -130,11 +130,6 @@ fun CaixaOperacoesScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar")
                     }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToConfiguracao) {
-                        Icon(Icons.Default.Settings, contentDescription = "Configuração de Impressão")
-                    }
                 }
             )
         }

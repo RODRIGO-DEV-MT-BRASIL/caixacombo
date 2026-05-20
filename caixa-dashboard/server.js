@@ -1587,6 +1587,8 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
   enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: produtosEmpresa });
   if (categoriasEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: categoriasEmpresa });
   if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
+  const funcionariosEmpresa = (db.funcionarios || []).filter(f => f.empresaId === String(targetEmpresaId));
+  if (funcionariosEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'funcionarios_sync', { funcionarios: funcionariosEmpresa });
   console.log(`✅ Terminal ${deviceId} aprovado - empresa ${empresa.nome} (${targetEmpresaId}) - ${produtosEmpresa.length} produtos, ${categoriasEmpresa.length} categorias`);
 
   // Auditoria
@@ -2612,6 +2614,10 @@ app.post('/api/device/poll', async (req, res) => {
     }
     if (impressaoTemplate) {
       enqueueDeviceCommand(deviceId, 'print_config_sync', { config: impressaoTemplate });
+    }
+    const funcionariosEmpresa = (db.funcionarios || []).filter(f => f.empresaId === String(pollEmpresaId));
+    if (funcionariosEmpresa.length > 0) {
+      enqueueDeviceCommand(deviceId, 'funcionarios_sync', { funcionarios: funcionariosEmpresa });
     }
   } else {
     // Terminal pendente: sem dados
