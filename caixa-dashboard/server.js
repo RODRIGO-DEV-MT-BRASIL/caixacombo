@@ -617,7 +617,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
   if (req.user.role === 'empresa' && req.user.empresaId) {
     const empresa = (db.empresas || []).find(e => e.id === req.user.empresaId);
     if (empresa) {
-      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa'];
+      userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'];
       userData.branding = {
         primaryColor: empresa.primaryColor || '#3b82f6',
         secondaryColor: empresa.secondaryColor || '#06b6d4',
