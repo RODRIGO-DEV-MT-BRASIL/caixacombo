@@ -1178,7 +1178,8 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
       vendas: false,
       caixa: false,
       auditoria: false,
-      empresas: true
+      empresas: true,
+      config: true
     },
     primaryColor: primaryColor || '#3b82f6',
     secondaryColor: secondaryColor || '#06b6d4',
