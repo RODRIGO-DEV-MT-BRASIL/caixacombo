@@ -13,9 +13,9 @@ const defaultFormData = {
 
 const STEPS = [
   { id: 'info', label: 'Informações', icon: Building2 },
-  { id: 'access', label: 'Admin', icon: Key },
+  { id: 'access', label: 'Acesso', icon: Key },
   { id: 'branding', label: 'Identidade', icon: Palette },
-  { id: 'pages', label: 'Painel', icon: Layout },
+  { id: 'pages', label: 'Páginas', icon: Layout },
 ]
 
 export default function Empresas() {
@@ -337,7 +337,7 @@ export default function Empresas() {
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-white">Acesso</h2>
-            <p className="text-sm text-gray-500">Login e senha do administrador</p>
+            <p className="text-sm text-gray-500">Login, senha e permissões</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
@@ -347,6 +347,31 @@ export default function Empresas() {
             <div>
               <label className="block text-[11px] font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Senha {editando ? '(vazio = manter)' : '*'}</label>
               <input type="password" value={formData.senha} onChange={e => setFormData({ ...formData, senha: e.target.value })} className="input-field" required={!editando} />
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-5">
+            <p className="text-[11px] font-semibold text-gray-400 mb-3 uppercase tracking-wider">Permissões</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                { key: 'dashboard', label: 'Dashboard' },
+                { key: 'produtos', label: 'Produtos' },
+                { key: 'categorias', label: 'Categorias' },
+                { key: 'vendas', label: 'Vendas' },
+                { key: 'caixa', label: 'Caixa' },
+                { key: 'auditoria', label: 'Auditoria' }
+              ].map(perm => (
+                <button
+                  key={perm.key}
+                  type="button"
+                  onClick={() => togglePermissao(perm.key)}
+                  className={`px-4 py-3 rounded-xl border text-left transition-all ${formData.permissoes[perm.key] ? 'border-blue-500/20 bg-blue-500/10' : 'border-white/5 bg-white/[0.02] hover:bg-white/5'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm font-medium ${formData.permissoes[perm.key] ? 'text-blue-400' : 'text-gray-400'}`}>{perm.label}</span>
+                    {formData.permissoes[perm.key] ? <Check size={16} className="text-blue-400" /> : <X size={16} className="text-gray-600" />}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
