@@ -61,6 +61,10 @@ class PollingService : Service() {
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
         private var onTerminalApproved: ((String, String?) -> Unit)? = null // (companyId, companyName) callback
 
+        fun setOnApprovalStatus(cb: ((Boolean, String?, String?) -> Unit)?) {
+            onApprovalStatus = cb
+        }
+
         fun setOnTerminalApproved(cb: ((String, String?) -> Unit)?) {
             onTerminalApproved = cb
         }

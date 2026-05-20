@@ -375,14 +375,14 @@ async function saveData() {
       if (ops.length > 0) await Model.bulkWrite(ops, { ordered: false });
     };
 
-    await bulkUpsert(Produto, db.produtos, 'id');
-    await bulkUpsert(Categoria, db.categorias, 'id');
-    await bulkUpsertOnly(Venda, db.vendas, 'id'); // Upsert-only: preserva vendas antigas
-    await bulkUpsert(Usuario, db.usuarios, 'id');
-    await bulkUpsert(Dispositivo, db.dispositivos, 'deviceId');
-    await bulkUpsert(Empresa, db.empresas, 'id');
-    await bulkUpsert(Cliente, db.clientes, 'id');
-    await bulkUpsertOnly(Funcionario, db.funcionarios, 'id'); // Upsert-only: preserva funcionários existentes
+    await bulkUpsertOnly(Produto, db.produtos, 'id');
+    await bulkUpsertOnly(Categoria, db.categorias, 'id');
+    await bulkUpsertOnly(Venda, db.vendas, 'id');
+    await bulkUpsertOnly(Usuario, db.usuarios, 'id');
+    await bulkUpsertOnly(Dispositivo, db.dispositivos, 'deviceId');
+    await bulkUpsertOnly(Empresa, db.empresas, 'id');
+    await bulkUpsertOnly(Cliente, db.clientes, 'id');
+    await bulkUpsertOnly(Funcionario, db.funcionarios, 'id');
 
     // Operações e auditoria: upsert-only para preservar registros antigos
     await bulkUpsertOnly(Operacao, db.operacoes, 'id');
