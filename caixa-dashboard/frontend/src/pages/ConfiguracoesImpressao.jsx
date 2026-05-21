@@ -639,7 +639,7 @@ export default function ConfiguracoesImpressao() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { key: 'mercado', label: 'Mercado', desc: 'Grid de produtos grande + carrinho na lateral. Ideal para bares, restaurantes, fast-food.', cor: '#3b82f6' },
-                  { key: 'master', label: 'Master', desc: 'Lista compacta vertical + teclado numérico. Ideal para minimercados, padarias, lojas.', cor: '#f59e0b' },
+                  { key: 'master', label: 'Master', desc: 'Grid 5 colunas + carrinho compacto à esquerda. Ideal para dispositivos de tela grande: D2S, V1, V2.', cor: '#f59e0b' },
                   { key: 'premium', label: 'Premium', desc: 'Cards com imagem do produto + carrinho na parte inferior. Ideal para butiques, eletrônicos.', cor: '#8b5cf6' },
                 ].map(design => (
                   <div key={design.key} onClick={() => updateField('designApp', 'tipo', design.key)}

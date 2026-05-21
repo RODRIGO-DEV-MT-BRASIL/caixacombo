@@ -31,14 +31,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.data.database.AppDatabase
+import com.seucaixa.caixacombo.data.model.*
+import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
+import com.seucaixa.caixacombo.ui.components.ProdutoImagem
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ItemCarrinho
-import com.seucaixa.caixacombo.data.SecurePrefs
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
@@ -63,15 +64,37 @@ fun CheckoutScreenMaster(
     val context = LocalContext.current
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
 
+    val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
+    val backgroundColor by remember { mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFF5F5F5.toInt()))) }
+    val accentColor by remember { mutableStateOf(Color(sharedPreferences.getInt("accent_color", primaryColor.hashCode()))) }
+
+    val surfaceCard = if (backgroundColor == Color(0xFFF5F5F5) || backgroundColor == Color(0xFF121212))
+        Color(0xFFFFFFFF) else backgroundColor.copy(alpha = 0.15f)
+    val textOnBg = if (backgroundColor == Color(0xFFF5F5F5) || backgroundColor == Color(0xFFFFFFFF)) Color(0xFF1A1A2E) else Color.White
+    val textSecondary = if (backgroundColor == Color(0xFFF5F5F5) || backgroundColor == Color(0xFFFFFFFF)) Color.Gray else Color.White.copy(alpha = 0.6f)
+
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
+    var empresaNome by remember { mutableStateOf("") }
+    var logoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
     LaunchedEffect(Unit) {
         try {
             val operatorId = com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(context)
             if (operatorId > 0) {
-                val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).usuarioDao()
+                val dao = AppDatabase.getDatabase(context).usuarioDao()
                 usuarioLogado = dao.getUsuarioById(operatorId)
             }
-        } catch (e: Exception) { android.util.Log.e("CheckoutMaster", "Erro ao carregar usuário", e) }
+            val empresaDao = AppDatabase.getDatabase(context).empresaDao()
+            val empresa = empresaDao.getEmpresaOnce()
+            if (empresa != null) {
+                val nome = empresa.nomeFantasia.ifBlank { empresa.razaoSocial }
+                if (nome.isNotBlank()) empresaNome = nome
+            }
+            val logoFile = java.io.File(context.filesDir, "logo.png")
+            if (logoFile.exists()) {
+                logoBitmap = BitmapFactory.decodeFile(logoFile.absolutePath)
+            }
+        } catch (e: Exception) { android.util.Log.e("CheckoutMaster", "Erro ao carregar dados", e) }
     }
 
     val isAdmin = usuarioLogado?.cargo == CargoUsuario.ADMIN
@@ -79,9 +102,6 @@ fun CheckoutScreenMaster(
     val permVendas = isAdmin || usuarioLogado?.permVendas == true
     val permProdutos = isAdmin || usuarioLogado?.permProdutos == true
     val permConfig = isAdmin || usuarioLogado?.permConfiguracoes == true
-
-    val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
-    val backgroundColor by remember { mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFF5F5F5.toInt()))) }
 
     val produtos by viewModel.produtos.collectAsState()
     val carrinho by viewModel.carrinho.collectAsState()
@@ -107,7 +127,7 @@ fun CheckoutScreenMaster(
     var currentTime by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         while (true) {
-            currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date())
+            currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale("pt", "BR")).format(Date())
             delay(1000)
         }
     }
@@ -119,7 +139,7 @@ fun CheckoutScreenMaster(
     stonePaymentError?.let { error ->
         AlertDialog(
             onDismissRequest = { stonePaymentError = null },
-            title = { Text("Erro no Pagamento") },
+            title = { Text("Erro no Pagamento", fontWeight = FontWeight.Bold) },
             text = { Text(error) },
             confirmButton = { TextButton(onClick = { stonePaymentError = null }) { Text("OK") } }
         )
@@ -130,9 +150,7 @@ fun CheckoutScreenMaster(
         stonePaymentError = null
         paymentProcessed = false
         when (forma) {
-            FormaPagamento.DINHEIRO -> {
-                showValorDialog = true
-            }
+            FormaPagamento.DINHEIRO -> showValorDialog = true
             FormaPagamento.PIX, FormaPagamento.CARTAO_CREDITO, FormaPagamento.CARTAO_DEBITO -> {
                 if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
                     val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma) ?: return
@@ -161,23 +179,37 @@ fun CheckoutScreenMaster(
                     viewModel.finalizarVenda(forma, 0.0, null, null)
                 }
             }
-            else -> {
-                viewModel.finalizarVenda(forma, 0.0, null, null)
-            }
+            else -> viewModel.finalizarVenda(forma, 0.0, null, null)
         }
     }
 
     if (showBuscaDialog) {
         Dialog(onDismissRequest = { showBuscaDialog = false }) {
-            Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Buscar Produto", fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
-                    OutlinedTextField(value = buscaText, onValueChange = { buscaText = it },
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = surfaceCard)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Buscar Produto", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = textOnBg, modifier = Modifier.padding(bottom = 16.dp))
+                    OutlinedTextField(
+                        value = buscaText, onValueChange = { buscaText = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Código ou nome do produto") },
+                        placeholder = { Text("Código ou nome do produto", color = textSecondary) },
                         singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = textOnBg,
+                            unfocusedTextColor = textOnBg,
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = textSecondary,
+                            cursorColor = primaryColor
+                        ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        trailingIcon = { IconButton(onClick = { showBuscaDialog = false; viewModel.buscarProdutos(buscaText) }) { Icon(Icons.Default.Search, null) } }
+                        trailingIcon = {
+                            IconButton(onClick = { showBuscaDialog = false; viewModel.buscarProdutos(buscaText) }) {
+                                Icon(Icons.Default.Search, null, tint = primaryColor)
+                            }
+                        }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
@@ -185,8 +217,10 @@ fun CheckoutScreenMaster(
                             it.nome.contains(buscaText, ignoreCase = true) || (it.codigoBarras ?: "").contains(buscaText)
                         }.take(20)
                         items(filtered) { produto ->
-                            ListItem(headlineContent = { Text(produto.nome, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            ListItem(
+                                headlineContent = { Text(produto.nome, maxLines = 1, overflow = TextOverflow.Ellipsis, color = textOnBg) },
                                 supportingContent = { Text("R$ ${"%.2f".format(produto.precoVenda)}", color = primaryColor) },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                                 modifier = Modifier.clickable {
                                     viewModel.adicionarAoCarrinho(produto)
                                     showBuscaDialog = false
@@ -201,67 +235,159 @@ fun CheckoutScreenMaster(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
-        TopAppBar(title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column { Text("MASTER", fontWeight = FontWeight.Bold, fontSize = 16.sp); Text(currentTime, fontSize = 10.sp, color = Color.Gray) }
+        Box(
+            modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    if (logoBitmap != null) {
+                        androidx.compose.foundation.Image(
+                            painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
+                            contentDescription = "Logo",
+                            modifier = Modifier.height(32.dp).width(32.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                    }
+                    Column {
+                        Text(if (empresaNome.isNotBlank()) empresaNome else "MASTER POS", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(currentTime, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                    }
+                }
+                IconButton(onClick = { showBuscaDialog = true }, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Search, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
-        }, navigationIcon = { IconButton(onClick = onNavigateToHome) { Icon(Icons.Default.Home, null) } },
-            actions = {
-                IconButton(onClick = { showBuscaDialog = true }) { Icon(Icons.Default.Search, null) }
-                if (permVendas) IconButton(onClick = onNavigateToVendas) { Icon(Icons.Default.Receipt, null) }
-                if (permProdutos) IconButton(onClick = onNavigateToProdutos) { Icon(Icons.Default.Inventory, null) }
-                if (permCaixa) IconButton(onClick = onNavigateToCaixa) { Icon(Icons.Default.AccountBalance, null) }
-                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao) { Icon(Icons.Default.Print, null) }
-                IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, null) }
-            }, colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor, titleContentColor = Color.White, actionIconContentColor = Color.White, navigationIconContentColor = Color.White)
-        )
+        }
 
         Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            Column(modifier = Modifier.weight(0.55f).fillMaxHeight().padding(8.dp)) {
-                Text("Carrinho (${carrinho.size} itens)", fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.padding(bottom = 4.dp))
-                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Column(modifier = Modifier.weight(0.28f).fillMaxHeight().padding(8.dp)) {
+                Text("CARRINHO", fontSize = 10.sp, color = textSecondary, letterSpacing = 2.sp, modifier = Modifier.padding(start = 4.dp, bottom = 6.dp))
+                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(carrinho) { item ->
-                        CarrinhoItemMaster(item = item, onRemove = { viewModel.removerDoCarrinho(item.produtoId) }, onUpdateQtd = { qtd -> viewModel.atualizarQuantidade(item.produtoId, qtd.toDouble()) }, primaryColor = primaryColor)
+                        CarrinhoItemMaster(item = item, onRemove = { viewModel.removerDoCarrinho(item.produtoId) }, onUpdateQtd = { qtd -> viewModel.atualizarQuantidade(item.produtoId, qtd.toDouble()) }, primaryColor = primaryColor, textOnBg = textOnBg, textSecondary = textSecondary, containerColor = surfaceCard)
                     }
-                }
-                Divider(modifier = Modifier.padding(vertical = 4.dp))
-                Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2D2D2D)).padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("TOTAL", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-                    Text("R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, color = Color(0xFFFFD700), fontSize = 18.sp)
-                }
-                if (carrinho.isNotEmpty()) {
-                    Button(onClick = { showFormaPagamentoDialog = true }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor), shape = RoundedCornerShape(8.dp)) {
-                        Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("FINALIZAR VENDA", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            Column(modifier = Modifier.weight(0.45f).fillMaxHeight().background(Color(0xFFE8E8E8)).padding(6.dp)) {
-                if (categorias.isNotEmpty()) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+                    if (carrinho.isEmpty()) {
                         item {
-                            FilterChip(selected = categoriaSelecionada == null, onClick = { viewModel.selecionarCategoria(null) },
-                                label = { Text("Todos", fontSize = 10.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-                        }
-                        items(categorias) { cat ->
-                            FilterChip(selected = categoriaSelecionada?.id == cat.id, onClick = { viewModel.selecionarCategoria(cat) },
-                                label = { Text(cat.nome, fontSize = 10.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-                        }
-                    }
-                }
-                val filtered = if (categoriaSelecionada != null) produtos.filter { it.categoriaId == categoriaSelecionada!!.id } else produtos
-                LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(filtered.take(30)) { produto ->
-                        Box(modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(6.dp)).background(Color.White).clickable { viewModel.adicionarAoCarrinho(produto) }.padding(4.dp), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(produto.nome, fontSize = 9.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text("Carrinho vazio", color = textSecondary, fontSize = 14.sp)
                             }
                         }
                     }
                 }
-                NumericKeypad(onNumberClick = { num -> buscaText += num }, onClear = { buscaText = "" }, onBackspace = { if (buscaText.isNotEmpty()) buscaText = buscaText.dropLast(1) }, primaryColor = primaryColor)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(primaryColor).padding(16.dp)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("TOTAL", fontSize = 10.sp, color = Color.White.copy(alpha = 0.7f), letterSpacing = 1.sp)
+                            Text("R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        if (carrinho.isNotEmpty()) {
+                            Button(
+                                onClick = { showFormaPagamentoDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                            ) {
+                                Text("PAGAR", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = primaryColor)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.weight(0.72f).fillMaxHeight().padding(8.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = categoriaSelecionada == null,
+                            onClick = { viewModel.selecionarCategoria(null) },
+                            label = { Text("Todos", fontSize = 13.sp, color = if (categoriaSelecionada == null) Color.White else textOnBg) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = primaryColor,
+                                containerColor = surfaceCard
+                            )
+                        )
+                    }
+                    items(categorias) { cat ->
+                        FilterChip(
+                            selected = categoriaSelecionada?.id == cat.id,
+                            onClick = { viewModel.selecionarCategoria(cat) },
+                            label = { Text(cat.nome, fontSize = 13.sp, color = if (categoriaSelecionada?.id == cat.id) Color.White else textOnBg) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = primaryColor,
+                                containerColor = surfaceCard
+                            )
+                        )
+                    }
+                }
+                val filtered = if (categoriaSelecionada != null) produtos.filter { it.categoriaId == categoriaSelecionada!!.id } else produtos
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filtered.take(30)) { produto ->
+                        val vendidos = vendidosPorProduto[produto.id] ?: 0
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable { viewModel.adicionarAoCarrinho(produto) },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = surfaceCard),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    ProdutoImagem(
+                                        imagem = produto.imagem,
+                                        contentDescription = produto.nome,
+                                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                        serverUrl = PollingService.getServerUrl()
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(produto.nome, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, color = textOnBg, modifier = Modifier.fillMaxWidth())
+                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                    Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 9.sp, color = textSecondary)
+                                    Text(" | ", fontSize = 9.sp, color = textSecondary.copy(alpha = 0.3f))
+                                    Text("V:$vendidos", fontSize = 9.sp, color = textSecondary)
+                                }
+                            }
+                        }
+                    }
+                    if (filtered.isEmpty() && produtos.isNotEmpty()) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                Text("Nenhum produto nesta categoria", color = textSecondary, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+                if (produtos.isEmpty()) {
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("Nenhum produto disponível", color = textSecondary, fontSize = 15.sp)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Aguardando sincronização...", color = textSecondary.copy(alpha = 0.5f), fontSize = 12.sp)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(surfaceCard).padding(horizontal = 6.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    NavButtonMaster(icon = Icons.Default.Receipt, label = "Vendas", enabled = permVendas, onClick = onNavigateToVendas, primaryColor = primaryColor, textSecondary = textSecondary)
+                    NavButtonMaster(icon = Icons.Default.Inventory, label = "Produtos", enabled = permProdutos, onClick = onNavigateToProdutos, primaryColor = primaryColor, textSecondary = textSecondary)
+                    NavButtonMaster(icon = Icons.Default.AccountBalance, label = "Caixa", enabled = permCaixa, onClick = onNavigateToCaixa, primaryColor = primaryColor, textSecondary = textSecondary)
+                    NavButtonMaster(icon = Icons.Default.Print, label = "Config", enabled = permConfig, onClick = onNavigateToConfiguracaoTipoImpressao, primaryColor = primaryColor, textSecondary = textSecondary)
+                    NavButtonMaster(icon = Icons.Default.ExitToApp, label = "Sair", enabled = true, onClick = onLogout, primaryColor = primaryColor, textSecondary = textSecondary)
+                }
             }
         }
     }
@@ -269,7 +395,7 @@ fun CheckoutScreenMaster(
     if (showFormaPagamentoDialog) {
         FormaPagamentoDialogMaster(total = total, onDismiss = { showFormaPagamentoDialog = false }, onSelect = { forma ->
             processarPagamento(forma)
-        }, primaryColor = primaryColor)
+        }, primaryColor = primaryColor, surfaceColor = surfaceCard, textColor = textOnBg)
     }
 
     if (showValorDialog) {
@@ -277,83 +403,128 @@ fun CheckoutScreenMaster(
             val numVal = valor.toDoubleSafe()
             viewModel.finalizarVenda(FormaPagamento.DINHEIRO, numVal, null, null)
             showValorDialog = false
-        })
+        }, primaryColor = primaryColor, surfaceColor = surfaceCard, textColor = textOnBg)
     }
 }
 
 @Composable
-fun ValorDialogoMaster(total: Double, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+fun ValorDialogoMaster(total: Double, onDismiss: () -> Unit, onConfirm: (String) -> Unit, primaryColor: Color, surfaceColor: Color, textColor: Color) {
     var valor by remember { mutableStateOf("") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Valor Recebido", fontWeight = FontWeight.Bold) },
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = surfaceColor,
+        title = { Text("Valor Recebido", fontWeight = FontWeight.Bold, color = textColor) },
         text = {
             Column {
-                OutlinedTextField(value = valor, onValueChange = { valor = it.filter { c -> c.isDigit() || c == '.' } },
-                    modifier = Modifier.fillMaxWidth(), label = { Text("Valor") },
+                OutlinedTextField(
+                    value = valor, onValueChange = { valor = it.filter { c -> c.isDigit() || c == '.' } },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Valor", color = textColor) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingIcon = { Text("R$", fontWeight = FontWeight.Bold) }, singleLine = true
+                    leadingIcon = { Text("R$", fontWeight = FontWeight.Bold, color = textColor) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = textColor.copy(alpha = 0.3f),
+                        cursorColor = primaryColor
+                    )
                 )
                 if (valor.isNotBlank()) {
                     val numVal = valor.toDoubleSafe()
                     if (numVal >= total) {
-                        val troco = numVal - total
-                        Text("Troco: R$ ${"%.2f".format(troco)}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), modifier = Modifier.padding(top = 8.dp))
+                        Text("Troco: R$ ${"%.2f".format(numVal - total)}", fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50), modifier = Modifier.padding(top = 8.dp), textAlign = TextAlign.Center)
                     } else {
-                        Text("Faltam: R$ ${"%.2f".format(total - numVal)}", color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+                        Text("Faltam: R$ ${"%.2f".format(total - numVal)}", color = Color.Red, modifier = Modifier.padding(top = 8.dp), textAlign = TextAlign.Center)
                     }
                 }
             }
         },
-        confirmButton = { Button(onClick = { onConfirm(valor) }, enabled = valor.isNotBlank()) { Text("Confirmar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        confirmButton = {
+            Button(onClick = { onConfirm(valor) }, enabled = valor.toDoubleSafe() >= total, colors = ButtonDefaults.buttonColors(containerColor = primaryColor), shape = RoundedCornerShape(10.dp)) { Text("Confirmar", fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = textColor.copy(alpha = 0.6f)) } }
     )
 }
 
 @Composable
-fun CarrinhoItemMaster(item: ItemCarrinho, onRemove: () -> Unit, onUpdateQtd: (Double) -> Unit, primaryColor: Color) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).background(Color.White).padding(8.dp).clip(RoundedCornerShape(6.dp)), verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.produtoNome, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 10.sp, color = Color.Gray)
+fun CarrinhoItemMaster(item: ItemCarrinho, onRemove: () -> Unit, onUpdateQtd: (Double) -> Unit, primaryColor: Color, textOnBg: Color, textSecondary: Color, containerColor: Color) {
+    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(containerColor).padding(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.produtoNome, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, color = textOnBg)
+                Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 10.sp, color = textSecondary)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { onUpdateQtd(item.quantidade - 1) }, modifier = Modifier.size(26.dp)) { Icon(Icons.Default.Remove, null, tint = textOnBg, modifier = Modifier.size(16.dp)) }
+                Text("${item.quantidade.toInt()}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textOnBg, modifier = Modifier.widthIn(min = 24.dp), textAlign = TextAlign.Center)
+                IconButton(onClick = { onUpdateQtd(item.quantidade + 1) }, modifier = Modifier.size(26.dp)) { Icon(Icons.Default.Add, null, tint = textOnBg, modifier = Modifier.size(16.dp)) }
+            }
+            Text("R$ ${"%.2f".format(item.total)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(72.dp), textAlign = TextAlign.End)
+            IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = primaryColor.copy(alpha = 0.6f)) }
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onUpdateQtd(item.quantidade - 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp)) }
-            Text("${item.quantidade.toInt()}", fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center)
-            IconButton(onClick = { onUpdateQtd(item.quantidade + 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) }
-        }
-        Text("R$ ${"%.2f".format(item.total)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(60.dp), textAlign = TextAlign.End)
-        IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = Color.Red) }
     }
 }
 
 @Composable
-fun NumericKeypad(onNumberClick: (String) -> Unit, onClear: () -> Unit, onBackspace: () -> Unit, primaryColor: Color) {
-    val keys = listOf("1","2","3","4","5","6","7","8","9","C","0","⌫")
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-        keys.chunked(3).forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                row.forEach { key ->
-                    val color = when(key) { "C" -> Color.Red; "⌫" -> Color(0xFFFF8C00); else -> primaryColor }
-                    Box(modifier = Modifier.weight(1f).aspectRatio(1.5f).padding(2.dp).clip(RoundedCornerShape(6.dp)).background(color).clickable {
-                        when(key) { "C" -> onClear(); "⌫" -> onBackspace(); else -> onNumberClick(key) }
-                    }, contentAlignment = Alignment.Center) {
-                        Text(key, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+fun FormaPagamentoDialogMaster(total: Double, onDismiss: () -> Unit, onSelect: (FormaPagamento) -> Unit, primaryColor: Color, surfaceColor: Color, textColor: Color) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(16.dp),
+        containerColor = surfaceColor,
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Text("Pagamento", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = textColor)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("R$ ${"%.2f".format(total)}", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                val opcoes = listOf(
+                    Triple(FormaPagamento.DINHEIRO, "Dinheiro", "Receber em espécie") to Icons.Default.Money,
+                    Triple(FormaPagamento.PIX, "PIX", "Pagamento instantâneo") to Icons.Default.QrCode,
+                    Triple(FormaPagamento.CARTAO_CREDITO, "Crédito", "Cartão de crédito") to Icons.Default.CreditCard,
+                    Triple(FormaPagamento.CARTAO_DEBITO, "Débito", "Cartão de débito") to Icons.Default.CreditScore
+                )
+                opcoes.forEach { (triple, icon) ->
+                    val (forma, label, desc) = triple
+                    Card(
+                        modifier = Modifier.fillMaxWidth().clickable { onSelect(forma) },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = primaryColor.copy(alpha = 0.08f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(primaryColor.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                                Icon(icon, null, tint = primaryColor, modifier = Modifier.size(22.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(label, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = textColor)
+                                Text(desc, fontSize = 11.sp, color = textColor.copy(alpha = 0.5f))
+                            }
+                            Icon(Icons.Default.ChevronRight, null, tint = primaryColor, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }
-        }
-    }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = textColor.copy(alpha = 0.6f)) } }
+    )
 }
 
 @Composable
-fun FormaPagamentoDialogMaster(total: Double, onDismiss: () -> Unit, onSelect: (FormaPagamento) -> Unit, primaryColor: Color) {
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Forma de Pagamento", fontWeight = FontWeight.Bold) },
-        text = { Column {
-            Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryColor, modifier = Modifier.padding(bottom = 12.dp))
-            Button(onClick = { onSelect(FormaPagamento.DINHEIRO) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Dinheiro", fontWeight = FontWeight.Bold) }
-            Button(onClick = { onSelect(FormaPagamento.PIX) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("PIX", fontWeight = FontWeight.Bold) }
-            Button(onClick = { onSelect(FormaPagamento.CARTAO_CREDITO) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Crédito", fontWeight = FontWeight.Bold) }
-            Button(onClick = { onSelect(FormaPagamento.CARTAO_DEBITO) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Débito", fontWeight = FontWeight.Bold) }
-        }},
-        confirmButton = {}, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
+fun NavButtonMaster(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, enabled: Boolean, onClick: () -> Unit, primaryColor: Color, textSecondary: Color) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(enabled = enabled) { onClick() }.padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Icon(icon, null, tint = if (enabled) primaryColor else textSecondary.copy(alpha = 0.3f), modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(label, fontSize = 10.sp, color = if (enabled) primaryColor else textSecondary.copy(alpha = 0.3f))
+    }
 }
