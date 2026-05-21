@@ -2611,7 +2611,7 @@ console.log(`📱 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmp
     if (clientesEmpresa.length > 0) enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: clientesEmpresa });
     // Enviar config da empresa (whitelabel)
     const empresa = (db.empresas || []).find(e => e.id === pollEmpresaId);
-    const impressaoTemplate = db.impressaoTemplates?.find(t => t.empresaId === pollEmpresaId);
+    const impressaoTemplate = empresa?.impressaoTemplate || db.impressaoTemplate || null;
     if (empresa) {
       enqueueDeviceCommand(deviceId, 'empresa_config', {
         empresaId: empresa.id, nome: empresa.nome,
