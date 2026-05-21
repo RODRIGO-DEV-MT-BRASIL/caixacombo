@@ -200,6 +200,16 @@ class LockActivity : Activity() {
         countdownRunnable?.let { handler.removeCallbacks(it) }
     }
 
+    override fun onResume() {
+        super.onResume()
+        instance = this
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (instance === this) instance = null
+    }
+
     override fun onBackPressed() {
         // Não faz nada - não permite sair
     }
@@ -214,6 +224,8 @@ class LockActivity : Activity() {
     }
 
     companion object {
+        private var instance: LockActivity? = null
+
         fun start(context: android.content.Context, reason: String, lockPassword: String) {
             val intent = Intent(context, LockActivity::class.java).apply {
                 putExtra("reason", reason)
@@ -221,6 +233,10 @@ class LockActivity : Activity() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             context.startActivity(intent)
+        }
+
+        fun finishInstance() {
+            instance?.finish()
         }
     }
 }

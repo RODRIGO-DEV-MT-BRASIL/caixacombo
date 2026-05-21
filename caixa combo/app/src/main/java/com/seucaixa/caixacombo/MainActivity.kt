@@ -1166,7 +1166,9 @@ class MainActivity : ComponentActivity() {
         
         lockDialog?.dismiss()
         lockDialog = null
-        startLockTaskMode()
+        
+        // Finalizar LockActivity se estiver visível
+        LockActivity.finishInstance()
     }
     
     /**
