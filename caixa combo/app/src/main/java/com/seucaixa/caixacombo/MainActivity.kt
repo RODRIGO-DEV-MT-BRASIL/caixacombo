@@ -1674,18 +1674,22 @@ class MainActivity : ComponentActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             setupImmersiveMode()
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ setupImmersiveMode() }, 300)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setupImmersiveMode()
+    }
+
+    override fun onPause() {
+        super.onPause()
     }
 
     override fun onDestroy() {
         stopLockTaskMode()
         super.onDestroy()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Reativar modo imersivo ao retornar
-        setupImmersiveMode()
     }
 }
 

@@ -105,6 +105,7 @@ fun CheckoutScreenPremium(
     val categoriaSelecionada by viewModel.categoriaSelecionada.collectAsState()
     val vendaFinalizada by viewModel.vendaFinalizada.collectAsState()
     val ultimaVenda by viewModel.ultimaVenda.collectAsState()
+    val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
 
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var showValorDialog by remember { mutableStateOf(false) }
@@ -204,12 +205,12 @@ fun CheckoutScreenPremium(
                         Text(currentTime, fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
-                if (permCaixa) IconButton(onClick = onNavigateToCaixa, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.AccountBalance, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                if (permVendas) IconButton(onClick = onNavigateToVendas, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Receipt, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                if (permProdutos) IconButton(onClick = onNavigateToProdutos, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Inventory, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Print, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                IconButton(onClick = onNavigateToDashboard, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Dashboard, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                IconButton(onClick = onLogout, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.ExitToApp, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                if (permCaixa) IconButton(onClick = onNavigateToCaixa, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.AccountBalance, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                if (permVendas) IconButton(onClick = onNavigateToVendas, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Receipt, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                if (permProdutos) IconButton(onClick = onNavigateToProdutos, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Inventory, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Print, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                IconButton(onClick = onNavigateToDashboard, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Dashboard, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                IconButton(onClick = onLogout, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.ExitToApp, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
         }
 
@@ -247,6 +248,7 @@ fun CheckoutScreenPremium(
                 else if (categoriaSelecionada != null) produtos.filter { it.categoriaId == categoriaSelecionada!!.id }
                 else produtos
             items(filtered.take(60)) { produto ->
+                val vendidos = vendidosPorProduto[produto.id] ?: 0
                 Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { viewModel.adicionarAoCarrinho(produto) },
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -262,8 +264,16 @@ fun CheckoutScreenPremium(
                             )
                         }
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(produto.nome, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                        Text(produto.nome, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                        if (produto.descricao != null && produto.descricao!!.isNotBlank()) {
+                            Text(produto.descricao!!, fontSize = 7.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                        }
                         Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 7.sp, color = Color.Gray)
+                            Text(" | ", fontSize = 7.sp, color = Color.Gray.copy(alpha = 0.3f))
+                            Text("Ven:$vendidos", fontSize = 7.sp, color = Color.Gray)
+                        }
                     }
                 }
             }
