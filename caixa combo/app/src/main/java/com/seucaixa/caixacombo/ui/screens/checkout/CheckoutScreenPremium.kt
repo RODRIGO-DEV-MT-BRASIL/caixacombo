@@ -421,18 +421,22 @@ fun CheckoutScreenPremium(
         AlertDialog(onDismissRequest = { showValorDialog = false },
             title = { Text("Valor Recebido", fontWeight = FontWeight.Bold) },
             text = {
-                OutlinedTextField(value = valorRecebido, onValueChange = { valorRecebido = it.filter { c -> c.isDigit() || c == '.' } },
-                    modifier = Modifier.fillMaxWidth(), label = { Text("Valor") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingIcon = { Text("R$", fontWeight = FontWeight.Bold) },
-                    singleLine = true, shape = RoundedCornerShape(12.dp)
-                )
-                if (valorRecebido.isNotBlank()) {
-                    val numVal = valorRecebido.toDoubleSafe()
-                    if (numVal >= total) {
-                        Text("Troco: R$ ${"%.2f".format(numVal - total)}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), modifier = Modifier.padding(top = 8.dp))
-                    } else if (numVal > 0) {
-                        Text("Faltam: R$ ${"%.2f".format(total - numVal)}", color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+                Column {
+                    OutlinedTextField(value = valorRecebido, onValueChange = { valorRecebido = it.filter { c -> c.isDigit() || c == '.' } },
+                        modifier = Modifier.fillMaxWidth(), label = { Text("Valor") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        leadingIcon = { Text("R$", fontWeight = FontWeight.Bold) },
+                        singleLine = true, shape = RoundedCornerShape(12.dp)
+                    )
+                    if (valorRecebido.isNotBlank()) {
+                        val numVal = valorRecebido.toDoubleSafe()
+                        if (numVal >= total) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Troco: R$ ${"%.2f".format(numVal - total)}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        } else if (numVal > 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Faltam: R$ ${"%.2f".format(total - numVal)}", color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
                     }
                 }
             },
