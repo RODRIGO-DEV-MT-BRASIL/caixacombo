@@ -1169,6 +1169,12 @@ class MainActivity : ComponentActivity() {
         
         // Finalizar LockActivity se estiver visível
         LockActivity.finishInstance()
+        
+        // Reiniciar MainActivity para voltar à tela correta (login se não logado, checkout se logado)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        startActivity(intent)
     }
     
     /**

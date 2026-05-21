@@ -149,6 +149,9 @@ class LockActivity : Activity() {
                     PollingService.sendDeviceStatus("online")
 
                     finish()
+                    startActivity(Intent(this@LockActivity, MainActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    })
                 } else {
                     failedAttempts++
                     if (failedAttempts >= MAX_ATTEMPTS) {
