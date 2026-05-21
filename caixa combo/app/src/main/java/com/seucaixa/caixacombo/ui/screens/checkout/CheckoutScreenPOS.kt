@@ -39,6 +39,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.ui.platform.LocalDensity
 import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
+import com.seucaixa.caixacombo.ui.components.PdvCategoriaFilterRow
+import com.seucaixa.caixacombo.ui.components.PdvProdutoCard
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
@@ -126,7 +128,7 @@ fun CheckoutScreenPOS(
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var formaPagamentoSelecionada by remember { mutableStateOf<FormaPagamento?>(null) }
     var showValorDialog by remember { mutableStateOf(false) }
-    var valorRecebido by remember { mutableStateOf("") }
+    var receivedValue by remember { mutableStateOf("") }
     var showProdutoGrid by remember { mutableStateOf(false) }
     var produtoSelecionado by remember { mutableStateOf<Produto?>(null) }
     var showBuscarClienteDialog by remember { mutableStateOf(false) }
@@ -473,8 +475,7 @@ fun CheckoutScreenPOS(
                 produtoSelecionado = produto
             },
             onDismiss = { showProdutoGrid = false },
-            primaryColor = primaryColor,
-            vendidosPorProduto = vendidosPorProduto
+            primaryColor = primaryColor
         )
     }
 
@@ -516,16 +517,9 @@ fun CheckoutScreenPOS(
                                 produtoSelecionado = null
                             }
                         } else {
-                            // Tratar erro 401 (Stone não ativado/autenticado)
                             val code = result?.code ?: -1
                             val reason = result?.reason ?: ""
-                            stonePaymentError = when {
-                                code == 401 -> "Terminal não ativado na Stone. Ative o terminal antes de usar cartão/débito."
-                                code == 1000 -> "App Stone não encontrado. Instale o Stone Payment App no terminal."
-                                reason.contains("NOT_FOUND", ignoreCase = true) -> "App de pagamento não encontrado no terminal."
-                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
-                                else -> "Pagamento recusado no terminal (código: $code)"
-                            }
+                            stonePaymentError = StoneDeeplinkService.getErrorMessage(code, reason)
                         }
                     }
                 } else {
@@ -547,23 +541,23 @@ fun CheckoutScreenPOS(
         ValorPagamentoDialogPOS(
             total = total,
             formaPagamento = formaPagamentoSelecionada!!,
-            valorRecebido = valorRecebido,
-            onValorRecebidoChange = { valorRecebido = it },
+            receivedValue = receivedValue,
+            onValorRecebidoChange = { receivedValue = it },
             onConfirmar = {
-                val recebido = valorRecebido.toDoubleSafe(total)
+                val recebido = receivedValue.toDoubleSafe(total)
                 val forma = formaPagamentoSelecionada!!
 
                 // Dinheiro -> finalizar direto
                 if (viewModel.finalizarVenda(forma, recebido, clienteSelecionado?.id)) {
                     showValorDialog = false
-                    valorRecebido = ""
+                    receivedValue = ""
                     formaPagamentoSelecionada = null
                     produtoSelecionado = null
                 }
             },
             onCancelar = {
                 showValorDialog = false
-                valorRecebido = ""
+                receivedValue = ""
                 formaPagamentoSelecionada = null
             }
         )
@@ -1043,8 +1037,7 @@ private fun ProdutoGridDialog(
     onCategoriaChange: (Categoria?) -> Unit,
     onProdutoClick: (Produto) -> Unit,
     onDismiss: () -> Unit,
-    primaryColor: Color,
-    vendidosPorProduto: Map<Long, Int>
+    primaryColor: Color
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1084,33 +1077,15 @@ private fun ProdutoGridDialog(
 
                 // Abas de categorias - chips horizontais
                 if (categorias.isNotEmpty()) {
-                    LazyRow(
+                    PdvCategoriaFilterRow(
+                        categorias = categorias,
+                        categoriaSelecionada = categoriaSelecionada,
+                        onCategoriaClick = onCategoriaChange,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        item {
-                            FilterChip(
-                                selected = categoriaSelecionada == null,
-                                onClick = { onCategoriaChange(null) },
-                                label = { Text("Todos", fontSize = 12.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = primaryColor.copy(alpha = 0.2f),
-                                    selectedLabelColor = primaryColor
-                                )
-                            )
-                        }
-                        items(categorias) { cat ->
-                            FilterChip(
-                                selected = categoriaSelecionada?.id == cat.id,
-                                onClick = { onCategoriaChange(if (categoriaSelecionada?.id == cat.id) null else cat) },
-                                label = { Text(cat.nome, fontSize = 12.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = primaryColor.copy(alpha = 0.2f),
-                                    selectedLabelColor = primaryColor
-                                )
-                            )
-                        }
-                    }
+                        selectedColor = primaryColor,
+                        selectedContainerAlpha = 0.2f,
+                        toggleOnReClick = true
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1124,92 +1099,17 @@ private fun ProdutoGridDialog(
                 ) {
                     items(produtos, key = { it.id }) { produto ->
                         val qtdNoCarrinho = carrinho.find { it.produtoId == produto.id }?.quantidade?.toInt() ?: 0
-                        val vendidos = vendidosPorProduto[produto.id] ?: 0
-                        val semEstque = produto.estoque <= 0
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { if (!semEstque) onProdutoClick(produto) },
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (semEstque) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        ) {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(6.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    // Imagem do produto
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(52.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(MaterialTheme.colorScheme.surface),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        com.seucaixa.caixacombo.ui.components.ProdutoImagem(
-                                            imagem = produto.imagem,
-                                            contentDescription = produto.nome,
-                                            modifier = Modifier.fillMaxSize().padding(4.dp),
-                                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                            serverUrl = com.seucaixa.caixacombo.service.PollingService.getServerUrl()
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    // Nome do produto
-                                    Text(
-                                        produto.nome,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = if (semEstque) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-
-                                    // Preço
-                                    Text(
-                                        produto.precoFormatado(),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (semEstque) primaryColor.copy(alpha = 0.3f) else primaryColor
-                                    )
-
-                                    // Estoque
-                                    if (semEstque) {
-                                        Text(
-                                            "ESGOTADO",
-                                            fontSize = 8.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    } else if (produto.estoque <= 5) {
-                                        Text(
-                                            "Estq: ${produto.estoque.toInt()}",
-                                            fontSize = 8.sp,
-                                            color = Color(0xFFFF9800)
-                                        )
-                                    }
-                                }
-
-                                // Badge quantidade no carrinho
-                                if (qtdNoCarrinho > 0) {
-                                    Badge(
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(2.dp),
-                                        containerColor = Color(0xFF4CAF50)
-                                    ) {
-                                        Text("${qtdNoCarrinho}x", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
+                        PdvProdutoCard(
+                            produto = produto,
+                            quantidadeNoCarrinho = qtdNoCarrinho,
+                            primaryColor = primaryColor,
+                            onCardClick = { onProdutoClick(produto) },
+                            imageHeight = 52.dp,
+                            nameFontSize = 11.sp,
+                            priceFontSize = 13.sp,
+                            cardElevation = 0.dp,
+                            cardColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     }
                 }
             }
@@ -1223,7 +1123,9 @@ private fun ProdutoGridDialog(
 fun DialogVendaSucesso(
     venda: Venda,
     onDismiss: () -> Unit,
-    nomeCliente: String? = null
+    nomeCliente: String? = null,
+    imprimirTotal: Boolean = true,
+    imprimirFichas: Boolean = true
 ) {
     val context = LocalContext.current
     val printService = remember { com.seucaixa.caixacombo.service.SunmiPrintService(context) }
@@ -1266,58 +1168,64 @@ fun DialogVendaSucesso(
                     }
                 }
 
-                Text("Opções de Impressão:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-
-                Button(
-                    onClick = {
-                        try {
-                            isPrinting = true
-                            printService.imprimirVenda(venda, nomeCliente = nomeCliente)
-                            onDismiss()
-                        } catch (e: Exception) {
-                            errorMessage = "Erro ao imprimir: ${e.message}"
-                            isPrinting = false
-                        }
-                    },
-                    enabled = !isPrinting,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Print, null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Imprimir Total")
+                if (imprimirTotal || imprimirFichas) {
+                    Text("Opções de Impressão:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 }
 
-                OutlinedButton(
-                    onClick = {
-                        scope.launch {
+                if (imprimirTotal) {
+                    Button(
+                        onClick = {
                             try {
                                 isPrinting = true
-                                venda.itens.forEach { item ->
-                                    repeat(item.quantidade.toInt()) {
-                                        printService.imprimirFichaProducao(
-                                            item = item,
-                                            numeroVenda = venda.numero,
-                                            dataHora = venda.dataHora,
-                                            formaPagamento = venda.formaPagamento.name.replace("_", " "),
-                                            quantidadeUnidade = 1
-                                        )
-                                        delay(800)
-                                    }
-                                }
+                                printService.imprimirVenda(venda, nomeCliente = nomeCliente)
                                 onDismiss()
                             } catch (e: Exception) {
-                                errorMessage = "Erro ao imprimir fichas: ${e.message}"
+                                errorMessage = "Erro ao imprimir: ${e.message}"
                                 isPrinting = false
                             }
-                        }
-                    },
-                    enabled = !isPrinting,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.ContentCopy, null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val totalUnidades = venda.itens.sumOf { it.quantidade.toInt() }
-                    Text("Imprimir Fichas ($totalUnidades unidades)")
+                        },
+                        enabled = !isPrinting,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Print, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Imprimir Total")
+                    }
+                }
+
+                if (imprimirFichas) {
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    isPrinting = true
+                                    venda.itens.forEach { item ->
+                                        repeat(item.quantidade.toInt()) {
+                                            printService.imprimirFichaProducao(
+                                                item = item,
+                                                numeroVenda = venda.numero,
+                                                dataHora = venda.dataHora,
+                                                formaPagamento = venda.formaPagamento.name.replace("_", " "),
+                                                quantidadeUnidade = 1
+                                            )
+                                            delay(800)
+                                        }
+                                    }
+                                    onDismiss()
+                                } catch (e: Exception) {
+                                    errorMessage = "Erro ao imprimir fichas: ${e.message}"
+                                    isPrinting = false
+                                }
+                            }
+                        },
+                        enabled = !isPrinting,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.ContentCopy, null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val totalUnidades = venda.itens.sumOf { it.quantidade.toInt() }
+                        Text("Imprimir Fichas ($totalUnidades unidades)")
+                    }
                 }
             }
         },

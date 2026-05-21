@@ -40,6 +40,23 @@ object StoneDeeplinkService {
         const val ISSUER = "ISSUER"    // parcelado com juros
     }
 
+    // Códigos de erro Stone
+    object ErrorCode {
+        const val TERMINAL_NOT_ACTIVATED = 401
+        const val APP_NOT_FOUND = 1000
+        const val NOT_FOUND_STRING = "NOT_FOUND"
+    }
+
+    fun getErrorMessage(code: Int, reason: String): String {
+        return when {
+            code == ErrorCode.TERMINAL_NOT_ACTIVATED -> "Terminal não ativado na Stone. Ative o terminal antes de usar cartão/débito."
+            code == ErrorCode.APP_NOT_FOUND -> "App Stone não encontrado. Instale o Stone Payment App no terminal."
+            reason.contains(ErrorCode.NOT_FOUND_STRING, ignoreCase = true) -> "App de pagamento não encontrado no terminal."
+            reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
+            else -> "Pagamento recusado no terminal (código: $code)"
+        }
+    }
+
     /**
      * Resultado do pagamento Stone
      */

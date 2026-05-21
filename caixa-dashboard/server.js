@@ -418,76 +418,8 @@ app.post('/api/auth/login', async (req, res) => {
       if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
       
       // VERIFICAR TERMINAL SE deviceId FOR ENVIADO
-      if (deviceId) {
-        const terminalNoBanco = db.dispositivos?.find(d => d.deviceId === deviceId);
-        const empresaDoFuncionario = funcionarioByCodigo.empresaId;
-        
-        // Verificar se terminal existe e está aprovado para esta empresa
-        if (!terminalNoBanco) {
-          // Terminal novo - criar como pendente
-          db.dispositivos = db.dispositivos || [];
-          const novoTerminal = {
-            deviceId,
-            deviceName: req.body.deviceName || 'Terminal Android',
-            deviceType: 'Android',
-            serialNumber: req.body.serialNumber || null,
-            status: 'pending',
-            empresaId: empresaDoFuncionario,
-            lastPoll: new Date()
-          };
-          db.dispositivos.push(novoTerminal);
-          connectedDevices.set(deviceId, {
-            deviceId,
-            deviceName: req.body.deviceName || 'Terminal Android',
-            deviceType: 'Android',
-            serialNumber: req.body.serialNumber || null,
-            status: 'pending',
-            empresaId: empresaDoFuncionario,
-            connectedAt: new Date(),
-            socketId: null
-          });
-          debouncedSaveData();
-          console.log(`📱 [LOGIN] Novo terminal ${deviceId} registrado como pendente para empresa ${empresaDoFuncionario}`);
-          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-        }
-        
-        // Terminal existe - verificar se pertence a esta empresa
-        if (terminalNoBanco.empresaId !== empresaDoFuncionario) {
-          // Terminal pertence a outra empresa - atualizar para esta empresa e deixar pendente
-          terminalNoBanco.empresaId = empresaDoFuncionario;
-          terminalNoBanco.status = 'pending';
-          terminalNoBanco.lastPoll = new Date();
-          debouncedSaveData();
-          console.log(`📱 [LOGIN] Terminal ${deviceId}transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
-          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-        }
-        
-        if (terminalNoBanco.status === 'blocked') {
-          return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
-        }
-        
-        // Se já aprovado (online), permite login sem resetar
-        if (terminalNoBanco.status === 'online') {
-          terminalNoBanco.lastPoll = new Date();
-          terminalNoBanco.lastLogin = new Date();
-          terminalNoBanco.lastLoginUser = funcionarioByCodigo?.nome || 'desconhecido';
-          const cd = connectedDevices.get(deviceId);
-          if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario; cd.lastLogin = new Date(); cd.lastLoginUser = funcionarioByCodigo?.nome || 'desconhecido' }
-          debouncedSaveData();
-          console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
-        } else {
-          // Terminal pendente ou bloqueado - requer aprovação
-          if (terminalNoBanco.status !== 'pending') {
-            terminalNoBanco.status = 'pending';
-            terminalNoBanco.lastPoll = new Date();
-            const cd = connectedDevices.get(deviceId);
-            if (cd) { cd.status = 'pending' }
-            debouncedSaveData();
-            console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
-          }
-          return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-        }
-      }
+      const terminalResult = verifyTerminalAndLogin(deviceId, funcionarioByCodigo.empresaId, funcionarioByCodigo?.nome || 'desconhecido', req);
+      if (terminalResult) return res.status(terminalResult.status).json({ error: terminalResult.error });
 
       const token = jwt.sign({ id: funcionarioByCodigo.id, username: funcionarioByCodigo.nome, role: 'funcionario', empresaId: funcionarioByCodigo.empresaId, funcionarioId: funcionarioByCodigo.id, permissoes: funcionarioByCodigo.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
       return res.json({ token, user: { id: funcionarioByCodigo.id, username: funcionarioByCodigo.nome, role: 'funcionario', empresaNome: empresa.nome, empresaId: funcionarioByCodigo.empresaId, funcionarioId: funcionarioByCodigo.id, permissoes: funcionarioByCodigo.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'], branding: { primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4', accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || '', companyName: empresa.nome } } });
@@ -504,77 +436,8 @@ app.post('/api/auth/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
     
     // VERIFICAR TERMINAL SE deviceId FOR ENVIADO
-    if (deviceId) {
-      const terminalNoBanco = db.dispositivos?.find(d => d.deviceId === deviceId);
-      const empresaDoFuncionario = funcionario.empresaId;
-      
-      if (!terminalNoBanco) {
-        // Terminal novo - criar como pendente
-        db.dispositivos = db.dispositivos || [];
-        const novoTerminal = {
-          deviceId,
-          deviceName: req.body.deviceName || 'Terminal Android',
-          deviceType: 'Android',
-          serialNumber: req.body.serialNumber || null,
-          status: 'pending',
-          empresaId: empresaDoFuncionario,
-          lastPoll: new Date()
-        };
-        db.dispositivos.push(novoTerminal);
-        connectedDevices.set(deviceId, {
-          deviceId,
-          deviceName: req.body.deviceName || 'Terminal Android',
-          deviceType: 'Android',
-          serialNumber: req.body.serialNumber || null,
-          status: 'pending',
-          empresaId: empresaDoFuncionario,
-          connectedAt: new Date(),
-          socketId: null
-        });
-        debouncedSaveData();
-        console.log(`📱 [LOGIN] Novo terminal ${deviceId} registrado como pendente para empresa ${empresaDoFuncionario}`);
-        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-      }
-      
-      // Terminal existe - verificar se pertence a esta empresa
-      if (terminalNoBanco.empresaId !== empresaDoFuncionario) {
-        // Terminal pertence a outra empresa - transferir para esta empresa e deixar pendente
-        terminalNoBanco.empresaId = empresaDoFuncionario;
-        terminalNoBanco.status = 'pending';
-        terminalNoBanco.lastPoll = new Date();
-        const cd = connectedDevices.get(deviceId);
-        if (cd) { cd.empresaId = empresaDoFuncionario; cd.status = 'pending' }
-        debouncedSaveData();
-        console.log(`📱 [LOGIN] Terminal ${deviceId} transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
-        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-      }
-      
-      if (terminalNoBanco.status === 'blocked') {
-        return res.status(403).json({ error: 'Terminal bloqueado pela empresa.' });
-      }
-      
-      // Se já aprovado (online), permite login sem resetar
-      if (terminalNoBanco.status === 'online') {
-        terminalNoBanco.lastPoll = new Date();
-        terminalNoBanco.lastLogin = new Date();
-        terminalNoBanco.lastLoginUser = funcionario?.nome || 'desconhecido';
-        const cd = connectedDevices.get(deviceId);
-        if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario; cd.lastLogin = new Date(); cd.lastLoginUser = funcionario?.nome || 'desconhecido' }
-        debouncedSaveData();
-        console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
-      } else {
-        // Terminal pendente ou bloqueado - requer aprovação
-        if (terminalNoBanco.status !== 'pending') {
-          terminalNoBanco.status = 'pending';
-          terminalNoBanco.lastPoll = new Date();
-          const cd = connectedDevices.get(deviceId);
-          if (cd) { cd.status = 'pending' }
-          debouncedSaveData();
-          console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
-        }
-        return res.status(403).json({ error: 'Terminal aguardando aprovação da empresa.' });
-      }
-    }
+    const terminalResult = verifyTerminalAndLogin(deviceId, funcionario.empresaId, funcionario?.nome || 'desconhecido', req);
+    if (terminalResult) return res.status(terminalResult.status).json({ error: terminalResult.error });
 
     const token = jwt.sign({ id: funcionario.id, username: funcionario.nome, role: 'funcionario', empresaId: funcionario.empresaId, funcionarioId: funcionario.id, permissoes: funcionario.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'] }, JWT_SECRET, { expiresIn: '24h' });
     return res.json({ token, user: { id: funcionario.id, username: funcionario.nome, role: 'funcionario', empresaNome: empresa.nome, empresaId: funcionario.empresaId, funcionarioId: funcionario.id, permissoes: funcionario.permissoes, paginasPermitidas: ['dashboard','vendas','caixa'], branding: { primaryColor: empresa.primaryColor || '#3b82f6', secondaryColor: empresa.secondaryColor || '#06b6d4', accentColor: empresa.accentColor || '#10b981', logoUrl: empresa.logoUrl || '', companyName: empresa.nome } } });
@@ -892,7 +755,7 @@ app.post('/api/categorias', authenticateToken, async (req, res) => {
   db.categorias.push(categoria);
   debouncedSaveData();
   emitToEmpresa('categoria_added', categoria, categoria.empresaId);
-  broadcastCategoriasSync('added', categoria);
+  broadcastSync('categorias', 'categorias_sync', { action: 'added', data: categoria });
   res.json(categoria);
 });
 
@@ -906,7 +769,7 @@ app.put('/api/categorias/:id', authenticateToken, async (req, res) => {
   db.categorias[index] = { ...db.categorias[index], ...req.body };
   debouncedSaveData();
   emitToEmpresa('categoria_updated', db.categorias[index], db.categorias[index].empresaId);
-  broadcastCategoriasSync('updated', db.categorias[index]);
+  broadcastSync('categorias', 'categorias_sync', { action: 'updated', data: db.categorias[index] });
   res.json(db.categorias[index]);
 });
 
@@ -920,7 +783,7 @@ app.delete('/api/categorias/:id', authenticateToken, async (req, res) => {
   const deleted = db.categorias.splice(index, 1)[0];
   debouncedSaveData();
   emitToEmpresa('categoria_deleted', deleted, deleted.empresaId);
-  broadcastCategoriasSync('deleted', deleted);
+  broadcastSync('categorias', 'categorias_sync', { action: 'deleted', data: deleted });
   res.json(deleted);
 });
 
@@ -1097,7 +960,7 @@ app.post('/api/produtos', authenticateToken, async (req, res) => {
   db.produtos.push(produto);
   debouncedSaveData();
   emitToEmpresa('produto_added', produto, produto.empresaId);
-  broadcastProdutosSync('added', produto);
+  broadcastSync('produtos', 'produtos_sync', { action: 'added', data: produto, logData: true });
   res.json(produto);
 });
 
@@ -1115,7 +978,7 @@ app.put('/api/produtos/:id', authenticateToken, async (req, res) => {
   db.produtos[index] = { ...db.produtos[index], ...updateData };
   debouncedSaveData();
   emitToEmpresa('produto_updated', db.produtos[index], db.produtos[index].empresaId);
-  broadcastProdutosSync('updated', db.produtos[index]);
+  broadcastSync('produtos', 'produtos_sync', { action: 'updated', data: db.produtos[index], logData: true });
   
   res.json(db.produtos[index]);
 });
@@ -1139,7 +1002,7 @@ app.delete('/api/produtos/:id', authenticateToken, async (req, res) => {
   
   debouncedSaveData();
   emitToEmpresa('produto_deleted', deleted, deleted.empresaId);
-  broadcastProdutosSync('deleted', deleted);
+  broadcastSync('produtos', 'produtos_sync', { action: 'deleted', data: deleted, logData: true });
   
   res.json(deleted);
 });
@@ -1377,7 +1240,7 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
   debouncedSaveData();
   
   // Notificar terminais via WebSocket e polling
-  broadcastClientesSync();
+  broadcastSync('clientes', 'clientes_sync');
   
   res.json(cliente);
 });
@@ -1391,7 +1254,7 @@ app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
   }
   db.clientes[index] = { ...db.clientes[index], ...req.body, id: db.clientes[index].id };
   debouncedSaveData();
-  broadcastClientesSync();
+  broadcastSync('clientes', 'clientes_sync');
   res.json(db.clientes[index]);
 });
 
@@ -1405,119 +1268,124 @@ app.delete('/api/clientes/:id', authenticateToken, async (req, res) => {
   const deleted = db.clientes.splice(index, 1)[0];
   debouncedSaveData();
   
-  broadcastClientesSync();
+  broadcastSync('clientes', 'clientes_sync');
   
   res.json(deleted);
 });
 
-// Função auxiliar: sincronizar clientes para todos os terminais
-function broadcastClientesSync() {
-  const clientes = db.clientes || [];
-  // Via WebSocket para dashboards - cada empresa só recebe seus clientes
+// Função auxiliar: verificar/gerenciar terminal no login
+function verifyTerminalAndLogin(deviceId, empresaDoFuncionario, nomeFuncionario, req) {
+  if (!deviceId) return null;
+  const terminalNoBanco = db.dispositivos?.find(d => d.deviceId === deviceId);
+
+  if (!terminalNoBanco) {
+    db.dispositivos = db.dispositivos || [];
+    const novoTerminal = {
+      deviceId,
+      deviceName: req.body.deviceName || 'Terminal Android',
+      deviceType: 'Android',
+      serialNumber: req.body.serialNumber || null,
+      status: 'pending',
+      empresaId: empresaDoFuncionario,
+      lastPoll: new Date()
+    };
+    db.dispositivos.push(novoTerminal);
+    connectedDevices.set(deviceId, {
+      deviceId,
+      deviceName: req.body.deviceName || 'Terminal Android',
+      deviceType: 'Android',
+      serialNumber: req.body.serialNumber || null,
+      status: 'pending',
+      empresaId: empresaDoFuncionario,
+      connectedAt: new Date(),
+      socketId: null
+    });
+    debouncedSaveData();
+    console.log(`📱 [LOGIN] Novo terminal ${deviceId} registrado como pendente para empresa ${empresaDoFuncionario}`);
+    return { error: 'Terminal aguardando aprovação da empresa.', status: 403 };
+  }
+
+  if (terminalNoBanco.empresaId !== empresaDoFuncionario) {
+    terminalNoBanco.empresaId = empresaDoFuncionario;
+    terminalNoBanco.status = 'pending';
+    terminalNoBanco.lastPoll = new Date();
+    const cd = connectedDevices.get(deviceId);
+    if (cd) { cd.empresaId = empresaDoFuncionario; cd.status = 'pending' }
+    debouncedSaveData();
+    console.log(`📱 [LOGIN] Terminal ${deviceId} transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
+    return { error: 'Terminal aguardando aprovação da empresa.', status: 403 };
+  }
+
+  if (terminalNoBanco.status === 'blocked') {
+    return { error: 'Terminal bloqueado pela empresa.', status: 403 };
+  }
+
+  if (terminalNoBanco.status === 'online') {
+    terminalNoBanco.lastPoll = new Date();
+    terminalNoBanco.lastLogin = new Date();
+    terminalNoBanco.lastLoginUser = nomeFuncionario;
+    const cd = connectedDevices.get(deviceId);
+    if (cd) { cd.status = 'online'; cd.empresaId = empresaDoFuncionario; cd.lastLogin = new Date(); cd.lastLoginUser = nomeFuncionario }
+    debouncedSaveData();
+    console.log(`✅ [LOGIN] Terminal ${deviceId} já aprovado - empresa ${empresaDoFuncionario}`);
+    return null;
+  }
+
+  if (terminalNoBanco.status !== 'pending') {
+    terminalNoBanco.status = 'pending';
+    terminalNoBanco.lastPoll = new Date();
+    const cd = connectedDevices.get(deviceId);
+    if (cd) { cd.status = 'pending' }
+    debouncedSaveData();
+    console.log(` [LOGIN] Terminal ${deviceId} resetado para pendente - empresa ${empresaDoFuncionario}`);
+  }
+  return { error: 'Terminal aguardando aprovação da empresa.', status: 403 };
+}
+
+// Função auxiliar genérica: sincronizar dados para todos os terminais e dashboards
+function broadcastSync(dataName, eventName, options = {}) {
+  const { action = 'sync', data = null, filterKey = 'empresaId', mapFn = null, logData = false } = options;
+  const items = db[dataName] || [];
+  
+  if (logData) {
+    console.log(`📤 [BROADCAST-${dataName.toUpperCase()}] Total no banco: ${items.length}, action=${action}`);
+  }
+
+  // Via WebSocket para dashboards - cada empresa só recebe seus dados
   connectedDashboards.forEach((info, socketId) => {
     const socket = io.sockets.sockets.get(socketId);
     if (!socket) return;
     const filtered = info.role === 'empresa' && info.empresaId
-      ? clientes.filter(c => c.empresaId === info.empresaId)
-      : clientes;
-    socket.emit('clientes_sync', filtered);
+      ? items.filter(i => i[filterKey] === info.empresaId)
+      : items;
+    const payload = { [dataName]: filtered, timestamp: new Date(), action: action || 'sync' };
+    if (data) payload.data = data;
+    socket.emit(eventName, payload);
   });
-  // Via polling para terminais - filtrar por empresa do dispositivo
+
+  // Via polling para terminais
   const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
     const filtered = deviceInfo.empresaId
-      ? clientes.filter(c => c.empresaId === deviceInfo.empresaId)
-      : clientes;
-    enqueueDeviceCommand(deviceId, 'clientes_sync', { clientes: filtered });
+      ? items.filter(i => i[filterKey] && String(i[filterKey]) === String(deviceInfo.empresaId))
+      : items;
+    const payload = { [dataName]: filtered };
+    enqueueDeviceCommand(deviceId, eventName, payload);
     deviceIds.push(deviceId);
   });
-  // Também dispositivos do banco que podem não estar conectados mas farão polling
+
+  // Dispositivos do banco não conectados
   (db.dispositivos || []).forEach(d => {
     if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = clientes.filter(c => c.empresaId === d.empresaId);
+      const filtered = items.filter(i => i[filterKey] && String(i[filterKey]) === String(d.empresaId));
       if (filtered.length > 0) {
-        enqueueDeviceCommand(d.deviceId, 'clientes_sync', { clientes: filtered });
+        enqueueDeviceCommand(d.deviceId, eventName, { [dataName]: filtered });
       }
     }
   });
 }
 
-// Função auxiliar: sincronizar produtos para todos os terminais
-function broadcastProdutosSync(action = 'sync', data = null) {
-  const produtos = db.produtos || [];
-  console.log(`📤 [BROADCAST-PRODUTOS] Total no banco: ${produtos.length} produtos, action=${action}`);
-  console.log(`📤 [BROADCAST-PRODUTOS] Detalhes:`, produtos.map(p => ({ id: p.id, nome: p.nome, empresaId: p.empresaId })));
-  // Via WebSocket para dashboards - cada empresa só recebe seus produtos
-  connectedDashboards.forEach((info, socketId) => {
-    const socket = io.sockets.sockets.get(socketId);
-    if (!socket) return;
-    const filtered = info.role === 'empresa' && info.empresaId
-      ? produtos.filter(p => p.empresaId === info.empresaId)
-      : produtos;
-    const payload = { produtos: filtered, timestamp: new Date(), action };
-    if (data) payload.data = data;
-    socket.emit('produtos_sync', payload);
-  });
-  // Via polling para terminais - filtrar por empresa do dispositivo
-  const deviceIds = [];
-  // Primeiro dispositivos conectados
-  connectedDevices.forEach((deviceInfo, deviceId) => {
-    const filtered = deviceInfo.empresaId
-      ? produtos.filter(p => p.empresaId && String(p.empresaId) === String(deviceInfo.empresaId))
-      : produtos;
-    enqueueDeviceCommand(deviceId, 'produtos_sync', { produtos: filtered });
-    deviceIds.push(deviceId);
-    console.log(`📤 [BROADCAST] Dispositivo conectado: ${deviceId}, empresaId: ${deviceInfo.empresaId}, produtos filtrados: ${filtered.length}`);
-  });
-  // Também dispositivos do banco que podem não estar conectados mas farão polling
-  (db.dispositivos || []).forEach(d => {
-    if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = produtos.filter(p => p.empresaId && String(p.empresaId) === String(d.empresaId));
-      console.log(`📤 [BROADCAST] Dispositivo banco: ${d.deviceId}, empresaId: ${d.empresaId}, produtos filtrados: ${filtered.length}`);
-      enqueueDeviceCommand(d.deviceId, 'produtos_sync', { produtos: filtered });
-    }
-  });
-  const totalDbDevices = (db.dispositivos || []).filter(d => !deviceIds.includes(d.deviceId) && d.empresaId).length;
-  console.log(`📤 [BROADCAST-PRODUTOS] Total: ${deviceIds.length} conectados + ${totalDbDevices} no banco`);
-}
-
-// Função auxiliar: sincronizar categorias para todos os terminais
-function broadcastCategoriasSync(action = 'sync', data = null) {
-  const categorias = db.categorias || [];
-  // Via WebSocket para dashboards - cada empresa só recebe suas categorias
-  connectedDashboards.forEach((info, socketId) => {
-    const socket = io.sockets.sockets.get(socketId);
-    if (!socket) return;
-    const filtered = info.role === 'empresa' && info.empresaId
-      ? categorias.filter(c => c.empresaId === info.empresaId)
-      : categorias;
-    const payload = { categorias: filtered, timestamp: new Date(), action };
-    if (data) payload.data = data;
-    socket.emit('categorias_sync', payload);
-  });
-  // Via polling para terminais - filtrar por empresa do dispositivo
-  const deviceIds = [];
-  // Primeiro dispositivos conectados
-  connectedDevices.forEach((deviceInfo, deviceId) => {
-    const filtered = deviceInfo.empresaId
-      ? categorias.filter(c => c.empresaId === deviceInfo.empresaId)
-      : categorias;
-    enqueueDeviceCommand(deviceId, 'categorias_sync', { categorias: filtered });
-    deviceIds.push(deviceId);
-  });
-  // Também dispositivos do banco que podem não estar conectados mas farão polling
-  (db.dispositivos || []).forEach(d => {
-    if (!deviceIds.includes(d.deviceId) && d.empresaId) {
-      const filtered = categorias.filter(c => c.empresaId === d.empresaId);
-      if (filtered.length > 0) {
-        enqueueDeviceCommand(d.deviceId, 'categorias_sync', { categorias: filtered });
-      }
-    }
-  });
-  console.log(`📤 [BROADCAST-CATEGORIAS] ${categorias.length} categorias para ${connectedDevices.size} dispositivos conectados`);
-}
-
-// Função auxiliar: sincronizar empresas para todos os terminais
+// Mantido específico pois faz map de campos e usa io.emit global
 function broadcastEmpresasSync() {
   const empresas = (db.empresas || []).map(e => ({
     id: e.id,
@@ -1527,9 +1395,7 @@ function broadcastEmpresasSync() {
     telefone: e.telefone,
     permissoes: e.permissoes
   }));
-  // Via WebSocket para dashboards - empresas é global (admin e empresa precisam ver)
   io.emit('empresas_sync', { empresas });
-  // Via polling para terminais Android
   const deviceIds = [];
   connectedDevices.forEach((deviceInfo, deviceId) => {
     enqueueDeviceCommand(deviceId, 'empresas_sync', { empresas });
@@ -2933,7 +2799,7 @@ app.post('/api/force-sync', authenticateToken, async (req, res) => {
   }
   
   if (type === 'produtos' || type === 'all') {
-    broadcastProdutosSync('force_sync');
+    broadcastSync('produtos', 'produtos_sync', { action: 'force_sync', logData: true });
     // Também enfileirar para dispositivos do banco que podem não estar no connectedDevices
     (db.dispositivos || []).forEach(d => {
       if (!connectedDevices.has(d.deviceId)) {
@@ -2943,7 +2809,7 @@ app.post('/api/force-sync', authenticateToken, async (req, res) => {
     synced.push('produtos');
   }
   if (type === 'categorias' || type === 'all') {
-    broadcastCategoriasSync('force_sync');
+    broadcastSync('categorias', 'categorias_sync', { action: 'force_sync' });
     (db.dispositivos || []).forEach(d => {
       if (!connectedDevices.has(d.deviceId)) {
         enqueueDeviceCommand(d.deviceId, 'categorias_sync', { categorias: db.categorias || [] });
@@ -2952,7 +2818,7 @@ app.post('/api/force-sync', authenticateToken, async (req, res) => {
     synced.push('categorias');
   }
   if (type === 'clientes' || type === 'all') {
-    broadcastClientesSync();
+    broadcastSync('clientes', 'clientes_sync');
     (db.dispositivos || []).forEach(d => {
       if (!connectedDevices.has(d.deviceId)) {
         enqueueDeviceCommand(d.deviceId, 'clientes_sync', { clientes: db.clientes || [] });
@@ -2997,7 +2863,7 @@ app.post('/api/device/produto-save', async (req, res) => {
     db.produtos[index] = { ...db.produtos[index], ...updateData };
     debouncedSaveData();
     emitToEmpresa('produto_updated', db.produtos[index], db.produtos[index].empresaId);
-    broadcastProdutosSync('updated', db.produtos[index]);
+  broadcastSync('produtos', 'produtos_sync', { action: 'updated', data: db.produtos[index], logData: true });
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} editou produto: ${produto.nome}`);
     res.json(db.produtos[index]);
   } else {
@@ -3017,7 +2883,7 @@ app.post('/api/device/produto-save', async (req, res) => {
     db.produtos.push(novo);
     debouncedSaveData();
     emitToEmpresa('produto_added', novo, novo.empresaId);
-    broadcastProdutosSync('added', novo);
+    broadcastSync('produtos', 'produtos_sync', { action: 'added', data: novo, logData: true });
     console.log(`📝 [DEVICE-PRODUTO] Device ${deviceId} criou produto: ${novo.nome}`);
     res.json(novo);
   }

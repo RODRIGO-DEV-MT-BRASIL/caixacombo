@@ -35,6 +35,8 @@ import com.seucaixa.caixacombo.data.database.AppDatabase
 import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
+import com.seucaixa.caixacombo.ui.components.PdvCategoriaFilterRow
+import com.seucaixa.caixacombo.ui.components.PdvProdutoCard
 import com.seucaixa.caixacombo.ui.components.ProdutoImagem
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
@@ -120,9 +122,9 @@ fun CheckoutScreenMaster(
 
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var showValorDialog by remember { mutableStateOf(false) }
-    var valorRecebido by remember { mutableStateOf("") }
+    var receivedValue by remember { mutableStateOf("") }
     var showBuscaDialog by remember { mutableStateOf(false) }
-    var buscaText by remember { mutableStateOf("") }
+    var searchText by remember { mutableStateOf("") }
     var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
 
     var stonePaymentError by remember { mutableStateOf<String?>(null) }
@@ -170,13 +172,10 @@ fun CheckoutScreenMaster(
                         } else {
                             val reason = result?.reason ?: ""
                             val code = result?.code ?: 0
-                            stonePaymentError = when {
-                                code == 401 -> "Terminal não ativado na Stone"
-                                code == 1000 -> "App Stone não encontrado"
-                                result == null -> "Pagamento cancelado ou não concluído"
-                                reason.contains("NOT_FOUND") -> "App de pagamento não encontrado"
-                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
-                                else -> "Pagamento recusado no terminal (código: $code)"
+                            stonePaymentError = if (result == null) {
+                                "Pagamento cancelado ou não concluído"
+                            } else {
+                                StoneDeeplinkService.getErrorMessage(code, reason)
                             }
                         }
                     }
@@ -198,7 +197,7 @@ fun CheckoutScreenMaster(
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text("Buscar Produto", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = textOnBg, modifier = Modifier.padding(bottom = 16.dp))
                     OutlinedTextField(
-                        value = buscaText, onValueChange = { buscaText = it },
+                        value = searchText, onValueChange = { searchText = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Código ou nome do produto", color = textSecondary) },
                         singleLine = true,
@@ -211,15 +210,15 @@ fun CheckoutScreenMaster(
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = {
-                            IconButton(onClick = { showBuscaDialog = false; viewModel.buscarProdutos(buscaText) }) {
+                            IconButton(onClick = { showBuscaDialog = false; viewModel.buscarProdutos(searchText) }) {
                                 Icon(Icons.Default.Search, null, tint = primaryColor)
                             }
                         }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                        val filtered = if (buscaText.isBlank()) emptyList() else produtos.filter {
-                            it.nome.contains(buscaText, ignoreCase = true) || (it.codigoBarras ?: "").contains(buscaText)
+                        val filtered = if (searchText.isBlank()) emptyList() else produtos.filter {
+                            it.nome.contains(searchText, ignoreCase = true) || (it.codigoBarras ?: "").contains(searchText)
                         }.take(20)
                         items(filtered) { produto ->
                             ListItem(
@@ -229,7 +228,7 @@ fun CheckoutScreenMaster(
                                 modifier = Modifier.clickable {
                                     viewModel.adicionarAoCarrinho(produto)
                                     showBuscaDialog = false
-                                    buscaText = ""
+                                    searchText = ""
                                 }
                             )
                         }

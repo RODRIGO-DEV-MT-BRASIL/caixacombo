@@ -218,7 +218,7 @@ private fun PagamentoCard(
 fun ValorPagamentoDialogPOS(
     total: Double,
     formaPagamento: FormaPagamento,
-    valorRecebido: String,
+    receivedValue: String,
     onValorRecebidoChange: (String) -> Unit,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit
@@ -274,7 +274,7 @@ fun ValorPagamentoDialogPOS(
                 // Valor recebido (só para dinheiro)
                 if (formaPagamento == FormaPagamento.DINHEIRO) {
                     OutlinedTextField(
-                        value = valorRecebido,
+                        value = receivedValue,
                         onValueChange = { newValue ->
                             onValorRecebidoChange(formatarMoeda(newValue))
                         },
@@ -293,7 +293,7 @@ fun ValorPagamentoDialogPOS(
                         keyboardOptions = KeyboardOptions(keyboardType = ComposeKeyboardType.Decimal)
                     )
 
-                    val troco = (valorRecebido.toDoubleSafe()) - total
+                    val troco = (receivedValue.toDoubleSafe()) - total
                     if (troco > 0) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -347,7 +347,7 @@ fun ValorPagamentoDialogPOS(
                             .height(CheckoutDimensions.botaoFinalizarHeight()),
                         shape = RoundedCornerShape(12.dp),
                         enabled = formaPagamento != FormaPagamento.DINHEIRO ||
-                                (valorRecebido.toDoubleSafe()) >= total
+                                (receivedValue.toDoubleSafe()) >= total
                     ) {
                         Text(
                             "FINALIZAR",
@@ -365,7 +365,7 @@ fun ValorPagamentoDialogPOS(
 fun FinalizarVendaDialogPOS(
     total: Double,
     formaPagamento: FormaPagamento,
-    valorRecebido: String,
+    receivedValue: String,
     onFormaPagamentoChange: (FormaPagamento) -> Unit,
     onValorRecebidoChange: (String) -> Unit,
     onConfirmar: () -> Unit,
@@ -488,7 +488,7 @@ fun FinalizarVendaDialogPOS(
                 // Valor recebido (só para dinheiro)
                 if (formaPagamento == FormaPagamento.DINHEIRO) {
                     OutlinedTextField(
-                        value = valorRecebido,
+                        value = receivedValue,
                         onValueChange = { newValue ->
                             onValorRecebidoChange(formatarMoeda(newValue))
                         },
@@ -507,7 +507,7 @@ fun FinalizarVendaDialogPOS(
                         keyboardOptions = KeyboardOptions(keyboardType = ComposeKeyboardType.Decimal)
                     )
                     
-                    val troco = (valorRecebido.toDoubleSafe()) - total
+                    val troco = (receivedValue.toDoubleSafe()) - total
                     if (troco > 0) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Card(
@@ -714,7 +714,7 @@ fun EscolhaFormaPagamentoDialogMobile(
 fun ValorPagamentoDialogMobile(
     total: Double,
     formaPagamento: FormaPagamento,
-    valorRecebido: String,
+    receivedValue: String,
     onValorRecebidoChange: (String) -> Unit,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit
@@ -786,7 +786,7 @@ fun ValorPagamentoDialogMobile(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = valorRecebido.ifEmpty { "0,00" },
+                            text = receivedValue.ifEmpty { "0,00" },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -799,7 +799,7 @@ fun ValorPagamentoDialogMobile(
 
                     // Teclado numérico customizado com máscara automática
                     CustomKeyboard(
-                        value = valorRecebido,
+                        value = receivedValue,
                         onValueChange = { newValue ->
                             // Máscara de moeda automática: digita 1500 -> mostra 15.00
                             val digitsOnly = newValue.filter { it.isDigit() }
@@ -818,7 +818,7 @@ fun ValorPagamentoDialogMobile(
                     )
 
                     // Troco
-                    val troco = (valorRecebido.toDoubleSafe()) - total
+                    val troco = (receivedValue.toDoubleSafe()) - total
                     if (troco > 0) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -868,7 +868,7 @@ fun ValorPagamentoDialogMobile(
                     
                     // Verificar se pode confirmar
                     val podeConfirmar = formaPagamento != FormaPagamento.DINHEIRO ||
-                            (valorRecebido.toDoubleSafe()) >= total
+                            (receivedValue.toDoubleSafe()) >= total
 
                     Button(
                         onClick = onConfirmar,
@@ -886,7 +886,7 @@ fun ValorPagamentoDialogMobile(
 
                 // Mostrar mensagem se valor insuficiente em dinheiro
                 if (formaPagamento == FormaPagamento.DINHEIRO && 
-                    (valorRecebido.toDoubleSafe()) < total) {
+                    (receivedValue.toDoubleSafe()) < total) {
                     Text(
                         text = "Digite o valor recebido",
                         style = MaterialTheme.typography.bodySmall,
@@ -906,7 +906,7 @@ fun ValorPagamentoDialogMobile(
 fun FinalizarVendaDialogMobile(
     total: Double,
     formaPagamento: FormaPagamento,
-    valorRecebido: String,
+    receivedValue: String,
     onFormaPagamentoChange: (FormaPagamento) -> Unit,
     onValorRecebidoChange: (String) -> Unit,
     onConfirmar: () -> Unit,
@@ -1026,7 +1026,7 @@ fun FinalizarVendaDialogMobile(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = valorRecebido.ifEmpty { "0,00" },
+                            text = receivedValue.ifEmpty { "0,00" },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1039,7 +1039,7 @@ fun FinalizarVendaDialogMobile(
 
                     // Teclado numérico customizado com máscara automática
                     com.seucaixa.caixacombo.ui.components.CustomKeyboard(
-                        value = valorRecebido,
+                        value = receivedValue,
                         onValueChange = { newValue ->
                             // Máscara de moeda automática: digita 1500 -> mostra 15.00
                             val digitsOnly = newValue.filter { it.isDigit() }
@@ -1058,7 +1058,7 @@ fun FinalizarVendaDialogMobile(
                     )
 
                     // Troco
-                    val troco = (valorRecebido.toDoubleSafe()) - total
+                    val troco = (receivedValue.toDoubleSafe()) - total
                     if (troco > 0) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -1104,7 +1104,7 @@ fun FinalizarVendaDialogMobile(
                     }
                     // Verificar se pode confirmar
                     val podeConfirmar = formaPagamento != FormaPagamento.DINHEIRO ||
-                            (valorRecebido.toDoubleSafe()) >= total
+                            (receivedValue.toDoubleSafe()) >= total
 
                     Button(
                         onClick = onConfirmar,
