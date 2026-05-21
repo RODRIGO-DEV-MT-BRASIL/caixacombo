@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.seucaixa.caixacombo.R
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -302,9 +304,9 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth(if (isSmallScreen) 0.9f else 0.65f)
-                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = if (isSmallScreen) 12.dp else 24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Espaçamento acima - reduzido quando teclado aberto
             if (!isKeyboardOpen.value) {
