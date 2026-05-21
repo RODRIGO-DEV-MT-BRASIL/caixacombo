@@ -911,6 +911,26 @@ class MainActivity : ComponentActivity() {
                 .apply()
 
             android.util.Log.d("MainActivity", "Whitelabel aplicado: nome=$nome, primary=$primaryColor, designApp=$designApp")
+
+            if (logoUrl.isNotBlank()) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val url = java.net.URL(logoUrl)
+                        val connection = url.openConnection()
+                        connection.connectTimeout = 5000
+                        connection.readTimeout = 5000
+                        val inputStream = connection.getInputStream()
+                        val file = java.io.File(filesDir, "logo.png")
+                        java.io.FileOutputStream(file).use { output ->
+                            inputStream.copyTo(output)
+                        }
+                        inputStream.close()
+                        android.util.Log.d("MainActivity", "Logo baixada com sucesso de $logoUrl")
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "Erro ao baixar logo: ${e.message}")
+                    }
+                }
+            }
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao aplicar whitelabel", e)
         }
