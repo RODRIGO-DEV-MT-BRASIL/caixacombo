@@ -113,12 +113,12 @@ export default function Terminais() {
   const filteredByEmpresa = filterEmpresa ? devices.filter(d => d.empresaId === filterEmpresa) : devices
   const filtered = empresaId ? filteredByEmpresa.filter(d => d.empresaId === empresaId) : filteredByEmpresa
   const pending = filtered.filter(d => d.status === 'pending')
-  const online = filtered.filter(d => d.online || d.status === 'online' || d.status === 'in_use')
+  const onlineNonPending = filtered.filter(d => d.status !== 'pending')
 
   const sl = search.toLowerCase()
-  const searched = search ? online.filter(d =>
+  const searched = search ? onlineNonPending.filter(d =>
     (d.deviceName || '').toLowerCase().includes(sl) || (d.deviceId || '').toLowerCase().includes(sl)
-  ) : online
+  ) : onlineNonPending
 
   const handleControl = useCallback(async (deviceId, action) => {
     try {
@@ -160,7 +160,7 @@ export default function Terminais() {
           <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center"><Monitor size={24} className="text-blue-400" /></div>
           <div>
             <h3 className="text-lg font-semibold text-white">Terminais</h3>
-            <p className="text-xs text-gray-400">{online.length} conectados · {filtered.filter(d => d.status === 'locked').length} bloqueados · {pending.length} pendentes</p>
+            <p className="text-xs text-gray-400">{onlineNonPending.length} terminais · {filtered.filter(d => d.status === 'locked').length} bloqueados · {pending.length} pendentes</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
