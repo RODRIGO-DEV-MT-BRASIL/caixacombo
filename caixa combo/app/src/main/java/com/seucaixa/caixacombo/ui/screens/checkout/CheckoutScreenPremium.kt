@@ -188,7 +188,7 @@ fun CheckoutScreenPremium(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
