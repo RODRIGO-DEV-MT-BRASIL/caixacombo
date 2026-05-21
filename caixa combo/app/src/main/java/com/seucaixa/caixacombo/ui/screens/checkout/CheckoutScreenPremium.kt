@@ -113,6 +113,7 @@ fun CheckoutScreenPremium(
     var showBusca by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     var showCarrinhoDialog by remember { mutableStateOf(false) }
+    var showPrintConfigDialog by remember { mutableStateOf(false) }
     var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
 
     var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
@@ -162,6 +163,7 @@ fun CheckoutScreenPremium(
                         if (paymentProcessed) return@invoke
                         if (result != null && result.success) {
                             paymentProcessed = true
+                            stonePaymentError = null
                             stonePaymentResult = result
                             val stoneAtk = result.authorizationCode.ifEmpty { null }
                             viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)
@@ -208,7 +210,7 @@ fun CheckoutScreenPremium(
                 if (permCaixa) IconButton(onClick = onNavigateToCaixa, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.AccountBalance, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
                 if (permVendas) IconButton(onClick = onNavigateToVendas, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Receipt, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
                 if (permProdutos) IconButton(onClick = onNavigateToProdutos, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Inventory, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
-                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Print, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                if (permConfig) IconButton(onClick = { showPrintConfigDialog = true }, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Print, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
                 IconButton(onClick = onNavigateToDashboard, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Dashboard, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
                 IconButton(onClick = onLogout, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.ExitToApp, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
@@ -242,7 +244,7 @@ fun CheckoutScreenPremium(
             }
         }
 
-        LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
+        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             val filtered = if (busca.isNotBlank()) produtos.filter { it.nome.contains(busca, true) || (it.codigoBarras ?: "").contains(busca) }
                 else if (categoriaSelecionada != null) produtos.filter { it.categoriaId == categoriaSelecionada!!.id }
@@ -253,8 +255,8 @@ fun CheckoutScreenPremium(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+                    Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(modifier = Modifier.fillMaxWidth().height(60.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
                             ProdutoImagem(
                                 imagem = produto.imagem,
                                 contentDescription = produto.nome,
@@ -263,23 +265,23 @@ fun CheckoutScreenPremium(
                                 serverUrl = PollingService.getServerUrl()
                             )
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(produto.nome, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(produto.nome, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                         if (produto.descricao != null && produto.descricao!!.isNotBlank()) {
-                            Text(produto.descricao!!, fontSize = 7.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Text(produto.descricao!!, fontSize = 11.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                         }
-                        Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                        Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 7.sp, color = Color.Gray)
-                            Text(" | ", fontSize = 7.sp, color = Color.Gray.copy(alpha = 0.3f))
-                            Text("Ven:$vendidos", fontSize = 7.sp, color = Color.Gray)
+                            Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 11.sp, color = Color.Gray)
+                            Text(" | ", fontSize = 11.sp, color = Color.Gray.copy(alpha = 0.3f))
+                            Text("Ven:$vendidos", fontSize = 11.sp, color = Color.Gray)
                         }
                     }
                 }
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("TOTAL", fontSize = 9.sp, color = Color.Gray)
@@ -397,8 +399,37 @@ fun CheckoutScreenPremium(
                                     Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center)
                                     IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(28.dp)) {
                                         Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                                    }
-                                }
+    }
+
+    if (showPrintConfigDialog) {
+        val printPrefs = remember { context.getSharedPreferences("config_impressao", Context.MODE_PRIVATE) }
+        var imprimirTotal by remember { mutableStateOf(printPrefs.getBoolean("imprimir_total", true)) }
+        var imprimirFichas by remember { mutableStateOf(printPrefs.getBoolean("imprimir_fichas", true)) }
+        AlertDialog(
+            onDismissRequest = { showPrintConfigDialog = false },
+            title = { Text("Configuração de Impressão", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Imprimir Total", fontWeight = FontWeight.Medium)
+                        Switch(checked = imprimirTotal, onCheckedChange = { imprimirTotal = it })
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Imprimir Fichas", fontWeight = FontWeight.Medium)
+                        Switch(checked = imprimirFichas, onCheckedChange = { imprimirFichas = it })
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    printPrefs.edit().putBoolean("imprimir_total", imprimirTotal).putBoolean("imprimir_fichas", imprimirFichas).apply()
+                    showPrintConfigDialog = false
+                }) { Text("Salvar") }
+            },
+            dismissButton = { TextButton(onClick = { showPrintConfigDialog = false }) { Text("Cancelar") } }
+        )
+    }
+}
                                 Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
                                 IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(24.dp)) {
                                     Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Red)
