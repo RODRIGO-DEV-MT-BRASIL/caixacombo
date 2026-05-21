@@ -8,6 +8,7 @@ import com.seucaixa.caixacombo.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -221,6 +224,7 @@ fun HomeScreen(
 
     // Detectar se teclado está aberto
     val isKeyboardOpen = remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     
     // Tela de terminal pendente
     if (terminalPendente) {
@@ -288,7 +292,11 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .imePadding(),
+            .imePadding()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { focusManager.clearFocus() },
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -305,8 +313,8 @@ fun HomeScreen(
 
             // Logo - reduzir tamanho quando teclado aberto
             if (logoBitmap != null) {
-                val logoAltura = if (isKeyboardOpen.value) (logoConfig?.logoAltura ?: 347f) * 0.3f else (logoConfig?.logoAltura ?: 347f)
-                val logoLargura = if (isKeyboardOpen.value) (logoConfig?.logoLargura ?: 567f) * 0.3f else (logoConfig?.logoLargura ?: 567f)
+                val logoAltura = if (isKeyboardOpen.value) (logoConfig?.logoAltura ?: 347f) * 0.7f else (logoConfig?.logoAltura ?: 347f)
+                val logoLargura = if (isKeyboardOpen.value) (logoConfig?.logoLargura ?: 567f) * 0.7f else (logoConfig?.logoLargura ?: 567f)
                 Image(
                     painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
                     contentDescription = "Logo",
