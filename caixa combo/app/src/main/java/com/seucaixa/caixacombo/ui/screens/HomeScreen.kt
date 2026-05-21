@@ -26,6 +26,8 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
@@ -108,6 +110,7 @@ fun HomeScreen(
     var loginType by remember { mutableStateOf("funcionario") }
     var loginIdentifier by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
+    var pinVisible by remember { mutableStateOf(false) }
     var erro by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var terminalPendente by remember { mutableStateOf(false) }
@@ -426,6 +429,16 @@ fun HomeScreen(
                 leadingIcon = {
                     Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
                 },
+                trailingIcon = {
+                    IconButton(onClick = { pinVisible = !pinVisible }) {
+                        Icon(
+                            if (pinVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                visualTransformation = if (pinVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = androidx.compose.ui.text.TextStyle(
                     fontSize = if (isSmallScreen) 14.sp else 18.sp,
