@@ -39,8 +39,8 @@ data class ConfiguracaoImpressao(
     val logoCheckoutPDV: Boolean = false,
     
     // Configurações de tamanho e espaçamento da logo
-    val logoAltura: Float = 80f,
-    val logoLargura: Float = 300f,
+    val logoAltura: Float = 347f,
+    val logoLargura: Float = 567f,
     val logoEspacamentoAcima: Float = 16f,
     val logoEspacamentoAbaixo: Float = 16f
 )
