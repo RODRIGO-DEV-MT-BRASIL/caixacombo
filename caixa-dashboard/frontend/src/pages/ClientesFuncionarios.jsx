@@ -205,7 +205,7 @@ export default function ClientesFuncionarios() {
           placeholder={`Buscar ${activeTab === 'clientes' ? 'clientes' : 'funcionários'}...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          className="input-field pl-10 py-2.5 text-sm"
         />
       </div>
 
@@ -258,319 +258,277 @@ export default function ClientesFuncionarios() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="glass rounded-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              {editingItem ? 'Editar' : activeTab === 'clientes' ? 'Novo Cliente' : 'Novo Funcionário'}
-            </h2>
-            
-            {/* Abas do modal para funcionários */}
-            {activeTab === 'funcionarios' && (
-              <div className="flex gap-2 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setModalTab('dados')}
-                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${modalTab === 'dados' ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}
-                >
-                  Dados
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalTab('permissoes')}
-                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${modalTab === 'permissoes' ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}
-                >
-                  Permissões
-                </button>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg flex flex-col max-h-[95vh]">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-700 shrink-0">
+              <div className="flex items-center gap-2">
+                <UserCog className="w-5 h-5 text-blue-400" />
+                <h2 className="text-lg font-semibold text-white">
+                  {editingItem ? 'Editar' : 'Novo'} {activeTab === 'clientes' ? 'Cliente' : 'Funcionário'}
+                </h2>
               </div>
-            )}
+              <button onClick={() => { setShowModal(false); setEditingItem(null); setModalTab('dados') }} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              {modalTab === 'dados' ? (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Nome *</label>
-                    <input
-                      type="text"
-                      value={formData.nome}
-                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                      required
-                    />
-                  </div>
-                  
-                  {activeTab === 'funcionarios' ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-400 mb-1">Código *</label>
-                          <input
-                            type="text"
-                            value={formData.codigo}
-                            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-400 mb-1">Senha de Acesso *</label>
-                          <input
-                            type="password"
-                            value={formData.senha}
-                            onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                            placeholder="4-6 dígitos"
-                            maxLength={6}
-                            required={!editingItem}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Cargo</label>
-                        <select
-                          value={formData.cargo}
-                          onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                        >
-                          <option value="caixa">Caixa</option>
-                          <option value="gerente">Gerente</option>
-                          <option value="supervisor">Supervisor</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">CPF/CNPJ</label>
-                        <input
-                          type="text"
-                          value={formData.cpfCnpj}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '')
-                            if (value.length > 14) value = value.slice(0, 14)
-                            if (value.length > 11) {
-                              // CNPJ: XX.XXX.XXX/XXXX-XX
-                              if (value.length > 12) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`
-                              else if (value.length > 8) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8)}`
-                              else if (value.length > 5) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
-                              else if (value.length > 2) value = `${value.slice(0, 2)}.${value.slice(2)}`
-                            } else if (value.length > 0) {
-                              // CPF: XXX.XXX.XXX-XX
-                              if (value.length > 9) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`
-                              else if (value.length > 6) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`
-                              else if (value.length > 3) value = `${value.slice(0, 3)}.${value.slice(3)}`
-                            }
-                            setFormData({ ...formData, cpfCnpj: value })
-                          }}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Telefone</label>
-                        <input
-                          type="text"
-                          value={formData.telefone}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '')
-                            if (value.length > 11) value = value.slice(0, 11)
-                            if (value.length > 0) {
-                              if (value.length <= 2) value = `(${value}`
-                              else if (value.length <= 7) value = `(${value.slice(0, 2)}) ${value.slice(2)}`
-                              else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`
-                            }
-                            setFormData({ ...formData, telefone: value })
-                          }}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="(11) 99999-9999"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">CPF/CNPJ</label>
-                        <input
-                          type="text"
-                          value={formData.cpfCnpj}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '')
-                            if (value.length > 14) value = value.slice(0, 14)
-                            if (value.length > 11) {
-                              // CNPJ: XX.XXX.XXX/XXXX-XX
-                              if (value.length > 12) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`
-                              else if (value.length > 8) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8)}`
-                              else if (value.length > 5) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
-                              else if (value.length > 2) value = `${value.slice(0, 2)}.${value.slice(2)}`
-                            } else if (value.length > 0) {
-                              // CPF: XXX.XXX.XXX-XX
-                              if (value.length > 9) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`
-                              else if (value.length > 6) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`
-                              else if (value.length > 3) value = `${value.slice(0, 3)}.${value.slice(3)}`
-                            }
-                            setFormData({ ...formData, cpfCnpj: value })
-                          }}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Telefone</label>
-                        <input
-                          type="text"
-                          value={formData.telefone}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '')
-                            if (value.length > 11) value = value.slice(0, 11)
-                            if (value.length > 0) {
-                              if (value.length <= 2) value = `(${value}`
-                              else if (value.length <= 7) value = `(${value.slice(0, 2)}) ${value.slice(2)}`
-                              else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`
-                            }
-                            setFormData({ ...formData, telefone: value })
-                          }}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="(11) 99999-9999"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Endereço</label>
-                        <input
-                          type="text"
-                          value={formData.endereco}
-                          onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Cidade</label>
-                        <input
-                          type="text"
-                          value={formData.cidade}
-                          onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">CEP</label>
-                        <input
-                          type="text"
-                          value={formData.cep}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '')
-                            if (value.length > 8) value = value.slice(0, 8)
-                            if (value.length > 5) value = `${value.slice(0, 5)}-${value.slice(5)}`
-                            setFormData({ ...formData, cep: value })
-                          }}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          placeholder="00000-000"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Observação</label>
-                        <textarea
-                          value={formData.observacao}
-                          onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
-                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                // Aba de permissões para funcionários
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Vendas</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.vendas}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, vendas: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Caixa</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.caixa}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, caixa: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Produtos</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.produtos}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, produtos: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Categorias</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.categorias}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, categorias: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Relatórios</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.relatorios}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, relatorios: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Desconto</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.desconto}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, desconto: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Cancelar Venda</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.cancelar_venda}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, cancelar_venda: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-400">Operações de Caixa</label>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissoes.operacoes_caixa}
-                      onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, operacoes_caixa: e.target.checked } })}
-                      className="w-5 h-5 rounded"
-                    />
-                  </div>
+            <form onSubmit={handleSave} className="flex flex-col min-h-0">
+              {activeTab === 'funcionarios' && (
+                <div className="flex gap-2 px-3 py-2 border-b border-gray-700 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setModalTab('dados')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${modalTab === 'dados' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                  >
+                    Dados
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalTab('permissoes')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${modalTab === 'permissoes' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+                  >
+                    Permissões
+                  </button>
                 </div>
               )}
-              
-              <div className="flex gap-2 justify-end">
+
+              <div className="overflow-y-auto px-3 py-2 space-y-1.5">
+                {modalTab === 'dados' ? (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-0.5">Nome *</label>
+                      <input
+                        type="text"
+                        value={formData.nome}
+                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    
+                    {activeTab === 'funcionarios' ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Código *</label>
+                            <input
+                              type="text"
+                              value={formData.codigo}
+                              onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Senha *</label>
+                            <input
+                              type="password"
+                              value={formData.senha}
+                              onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                              placeholder="4-6 dígitos"
+                              maxLength={6}
+                              required={!editingItem}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-300 mb-0.5">Cargo</label>
+                          <select
+                            value={formData.cargo}
+                            onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                          >
+                            <option value="caixa">Caixa</option>
+                            <option value="gerente">Gerente</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-300 mb-0.5">CPF/CNPJ</label>
+                          <input
+                            type="text"
+                            value={formData.cpfCnpj}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/\D/g, '')
+                              if (value.length > 14) value = value.slice(0, 14)
+                              if (value.length > 11) {
+                                if (value.length > 12) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`
+                                else if (value.length > 8) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8)}`
+                                else if (value.length > 5) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
+                                else if (value.length > 2) value = `${value.slice(0, 2)}.${value.slice(2)}`
+                              } else if (value.length > 0) {
+                                if (value.length > 9) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`
+                                else if (value.length > 6) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`
+                                else if (value.length > 3) value = `${value.slice(0, 3)}.${value.slice(3)}`
+                              }
+                              setFormData({ ...formData, cpfCnpj: value })
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Telefone</label>
+                            <input
+                              type="text"
+                              value={formData.telefone}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '')
+                                if (value.length > 11) value = value.slice(0, 11)
+                                if (value.length > 0) {
+                                  if (value.length <= 2) value = `(${value}`
+                                  else if (value.length <= 7) value = `(${value.slice(0, 2)}) ${value.slice(2)}`
+                                  else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`
+                                }
+                                setFormData({ ...formData, telefone: value })
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                              placeholder="(11) 99999-9999"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Email</label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-300 mb-0.5">CPF/CNPJ</label>
+                          <input
+                            type="text"
+                            value={formData.cpfCnpj}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/\D/g, '')
+                              if (value.length > 14) value = value.slice(0, 14)
+                              if (value.length > 11) {
+                                if (value.length > 12) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`
+                                else if (value.length > 8) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8)}`
+                                else if (value.length > 5) value = `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5)}`
+                                else if (value.length > 2) value = `${value.slice(0, 2)}.${value.slice(2)}`
+                              } else if (value.length > 0) {
+                                if (value.length > 9) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`
+                                else if (value.length > 6) value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`
+                                else if (value.length > 3) value = `${value.slice(0, 3)}.${value.slice(3)}`
+                              }
+                              setFormData({ ...formData, cpfCnpj: value })
+                            }}
+                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Telefone</label>
+                            <input
+                              type="text"
+                              value={formData.telefone}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '')
+                                if (value.length > 11) value = value.slice(0, 11)
+                                if (value.length > 0) {
+                                  if (value.length <= 2) value = `(${value}`
+                                  else if (value.length <= 7) value = `(${value.slice(0, 2)}) ${value.slice(2)}`
+                                  else value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`
+                                }
+                                setFormData({ ...formData, telefone: value })
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                              placeholder="(11) 99999-9999"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Email</label>
+                            <input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-300 mb-0.5">Endereço</label>
+                          <input
+                            type="text"
+                            value={formData.endereco}
+                            onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">Cidade</label>
+                            <input
+                              type="text"
+                              value={formData.cidade}
+                              onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-300 mb-0.5">CEP</label>
+                            <input
+                              type="text"
+                              value={formData.cep}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '')
+                                if (value.length > 8) value = value.slice(0, 8)
+                                if (value.length > 5) value = `${value.slice(0, 5)}-${value.slice(5)}`
+                                setFormData({ ...formData, cep: value })
+                              }}
+                              className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                              placeholder="00000-000"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-300 mb-0.5">Observação</label>
+                          <textarea
+                            value={formData.observacao}
+                            onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
+                            className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 resize-none"
+                            rows={2}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="space-y-0.5">
+                    {[
+                      { key: 'vendas', label: 'Vendas' },
+                      { key: 'caixa', label: 'Caixa' },
+                      { key: 'produtos', label: 'Produtos' },
+                      { key: 'categorias', label: 'Categorias' },
+                      { key: 'relatorios', label: 'Relatórios' },
+                      { key: 'desconto', label: 'Desconto' },
+                      { key: 'cancelar_venda', label: 'Cancelar Venda' },
+                      { key: 'operacoes_caixa', label: 'Operações de Caixa' },
+                    ].map(({ key, label }) => (
+                      <div key={key} className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
+                        <label className="text-sm text-gray-300">{label}</label>
+                        <input
+                          type="checkbox"
+                          checked={formData.permissoes[key]}
+                          onChange={(e) => setFormData({ ...formData, permissoes: { ...formData.permissoes, [key]: e.target.checked } })}
+                          className="w-4 h-4 rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 px-3 py-2 border-t border-gray-700 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -582,13 +540,13 @@ export default function ClientesFuncionarios() {
                       codigo: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
                     })
                   }}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
                 >
                   Salvar
                 </button>
@@ -597,22 +555,28 @@ export default function ClientesFuncionarios() {
           </div>
         </div>
       )}
-      {/* Delete confirmation modal (custom, not browser confirm) */}
+      {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="glass rounded-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-white mb-2">Confirmar exclusão</h3>
-            <p className="text-gray-300 mb-4">Tem certeza que deseja excluir <strong className="text-white">{confirmDelete.nome}</strong>?</p>
-            <div className="flex justify-end gap-2">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm">
+            <div className="px-4 py-3 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">Confirmar exclusão</h3>
+            </div>
+            <div className="px-4 py-4">
+              <p className="text-sm text-gray-300">
+                Tem certeza que deseja excluir <strong className="text-white">{confirmDelete.nome}</strong>?
+              </p>
+            </div>
+            <div className="flex gap-2 px-4 py-3 border-t border-gray-700 justify-end">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg"
+                className="px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => confirmDeleteExecute(confirmDelete.id)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm transition-colors"
               >
                 Excluir
               </button>
