@@ -313,8 +313,10 @@ fun HomeScreen(
 
             // Logo - reduzir tamanho quando teclado aberto
             if (logoBitmap != null) {
-                val logoAltura = if (isKeyboardOpen.value) (logoConfig?.logoAltura ?: 347f) * 0.7f else (logoConfig?.logoAltura ?: 347f)
-                val logoLargura = if (isKeyboardOpen.value) (logoConfig?.logoLargura ?: 567f) * 0.7f else (logoConfig?.logoLargura ?: 567f)
+                val baseAltura = (logoConfig?.logoAltura ?: 347f).coerceAtLeast(347f)
+                val baseLargura = (logoConfig?.logoLargura ?: 567f).coerceAtLeast(567f)
+                val logoAltura = if (isKeyboardOpen.value) baseAltura * 0.7f else baseAltura
+                val logoLargura = if (isKeyboardOpen.value) baseLargura * 0.7f else baseLargura
                 Image(
                     painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
                     contentDescription = "Logo",
