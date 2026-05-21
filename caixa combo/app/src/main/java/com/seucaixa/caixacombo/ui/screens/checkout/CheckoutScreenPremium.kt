@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -39,7 +38,6 @@ import com.seucaixa.caixacombo.ui.components.ProdutoImagem
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
-import com.seucaixa.caixacombo.ui.viewmodel.ItemCarrinho
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
@@ -65,6 +63,9 @@ fun CheckoutScreenPremium(
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
 
     val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
+    val surfaceColor = Color(0xFF1A1A2E)
+    val cardColor = Color(0xFF16213E)
+    val goldColor = Color(0xFFFFD700)
 
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var empresaNome by remember { mutableStateOf("PREMIUM") }
@@ -115,6 +116,10 @@ fun CheckoutScreenPremium(
     var showCarrinhoDialog by remember { mutableStateOf(false) }
     var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
 
+    var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
+    var stonePaymentError by remember { mutableStateOf<String?>(null) }
+    val isStoneAvailable = remember { StoneDeeplinkService.isStoneInstalled(context) }
+
     var currentTime by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         while (true) {
@@ -122,10 +127,6 @@ fun CheckoutScreenPremium(
             delay(1000)
         }
     }
-
-    val displayMetrics = LocalContext.current.resources.displayMetrics
-    val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
-    val isSmallScreen = screenWidthDp < 600
 
     if (vendaFinalizada && ultimaVenda != null) {
         DialogVendaSucesso(
@@ -135,8 +136,54 @@ fun CheckoutScreenPremium(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
+    stonePaymentError?.let { error ->
+        AlertDialog(
+            onDismissRequest = { stonePaymentError = null },
+            title = { Text("Erro no Pagamento") },
+            text = { Text(error) },
+            confirmButton = { TextButton(onClick = { stonePaymentError = null }) { Text("OK") } }
+        )
+    }
+
+    fun processarPagamento(forma: FormaPagamento) {
+        showFormaPagamentoDialog = false
+        when (forma) {
+            FormaPagamento.DINHEIRO -> {
+                showValorDialog = true
+            }
+            FormaPagamento.PIX, FormaPagamento.CARTAO_CREDITO, FormaPagamento.CARTAO_DEBITO -> {
+                if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
+                    val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma) ?: return
+                    val centavos = (total * 100).toLong()
+                    onSendStonePayment?.invoke(centavos, transactionType, StoneDeeplinkService.InstallmentType.NONE, "") { result ->
+                        if (result != null && result.success) {
+                            stonePaymentResult = result
+                            val stoneAtk = result.authorizationCode.ifEmpty { null }
+                            viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)
+                        } else {
+                            val reason = result?.reason ?: ""
+                            val code = result?.code ?: 0
+                            stonePaymentError = when {
+                                code == 401 -> "Terminal não ativado na Stone"
+                                code == 1000 -> "App Stone não encontrado"
+                                reason.contains("NOT_FOUND") -> "App de pagamento não encontrado"
+                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
+                                else -> "Pagamento recusado no terminal (código: $code)"
+                            }
+                        }
+                    }
+                } else {
+                    viewModel.finalizarVenda(forma, 0.0, null, null)
+                }
+            }
+            else -> {
+                viewModel.finalizarVenda(forma, 0.0, null, null)
+            }
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        Box(modifier = Modifier.fillMaxWidth().background(surfaceColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     if (logoBitmap != null) {
@@ -157,7 +204,7 @@ fun CheckoutScreenPremium(
                 if (permProdutos) IconButton(onClick = onNavigateToProdutos, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Inventory, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
                 if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Print, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
                 IconButton(onClick = onNavigateToDashboard, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Dashboard, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
-                IconButton(onClick = onLogout, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Logout, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
+                IconButton(onClick = onLogout, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.ExitToApp, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
             }
         }
 
@@ -172,23 +219,22 @@ fun CheckoutScreenPremium(
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor)
             )
         } else {
-            IconButton(onClick = { showBusca = true }, modifier = Modifier.align(Alignment.CenterHorizontally).padding(4.dp)) {
-                Icon(Icons.Default.Search, null, tint = Color.Gray)
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
+                    item {
+                        FilterChip(selected = categoriaSelecionada == null, onClick = { viewModel.selecionarCategoria(null) },
+                            label = { Text("Todos", fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
+                    }
+                    items(categorias) { cat ->
+                        FilterChip(selected = categoriaSelecionada?.id == cat.id, onClick = { viewModel.selecionarCategoria(cat) },
+                            label = { Text(cat.nome, fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
+                    }
+                }
+                IconButton(onClick = { showBusca = true }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Search, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                }
             }
         }
-
-        LazyRow(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), contentPadding = PaddingValues(horizontal = 8.dp)) {
-            item {
-                FilterChip(selected = categoriaSelecionada == null, onClick = { viewModel.selecionarCategoria(null) },
-                    label = { Text("Todos", fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-            }
-            items(categorias) { cat ->
-                FilterChip(selected = categoriaSelecionada?.id == cat.id, onClick = { viewModel.selecionarCategoria(cat) },
-                    label = { Text(cat.nome, fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-            }
-        }
-
-
 
         LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -201,7 +247,7 @@ fun CheckoutScreenPremium(
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(8.dp)).background(primaryColor.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
                             ProdutoImagem(
                                 imagem = produto.imagem,
                                 contentDescription = produto.nome,
@@ -220,11 +266,10 @@ fun CheckoutScreenPremium(
 
         Box(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.Start) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text("TOTAL", fontSize = 9.sp, color = Color.Gray)
                     Text("R$ ${"%.2f".format(total)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 if (carrinho.isNotEmpty()) {
                     OutlinedButton(onClick = { showCarrinhoDialog = true },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
@@ -251,25 +296,71 @@ fun CheckoutScreenPremium(
     }
 
     if (showFormaPagamentoDialog) {
-        AlertDialog(onDismissRequest = { showFormaPagamentoDialog = false },
-            title = { Text("Pagamento", fontWeight = FontWeight.Bold) },
-            text = { Column {
-                Text("R$ ${"%.2f".format(total)}", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryColor, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
-                Button(onClick = { showFormaPagamentoDialog = false; showValorDialog = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Dinheiro", fontWeight = FontWeight.Bold) }
-                Button(onClick = { showFormaPagamentoDialog = false; viewModel.finalizarVenda(FormaPagamento.PIX, 0.0, null, null) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("PIX", fontWeight = FontWeight.Bold) }
-                Button(onClick = { showFormaPagamentoDialog = false; viewModel.finalizarVenda(FormaPagamento.CARTAO_CREDITO, 0.0, null, null) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Crédito", fontWeight = FontWeight.Bold) }
-                Button(onClick = { showFormaPagamentoDialog = false; viewModel.finalizarVenda(FormaPagamento.CARTAO_DEBITO, 0.0, null, null) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Débito", fontWeight = FontWeight.Bold) }
-            }},
-            confirmButton = {}, dismissButton = { TextButton(onClick = { showFormaPagamentoDialog = false }) { Text("Cancelar") } }
+        AlertDialog(
+            onDismissRequest = { showFormaPagamentoDialog = false },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = Color(0xFF0F0F23),
+            titleContentColor = Color.White,
+            textContentColor = Color.White,
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    Text("Pagamento", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("R$ ${"%.2f".format(total)}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = goldColor)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    PaymentOptionCard(
+                        icon = Icons.Default.Money,
+                        label = "Dinheiro",
+                        desc = "Receber em espécie",
+                        color = Color(0xFF4CAF50),
+                        onClick = { processarPagamento(FormaPagamento.DINHEIRO) }
+                    )
+                    PaymentOptionCard(
+                        icon = Icons.Default.QrCode,
+                        label = "PIX",
+                        desc = if (isStoneAvailable) "Pagamento via PIX Stone" else "Pagamento PIX",
+                        color = Color(0xFF0080FF),
+                        enabled = isStoneAvailable,
+                        onClick = { processarPagamento(FormaPagamento.PIX) }
+                    )
+                    PaymentOptionCard(
+                        icon = Icons.Default.CreditCard,
+                        label = "Cartão de Crédito",
+                        desc = if (isStoneAvailable) "Pagamento via Stone" else "Pagamento offline",
+                        color = Color(0xFF9C27B0),
+                        onClick = { processarPagamento(FormaPagamento.CARTAO_CREDITO) }
+                    )
+                    PaymentOptionCard(
+                        icon = Icons.Default.CreditScore,
+                        label = "Cartão de Débito",
+                        desc = if (isStoneAvailable) "Pagamento via Stone" else "Pagamento offline",
+                        color = Color(0xFFE91E63),
+                        onClick = { processarPagamento(FormaPagamento.CARTAO_DEBITO) }
+                    )
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showFormaPagamentoDialog = false }) {
+                    Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
+                }
+            }
         )
     }
 
     if (showCarrinhoDialog) {
         AlertDialog(
             onDismissRequest = { showCarrinhoDialog = false },
+            containerColor = Color(0xFF0F0F23),
+            shape = RoundedCornerShape(20.dp),
+            titleContentColor = Color.White,
+            textContentColor = Color.White,
             title = {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Carrinho (${carrinho.size})", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text("Carrinho (${carrinho.size})", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White, modifier = Modifier.weight(1f))
                     TextButton(onClick = { viewModel.limparCarrinho(); showCarrinhoDialog = false }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = Color.Red)
                         Spacer(Modifier.width(2.dp))
@@ -279,22 +370,28 @@ fun CheckoutScreenPremium(
             },
             text = {
                 if (carrinho.isEmpty()) {
-                    Text("Carrinho vazio", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text("Carrinho vazio", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Color.White.copy(alpha = 0.5f))
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                         items(carrinho) { item ->
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.produtoNome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 11.sp, color = Color.Gray)
+                                    Text(item.produtoNome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White)
+                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade - 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp)) }
-                                    Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center)
-                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) }
+                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade - 1) }, modifier = Modifier.size(28.dp)) {
+                                        Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                    }
+                                    Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center, color = Color.White)
+                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(28.dp)) {
+                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                    }
                                 }
-                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
-                                IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Red) }
+                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = goldColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
+                                IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(24.dp)) {
+                                    Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Red)
+                                }
                             }
                         }
                     }
@@ -302,7 +399,7 @@ fun CheckoutScreenPremium(
             },
             confirmButton = {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryColor)
+                    Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = goldColor)
                     Button(onClick = { showCarrinhoDialog = false; showFormaPagamentoDialog = true }) { Text("VENDER") }
                 }
             }
@@ -319,13 +416,52 @@ fun CheckoutScreenPremium(
                     leadingIcon = { Text("R$", fontWeight = FontWeight.Bold) },
                     singleLine = true, shape = RoundedCornerShape(12.dp)
                 )
+                if (valorRecebido.isNotBlank()) {
+                    val numVal = valorRecebido.toDoubleSafe()
+                    if (numVal >= total) {
+                        Text("Troco: R$ ${"%.2f".format(numVal - total)}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), modifier = Modifier.padding(top = 8.dp))
+                    } else if (numVal > 0) {
+                        Text("Faltam: R$ ${"%.2f".format(total - numVal)}", color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+                    }
+                }
             },
             confirmButton = { Button(onClick = {
                 val valor = valorRecebido.toDoubleSafe()
                 viewModel.finalizarVenda(FormaPagamento.DINHEIRO, valor, null, null)
                 showValorDialog = false; valorRecebido = ""
-            }) { Text("Confirmar") } },
+            }, enabled = valorRecebido.toDoubleSafe() >= total) { Text("Confirmar") } },
             dismissButton = { TextButton(onClick = { showValorDialog = false }) { Text("Cancelar") } }
         )
+    }
+}
+
+@Composable
+private fun PaymentOptionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    desc: String,
+    color: Color,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) color.copy(alpha = 0.15f) else Color(0xFF1A1A1A)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (enabled) Color.White else Color.White.copy(alpha = 0.3f))
+                Text(desc, fontSize = 11.sp, color = if (enabled) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.2f))
+            }
+            Icon(Icons.Default.ChevronRight, null, tint = if (enabled) color else Color.White.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
+        }
     }
 }
