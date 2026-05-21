@@ -3085,11 +3085,14 @@ io.on('connection', (socket) => {
       serialNumber: serialNumber || deviceId,
       lastLogin: existing?.lastLogin || existingDb?.lastLogin || null,
       lastLoginUser: existing?.lastLoginUser || existingDb?.lastLoginUser || null,
+      lastPoll: existing?.lastPoll || existingDb?.lastPoll || null,
       connectedAt: new Date(),
       status: deviceStatus,
       lockPassword: lockPassword,
-      usageTimeLimit: existing ? existing.usageTimeLimit : null,
-      usageStartTime: existing ? existing.usageStartTime : null,
+      lockReason: existing?.lockReason || existingDb?.lockReason || null,
+      lockedAt: existing?.lockedAt || existingDb?.lockedAt || null,
+      usageTimeLimit: existing?.usageTimeLimit ?? existingDb?.usageTimeLimit ?? null,
+      usageStartTime: existing?.usageStartTime ?? existingDb?.usageStartTime ?? null,
       empresaId: deviceEmpresaId
     });
 
@@ -3103,15 +3106,22 @@ io.on('connection', (socket) => {
         serialNumber: serialNumber || deviceId,
         status: deviceStatus,
         lockPassword: lockPassword,
-        empresaId: deviceEmpresaId
+        empresaId: deviceEmpresaId,
+        lastLogin: existing?.lastLogin || existingDb?.lastLogin || null,
+        lastLoginUser: existing?.lastLoginUser || existingDb?.lastLoginUser || null,
+        lastPoll: existing?.lastPoll || existingDb?.lastPoll || null
       });
       debouncedSaveData();
       console.log(`💾 Dispositivo ${deviceId} salvo no banco [${deviceStatus}]`);
     } else {
       // Atualizar dispositivo existente
-      db.dispositivos[deviceIndex].status = deviceStatus;
-      db.dispositivos[deviceIndex].lockPassword = lockPassword;
-      db.dispositivos[deviceIndex].connectedAt = new Date();
+      const existingDev = db.dispositivos[deviceIndex];
+      existingDev.status = deviceStatus;
+      existingDev.lockPassword = lockPassword;
+      existingDev.connectedAt = new Date();
+      existingDev.lastLogin = existing?.lastLogin || existingDb?.lastLogin || existingDev.lastLogin || null;
+      existingDev.lastLoginUser = existing?.lastLoginUser || existingDb?.lastLoginUser || existingDev.lastLoginUser || null;
+      existingDev.lastPoll = existing?.lastPoll || existingDb?.lastPoll || existingDev.lastPoll || null;
       debouncedSaveData();
     }
 
