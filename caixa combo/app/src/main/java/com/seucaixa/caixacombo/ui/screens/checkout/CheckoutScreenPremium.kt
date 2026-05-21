@@ -112,6 +112,7 @@ fun CheckoutScreenPremium(
     var valorRecebido by remember { mutableStateOf("") }
     var showBusca by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
+    var showCarrinhoDialog by remember { mutableStateOf(false) }
     var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
 
     var currentTime by remember { mutableStateOf("") }
@@ -187,37 +188,7 @@ fun CheckoutScreenPremium(
             }
         }
 
-        if (carrinho.isNotEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).padding(bottom = 2.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
-                Column(modifier = Modifier.heightIn(max = 160.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Carrinho (${carrinho.size})", fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { viewModel.limparCarrinho() }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
-                            Icon(Icons.Default.Delete, null, modifier = Modifier.size(14.dp), tint = Color.Red)
-                            Spacer(Modifier.width(2.dp))
-                            Text("Limpar", fontSize = 10.sp, color = Color.Red)
-                        }
-                    }
-                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        items(carrinho) { item ->
-                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.produtoNome, fontSize = 10.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 9.sp, color = Color.Gray)
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade - 1) }, modifier = Modifier.size(22.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(14.dp)) }
-                                    Text("%.0f".format(item.quantidade), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 16.dp), textAlign = TextAlign.Center)
-                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(22.dp)) { Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp)) }
-                                }
-                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(60.dp), textAlign = TextAlign.End)
-                                IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(20.dp)) { Icon(Icons.Default.Close, null, modifier = Modifier.size(12.dp), tint = Color.Red) }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+
 
         LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f).padding(horizontal = 6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -249,22 +220,19 @@ fun CheckoutScreenPremium(
 
         Box(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Carrinho", fontSize = 9.sp, color = Color.Gray)
-                    Text("${carrinho.size} itens", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-                Column(horizontalAlignment = Alignment.End) {
+                Column(horizontalAlignment = Alignment.Start) {
                     Text("TOTAL", fontSize = 9.sp, color = Color.Gray)
                     Text("R$ ${"%.2f".format(total)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                 }
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 if (carrinho.isNotEmpty()) {
-                    OutlinedButton(onClick = { viewModel.limparCarrinho() },
+                    OutlinedButton(onClick = { showCarrinhoDialog = true },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Icon(Icons.Default.Delete, null, modifier = Modifier.size(14.dp))
+                        Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Itens (${carrinho.size})", fontSize = 11.sp)
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                 }
@@ -293,6 +261,51 @@ fun CheckoutScreenPremium(
                 Button(onClick = { showFormaPagamentoDialog = false; viewModel.finalizarVenda(FormaPagamento.CARTAO_DEBITO, 0.0, null, null) }, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) { Text("Débito", fontWeight = FontWeight.Bold) }
             }},
             confirmButton = {}, dismissButton = { TextButton(onClick = { showFormaPagamentoDialog = false }) { Text("Cancelar") } }
+        )
+    }
+
+    if (showCarrinhoDialog) {
+        AlertDialog(
+            onDismissRequest = { showCarrinhoDialog = false },
+            title = {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Carrinho (${carrinho.size})", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { viewModel.limparCarrinho(); showCarrinhoDialog = false }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                        Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = Color.Red)
+                        Spacer(Modifier.width(2.dp))
+                        Text("Limpar", color = Color.Red, fontSize = 12.sp)
+                    }
+                }
+            },
+            text = {
+                if (carrinho.isEmpty()) {
+                    Text("Carrinho vazio", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(carrinho) { item ->
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.produtoNome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 11.sp, color = Color.Gray)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade - 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp)) }
+                                    Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center)
+                                    IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp)) }
+                                }
+                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
+                                IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Red) }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryColor)
+                    Button(onClick = { showCarrinhoDialog = false; showFormaPagamentoDialog = true }) { Text("VENDER") }
+                }
+            }
         )
     }
 
