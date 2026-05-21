@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,11 +40,14 @@ import com.seucaixa.caixacombo.data.model.estoqueFormatado
 import com.seucaixa.caixacombo.data.model.precoFormatado
 import com.seucaixa.caixacombo.ui.components.CustomKeyboard
 import com.seucaixa.caixacombo.ui.components.OutlinedTextFieldWithCustomKeyboard
+import com.seucaixa.caixacombo.ui.components.PdvCategoriaFilterRow
+import com.seucaixa.caixacombo.ui.components.PdvProdutoCard
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ItemCarrinho
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
+import android.content.Context
 import com.seucaixa.caixacombo.service.PollingService
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +74,8 @@ fun CheckoutScreenMobile(
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val printPrefs = remember { context.getSharedPreferences("config_impressao", Context.MODE_PRIVATE) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var formaPagamentoSelecionada by remember { mutableStateOf<FormaPagamento?>(null) }
@@ -77,13 +83,15 @@ fun CheckoutScreenMobile(
     var showPixDialog by remember { mutableStateOf(false) }
     var showCreditoDialog by remember { mutableStateOf(false) }
     var showDebitoDialog by remember { mutableStateOf(false) }
-    var valorRecebido by remember { mutableStateOf("") }
+    var receivedValue by remember { mutableStateOf("") }
 
     // Diálogo de sucesso com botões de impressão
     if (vendaFinalizada && ultimaVenda != null) {
-        DialogVendaSucessoMobile(
+        DialogVendaSucesso(
             venda = ultimaVenda!!,
-            onDismiss = { viewModel.resetVendaFinalizada() }
+            onDismiss = { viewModel.resetVendaFinalizada() },
+            imprimirTotal = printPrefs.getBoolean("imprimir_total", true),
+            imprimirFichas = printPrefs.getBoolean("imprimir_fichas", true)
         )
     }
     
@@ -204,33 +212,14 @@ fun CheckoutScreenMobile(
 
             // Categorias - chips horizontais
             if (categorias.isNotEmpty()) {
-                LazyRow(
+                PdvCategoriaFilterRow(
+                    categorias = categorias,
+                    categoriaSelecionada = categoriaSelecionada,
+                    onCategoriaClick = { viewModel.selecionarCategoria(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    item {
-                        FilterChip(
-                            selected = categoriaSelecionada == null,
-                            onClick = { viewModel.selecionarCategoria(null) },
-                            label = { Text("Todos", fontSize = 12.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                selectedLabelColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
-                    items(categorias) { cat ->
-                        FilterChip(
-                            selected = categoriaSelecionada?.id == cat.id,
-                            onClick = { viewModel.selecionarCategoria(if (categoriaSelecionada?.id == cat.id) null else cat) },
-                            label = { Text(cat.nome, fontSize = 12.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                selectedLabelColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
-                }
+                    selectedContainerAlpha = 0.2f,
+                    toggleOnReClick = true
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -242,13 +231,16 @@ fun CheckoutScreenMobile(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(produtos, key = { it.id }) { produto ->
-                    ProdutoItemMobile(
+                    PdvProdutoCard(
                         produto = produto,
                         vendidos = vendidosPorProduto[produto.id] ?: 0,
-                        onClick = { 
-                            viewModel.adicionarAoCarrinho(produto)
-                            // Carrinho só abre quando clicar no botão do carrinho
-                        }
+                        primaryColor = MaterialTheme.colorScheme.primary,
+                        onCardClick = { viewModel.adicionarAoCarrinho(produto) },
+                        imageHeight = 64.dp,
+                        nameFontSize = 12.sp,
+                        priceFontSize = 14.sp,
+                        cardElevation = 0.dp,
+                        cardColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
@@ -307,19 +299,19 @@ fun CheckoutScreenMobile(
         ValorPagamentoDialogMobile(
             total = total,
             formaPagamento = formaPagamentoSelecionada!!,
-            valorRecebido = valorRecebido,
-            onValorRecebidoChange = { valorRecebido = it },
+            receivedValue = receivedValue,
+            onValorRecebidoChange = { receivedValue = it },
             onConfirmar = {
-                val recebido = valorRecebido.toDoubleSafe(total)
+                val recebido = receivedValue.toDoubleSafe(total)
                 if (viewModel.finalizarVenda(formaPagamentoSelecionada!!, recebido)) {
                     showValorDialog = false
-                    valorRecebido = ""
+                    receivedValue = ""
                     formaPagamentoSelecionada = null
                 }
             },
             onCancelar = {
                 showValorDialog = false
-                valorRecebido = ""
+                receivedValue = ""
                 formaPagamentoSelecionada = null
             }
         )
@@ -425,7 +417,7 @@ fun CheckoutScreenMobile(
                                 showPixDialog = false
                                 val recebido = total
                                 if (viewModel.finalizarVenda(FormaPagamento.PIX, recebido)) {
-                                    valorRecebido = ""
+                                    receivedValue = ""
                                     formaPagamentoSelecionada = null
                                 }
                             },
@@ -495,7 +487,7 @@ fun CheckoutScreenMobile(
                                 showCreditoDialog = false
                                 val recebido = total
                                 if (viewModel.finalizarVenda(FormaPagamento.CARTAO_CREDITO, recebido)) {
-                                    valorRecebido = ""
+                                    receivedValue = ""
                                     formaPagamentoSelecionada = null
                                 }
                             },
@@ -565,7 +557,7 @@ fun CheckoutScreenMobile(
                                 showDebitoDialog = false
                                 val recebido = total
                                 if (viewModel.finalizarVenda(FormaPagamento.CARTAO_DEBITO, recebido)) {
-                                    valorRecebido = ""
+                                    receivedValue = ""
                                     formaPagamentoSelecionada = null
                                 }
                             },
@@ -575,86 +567,6 @@ fun CheckoutScreenMobile(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ProdutoItemMobile(
-    produto: Produto,
-    vendidos: Int = 0,
-    onClick: () -> Unit
-) {
-    val semEstoque = produto.estoque <= 0
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { if (!semEstoque) onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (semEstoque) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Imagem do produto
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center
-            ) {
-                com.seucaixa.caixacombo.ui.components.ProdutoImagem(
-                    imagem = produto.imagem,
-                    contentDescription = produto.nome,
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    serverUrl = PollingService.getServerUrl()
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Nome
-            Text(
-                produto.nome,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (semEstoque) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Preço
-            Text(
-                produto.precoFormatado(),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (semEstoque) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary
-            )
-
-            // Estoque
-            if (semEstoque) {
-                Text(
-                    "ESGOTADO",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
-                )
-            } else if (produto.estoque <= 5) {
-                Text(
-                    "Estq: ${produto.estoque.toInt()}",
-                    fontSize = 9.sp,
-                    color = Color(0xFFFF9800)
-                )
             }
         }
     }
@@ -853,158 +765,3 @@ fun CarrinhoItemMobile(
     }
 }
 
-@Composable
-fun DialogVendaSucessoMobile(
-    venda: com.seucaixa.caixacombo.data.model.Venda,
-    onDismiss: () -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val printService = remember { com.seucaixa.caixacombo.service.SunmiPrintService(context) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    var isPrinting by remember { mutableStateOf(false) }
-    
-    // Ler configurações de impressão
-    val sharedPreferences = remember { context.getSharedPreferences("config_impressao", android.content.Context.MODE_PRIVATE) }
-    val imprimirTotal = remember { sharedPreferences.getBoolean("imprimir_total", true) }
-    val imprimirFichas = remember { sharedPreferences.getBoolean("imprimir_fichas", true) }
-
-    // Mostrar erro se houver
-    errorMessage?.let { error ->
-        AlertDialog(
-            onDismissRequest = { errorMessage = null },
-            title = { Text("Erro de Impressão") },
-            text = { Text(error) },
-            confirmButton = {
-                TextButton(onClick = { errorMessage = null }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    AlertDialog(
-        onDismissRequest = { if (!isPrinting) onDismiss() },
-        title = {
-            Text(
-                "✅ Venda Finalizada!",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Info da venda
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Total: R$ %.2f".format(venda.total),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            "Forma: ${venda.formaPagamento.name.replace("_", " ")}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "Nº ${venda.numero}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Botões de impressão (condicionais)
-                if (imprimirTotal || imprimirFichas) {
-                    Text(
-                        "Opções de Impressão:",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                // Imprimir Total (se habilitado)
-                if (imprimirTotal) {
-                    Button(
-                        onClick = {
-                            try {
-                                isPrinting = true
-                                printService.imprimirVenda(venda)
-                                onDismiss()
-                            } catch (e: Exception) {
-                                android.util.Log.e("DialogVendaSucesso", "Erro ao imprimir: ${e.message}", e)
-                                errorMessage = "Erro ao imprimir: ${e.message}"
-                                isPrinting = false
-                            }
-                        },
-                        enabled = !isPrinting,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Print, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Imprimir Total")
-                    }
-                }
-
-                // Imprimir Fichas Separadas (se habilitado)
-                if (imprimirFichas) {
-                    OutlinedButton(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                isPrinting = true
-                                var totalFichas = 0
-                                venda.itens.forEach { item ->
-                                    // Imprimir uma ficha por unidade
-                                    repeat(item.quantidade.toInt()) { index ->
-                                        printService.imprimirFichaProducao(
-                                            item = item,
-                                            numeroVenda = venda.numero,
-                                            dataHora = venda.dataHora,
-                                            formaPagamento = venda.formaPagamento.name.replace("_", " "),
-                                            quantidadeUnidade = 1
-                                        )
-                                        totalFichas++
-                                        // Delay entre impressões para garantir que saiam separadas
-                                        kotlinx.coroutines.delay(800)
-                                    }
-                                }
-                                android.util.Log.d("DialogVendaSucesso", "Total de fichas impressas: $totalFichas")
-                                onDismiss()
-                            } catch (e: Exception) {
-                                android.util.Log.e("DialogVendaSucesso", "Erro ao imprimir fichas: ${e.message}", e)
-                                errorMessage = "Erro ao imprimir fichas: ${e.message}"
-                                isPrinting = false
-                            }
-                        }
-                    },
-                    enabled = !isPrinting,
-                    modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ContentCopy, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        val totalUnidades = venda.itens.sumOf { it.quantidade.toInt() }
-                        Text("Imprimir Fichas ($totalUnidades unidades)")
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("OK")
-            }
-        }
-    )
-}

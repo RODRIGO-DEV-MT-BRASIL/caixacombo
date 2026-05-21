@@ -34,6 +34,8 @@ import com.seucaixa.caixacombo.data.model.*
 import com.seucaixa.caixacombo.data.database.AppDatabase
 import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
+import com.seucaixa.caixacombo.ui.components.PdvCategoriaFilterRow
+import com.seucaixa.caixacombo.ui.components.PdvProdutoCard
 import com.seucaixa.caixacombo.ui.components.ProdutoImagem
 import com.seucaixa.caixacombo.ui.components.toDoubleSafe
 import com.seucaixa.caixacombo.ui.theme.DeviceType
@@ -109,8 +111,8 @@ fun CheckoutScreenPremium(
 
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var showValorDialog by remember { mutableStateOf(false) }
-    var valorRecebido by remember { mutableStateOf("") }
-    var showBusca by remember { mutableStateOf(false) }
+    var receivedValue by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
     var showCarrinhoDialog by remember { mutableStateOf(false) }
     var showPrintConfigDialog by remember { mutableStateOf(false) }
@@ -170,13 +172,10 @@ fun CheckoutScreenPremium(
                         } else {
                             val reason = result?.reason ?: ""
                             val code = result?.code ?: 0
-                            stonePaymentError = when {
-                                code == 401 -> "Terminal não ativado na Stone"
-                                code == 1000 -> "App Stone não encontrado"
-                                result == null -> "Pagamento cancelado ou não concluído"
-                                reason.contains("NOT_FOUND") -> "App de pagamento não encontrado"
-                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
-                                else -> "Pagamento recusado no terminal (código: $code)"
+                            stonePaymentError = if (result == null) {
+                                "Pagamento cancelado ou não concluído"
+                            } else {
+                                StoneDeeplinkService.getErrorMessage(code, reason)
                             }
                         }
                     }
@@ -216,29 +215,27 @@ fun CheckoutScreenPremium(
             }
         }
 
-        if (showBusca) {
+        if (showSearch) {
             OutlinedTextField(value = searchText, onValueChange = { searchText = it; viewModel.buscarProdutos(it) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                 placeholder = { Text("Buscar produto...") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
-                trailingIcon = { IconButton(onClick = { showBusca = false; searchText = ""; viewModel.buscarProdutos("") }) { Icon(Icons.Default.Close, null) } },
+                trailingIcon = { IconButton(onClick = { showSearch = false; searchText = ""; viewModel.buscarProdutos("") }) { Icon(Icons.Default.Close, null) } },
                 singleLine = true,
                 shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor)
             )
         } else {
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                    item {
-                        FilterChip(selected = categoriaSelecionada == null, onClick = { viewModel.selecionarCategoria(null) },
-                            label = { Text("Todos", fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-                    }
-                    items(categorias) { cat ->
-                        FilterChip(selected = categoriaSelecionada?.id == cat.id, onClick = { viewModel.selecionarCategoria(cat) },
-                            label = { Text(cat.nome, fontSize = 11.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
-                    }
-                }
-                IconButton(onClick = { showBusca = true }, modifier = Modifier.size(32.dp)) {
+                PdvCategoriaFilterRow(
+                    categorias = categorias,
+                    categoriaSelecionada = categoriaSelecionada,
+                    onCategoriaClick = { viewModel.selecionarCategoria(it) },
+                    modifier = Modifier.weight(1f),
+                    fontSize = 11.sp,
+                    selectedColor = primaryColor
+                )
+                IconButton(onClick = { showSearch = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Search, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
                 }
             }
@@ -251,33 +248,20 @@ fun CheckoutScreenPremium(
                 else produtos
             items(filtered.take(60)) { produto ->
                 val vendidos = vendidosPorProduto[produto.id] ?: 0
-                Card(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { viewModel.adicionarAoCarrinho(produto) },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(modifier = Modifier.fillMaxWidth().height(60.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), contentAlignment = Alignment.Center) {
-                            ProdutoImagem(
-                                imagem = produto.imagem,
-                                contentDescription = produto.nome,
-                                modifier = Modifier.fillMaxSize().padding(4.dp),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                                serverUrl = PollingService.getServerUrl()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(produto.nome, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                        if (produto.descricao != null && produto.descricao!!.isNotBlank()) {
-                            Text(produto.descricao!!, fontSize = 11.sp, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                        }
-                        Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = primaryColor)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 11.sp, color = Color.Gray)
-                            Text(" | ", fontSize = 11.sp, color = Color.Gray.copy(alpha = 0.3f))
-                            Text("Ven:$vendidos", fontSize = 11.sp, color = Color.Gray)
-                        }
-                    }
-                }
+                PdvProdutoCard(
+                    produto = produto,
+                    vendidos = vendidos,
+                    primaryColor = primaryColor,
+                    onCardClick = { viewModel.adicionarAoCarrinho(produto) },
+                    imageHeight = 60.dp,
+                    nameFontSize = 14.sp,
+                    priceFontSize = 16.sp,
+                    showVendidos = true,
+                    showDescricao = true,
+                    cardElevation = 4.dp,
+                    cardColor = Color.White,
+                    semEstoqueClickable = true
+                )
             }
         }
 
@@ -453,14 +437,14 @@ fun CheckoutScreenPremium(
             title = { Text("Valor Recebido", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    OutlinedTextField(value = valorRecebido, onValueChange = { valorRecebido = it.filter { c -> c.isDigit() || c == '.' } },
+                    OutlinedTextField(value = receivedValue, onValueChange = { receivedValue = it.filter { c -> c.isDigit() || c == '.' } },
                         modifier = Modifier.fillMaxWidth(), label = { Text("Valor") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         leadingIcon = { Text("R$", fontWeight = FontWeight.Bold) },
                         singleLine = true, shape = RoundedCornerShape(12.dp)
                     )
-                    if (valorRecebido.isNotBlank()) {
-                        val numVal = valorRecebido.toDoubleSafe()
+                    if (receivedValue.isNotBlank()) {
+                        val numVal = receivedValue.toDoubleSafe()
                         if (numVal >= total) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text("Troco: R$ ${"%.2f".format(numVal - total)}", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
@@ -472,10 +456,10 @@ fun CheckoutScreenPremium(
                 }
             },
             confirmButton = { Button(onClick = {
-                val valor = valorRecebido.toDoubleSafe()
+                val valor = receivedValue.toDoubleSafe()
                 viewModel.finalizarVenda(FormaPagamento.DINHEIRO, valor, null, null)
-                showValorDialog = false; valorRecebido = ""
-            }, enabled = valorRecebido.toDoubleSafe() >= total) { Text("Confirmar") } },
+                showValorDialog = false; receivedValue = ""
+            }, enabled = receivedValue.toDoubleSafe() >= total) { Text("Confirmar") } },
             dismissButton = { TextButton(onClick = { showValorDialog = false }) { Text("Cancelar") } }
         )
     }
