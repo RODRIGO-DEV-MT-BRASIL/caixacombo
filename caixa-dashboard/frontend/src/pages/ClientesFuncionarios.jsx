@@ -22,8 +22,11 @@ export default function ClientesFuncionarios() {
       const res = await fetch('/api/clientes', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      const data = await res.json()
-      setClientes(data.data || data)
+      if (res.ok) {
+        const data = await res.json()
+        const list = Array.isArray(data) ? data : data.data || []
+        setClientes(list)
+      }
     } catch (error) {
       console.error('Erro ao buscar clientes:', error)
     }
@@ -34,8 +37,10 @@ export default function ClientesFuncionarios() {
       const res = await fetch('/api/funcionarios', {
         headers: { Authorization: `Bearer ${token}` }
       })
-      const data = await res.json()
-      setFuncionarios(data)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) setFuncionarios(data)
+      }
     } catch (error) {
       console.error('Erro ao buscar funcionários:', error)
     }
