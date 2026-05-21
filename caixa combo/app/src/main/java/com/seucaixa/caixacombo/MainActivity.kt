@@ -1175,26 +1175,17 @@ class MainActivity : ComponentActivity() {
     private fun hideLockScreen() {
         android.util.Log.d("MainActivity", "Dispositivo desbloqueado")
         
-        // Remover estado de bloqueio persistente
         lockPrefs.edit()
             .putBoolean("is_locked", false)
             .remove("lock_reason")
             .apply()
         
-        // Notificar servidor que o dispositivo foi desbloqueado
         PollingService.sendUnlockConfirmed()
         
         lockDialog?.dismiss()
         lockDialog = null
         
-        // Finalizar LockActivity se estiver visível
         LockActivity.finishInstance()
-        
-        // Reiniciar MainActivity para voltar à tela correta (login se não logado, checkout se logado)
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        startActivity(intent)
     }
     
     /**
