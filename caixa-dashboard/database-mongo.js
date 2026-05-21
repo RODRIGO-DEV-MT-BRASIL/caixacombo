@@ -127,7 +127,12 @@ const FuncionarioSchema = new mongoose.Schema({
   id: { type: Number, required: true },
   nome: { type: String, required: true },
   codigo: { type: String, required: true },
-  cargo: { type: String, default: 'caixa', enum: ['admin', 'gerente', 'caixa'] },
+  email: { type: String, default: '' },
+  password: { type: String, default: null },
+  pin: { type: String, default: null },
+  cpfCnpj: { type: String, default: '' },
+  telefone: { type: String, default: '' },
+  cargo: { type: String, default: 'caixa', enum: ['admin', 'gerente', 'supervisor', 'caixa'] },
   permissoes: {
     vendas: { type: Boolean, default: true },
     caixa: { type: Boolean, default: true },

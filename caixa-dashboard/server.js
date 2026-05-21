@@ -66,10 +66,13 @@ let saveDataTimer = null;
 const SAVEDATA_DEBOUNCE_MS = 2000; // 2 segundos
 function debouncedSaveData() {
   if (saveDataTimer) clearTimeout(saveDataTimer);
-  saveDataTimer = setTimeout(async () => {
-    await saveData();
-    saveDataTimer = null;
-  }, SAVEDATA_DEBOUNCE_MS);
+  return new Promise(resolve => {
+    saveDataTimer = setTimeout(async () => {
+      await saveData();
+      saveDataTimer = null;
+      resolve();
+    }, SAVEDATA_DEBOUNCE_MS);
+  });
 }
 
 // Seed do admin será feito após connectMongo() para verificar dados do MongoDB primeiro
