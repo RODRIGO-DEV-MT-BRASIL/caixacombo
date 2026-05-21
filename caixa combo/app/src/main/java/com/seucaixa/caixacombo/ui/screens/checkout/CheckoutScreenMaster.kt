@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -73,6 +74,12 @@ fun CheckoutScreenMaster(
         } catch (e: Exception) { android.util.Log.e("CheckoutMaster", "Erro ao carregar usuário", e) }
     }
 
+    val isAdmin = usuarioLogado?.cargo == CargoUsuario.ADMIN
+    val permCaixa = isAdmin || usuarioLogado?.permCaixa == true
+    val permVendas = isAdmin || usuarioLogado?.permVendas == true
+    val permProdutos = isAdmin || usuarioLogado?.permProdutos == true
+    val permConfig = isAdmin || usuarioLogado?.permConfiguracoes == true
+
     val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
     val backgroundColor by remember { mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFF5F5F5.toInt()))) }
 
@@ -81,8 +88,10 @@ fun CheckoutScreenMaster(
     val total by viewModel.total.collectAsState()
     val busca by viewModel.busca.collectAsState()
     val categorias by viewModel.categorias.collectAsState()
+    val categoriaSelecionada by viewModel.categoriaSelecionada.collectAsState()
     val vendaFinalizada by viewModel.vendaFinalizada.collectAsState()
     val ultimaVenda by viewModel.ultimaVenda.collectAsState()
+    val vendidosPorProduto by viewModel.vendidosPorProduto.collectAsState()
 
     var showFormaPagamentoDialog by remember { mutableStateOf(false) }
     var showValorDialog by remember { mutableStateOf(false) }
@@ -90,6 +99,10 @@ fun CheckoutScreenMaster(
     var showBuscaDialog by remember { mutableStateOf(false) }
     var buscaText by remember { mutableStateOf("") }
     var clienteSelecionado by remember { mutableStateOf<Cliente?>(null) }
+
+    var stonePaymentError by remember { mutableStateOf<String?>(null) }
+    var paymentProcessed by remember { mutableStateOf(false) }
+    val isStoneAvailable = remember { StoneDeeplinkService.isStoneInstalled(context) }
 
     var currentTime by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
@@ -101,6 +114,57 @@ fun CheckoutScreenMaster(
 
     if (vendaFinalizada && ultimaVenda != null) {
         DialogVendaSucesso(venda = ultimaVenda!!, onDismiss = { viewModel.resetVendaFinalizada() }, nomeCliente = null)
+    }
+
+    stonePaymentError?.let { error ->
+        AlertDialog(
+            onDismissRequest = { stonePaymentError = null },
+            title = { Text("Erro no Pagamento") },
+            text = { Text(error) },
+            confirmButton = { TextButton(onClick = { stonePaymentError = null }) { Text("OK") } }
+        )
+    }
+
+    fun processarPagamento(forma: FormaPagamento) {
+        showFormaPagamentoDialog = false
+        stonePaymentError = null
+        paymentProcessed = false
+        when (forma) {
+            FormaPagamento.DINHEIRO -> {
+                showValorDialog = true
+            }
+            FormaPagamento.PIX, FormaPagamento.CARTAO_CREDITO, FormaPagamento.CARTAO_DEBITO -> {
+                if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
+                    val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma) ?: return
+                    val centavos = (total * 100).toLong()
+                    onSendStonePayment?.invoke(centavos, transactionType, StoneDeeplinkService.InstallmentType.NONE, "") { result ->
+                        if (paymentProcessed) return@invoke
+                        if (result != null && result.success) {
+                            paymentProcessed = true
+                            stonePaymentError = null
+                            val stoneAtk = result.authorizationCode.ifEmpty { null }
+                            viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)
+                        } else {
+                            val reason = result?.reason ?: ""
+                            val code = result?.code ?: 0
+                            stonePaymentError = when {
+                                code == 401 -> "Terminal não ativado na Stone"
+                                code == 1000 -> "App Stone não encontrado"
+                                result == null -> "Pagamento cancelado ou não concluído"
+                                reason.contains("NOT_FOUND") -> "App de pagamento não encontrado"
+                                reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
+                                else -> "Pagamento recusado no terminal (código: $code)"
+                            }
+                        }
+                    }
+                } else {
+                    viewModel.finalizarVenda(forma, 0.0, null, null)
+                }
+            }
+            else -> {
+                viewModel.finalizarVenda(forma, 0.0, null, null)
+            }
+        }
     }
 
     if (showBuscaDialog) {
@@ -144,8 +208,11 @@ fun CheckoutScreenMaster(
         }, navigationIcon = { IconButton(onClick = onNavigateToHome) { Icon(Icons.Default.Home, null) } },
             actions = {
                 IconButton(onClick = { showBuscaDialog = true }) { Icon(Icons.Default.Search, null) }
+                if (permVendas) IconButton(onClick = onNavigateToVendas) { Icon(Icons.Default.Receipt, null) }
+                if (permProdutos) IconButton(onClick = onNavigateToProdutos) { Icon(Icons.Default.Inventory, null) }
+                if (permCaixa) IconButton(onClick = onNavigateToCaixa) { Icon(Icons.Default.AccountBalance, null) }
+                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao) { Icon(Icons.Default.Print, null) }
                 IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, null) }
-                IconButton(onClick = onNavigateToCaixa) { Icon(Icons.Default.AccountBalance, null) }
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = primaryColor, titleContentColor = Color.White, actionIconContentColor = Color.White, navigationIconContentColor = Color.White)
         )
 
@@ -170,14 +237,26 @@ fun CheckoutScreenMaster(
             }
 
             Column(modifier = Modifier.weight(0.45f).fillMaxHeight().background(Color(0xFFE8E8E8)).padding(6.dp)) {
-                Text("Produtos", fontWeight = FontWeight.Bold, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp))
+                if (categorias.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+                        item {
+                            FilterChip(selected = categoriaSelecionada == null, onClick = { viewModel.selecionarCategoria(null) },
+                                label = { Text("Todos", fontSize = 10.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
+                        }
+                        items(categorias) { cat ->
+                            FilterChip(selected = categoriaSelecionada?.id == cat.id, onClick = { viewModel.selecionarCategoria(cat) },
+                                label = { Text(cat.nome, fontSize = 10.sp) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = primaryColor))
+                        }
+                    }
+                }
+                val filtered = if (categoriaSelecionada != null) produtos.filter { it.categoriaId == categoriaSelecionada!!.id } else produtos
                 LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(produtos.take(30)) { produto ->
+                    items(filtered.take(30)) { produto ->
                         Box(modifier = Modifier.aspectRatio(1f).clip(RoundedCornerShape(6.dp)).background(Color.White).clickable { viewModel.adicionarAoCarrinho(produto) }.padding(4.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(produto.nome, fontSize = 8.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                                Text(produto.nome, fontSize = 9.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                             }
                         }
                     }
@@ -189,15 +268,13 @@ fun CheckoutScreenMaster(
 
     if (showFormaPagamentoDialog) {
         FormaPagamentoDialogMaster(total = total, onDismiss = { showFormaPagamentoDialog = false }, onSelect = { forma ->
-            showFormaPagamentoDialog = false
-            if (forma == FormaPagamento.DINHEIRO) { showValorDialog = true } else { viewModel.finalizarVenda(forma, 0.0, null, null) }
+            processarPagamento(forma)
         }, primaryColor = primaryColor)
     }
 
     if (showValorDialog) {
         ValorDialogoMaster(total = total, onDismiss = { showValorDialog = false }, onConfirm = { valor ->
             val numVal = valor.toDoubleSafe()
-            val troco = if (numVal >= total) numVal - total else null
             viewModel.finalizarVenda(FormaPagamento.DINHEIRO, numVal, null, null)
             showValorDialog = false
         })
