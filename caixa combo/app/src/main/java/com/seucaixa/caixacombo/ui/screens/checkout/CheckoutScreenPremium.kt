@@ -63,9 +63,7 @@ fun CheckoutScreenPremium(
     val sharedPreferences = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
 
     val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
-    val surfaceColor = Color(0xFF1A1A2E)
-    val cardColor = Color(0xFF16213E)
-    val goldColor = Color(0xFFFFD700)
+    val backgroundColor by remember { mutableStateOf(Color(sharedPreferences.getInt("background_color", 0xFFF5F5F5.toInt()))) }
 
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var empresaNome by remember { mutableStateOf("PREMIUM") }
@@ -118,6 +116,7 @@ fun CheckoutScreenPremium(
 
     var stonePaymentResult by remember { mutableStateOf<StoneDeeplinkService.PaymentResult?>(null) }
     var stonePaymentError by remember { mutableStateOf<String?>(null) }
+    var paymentProcessed by remember { mutableStateOf(false) }
     val isStoneAvailable = remember { StoneDeeplinkService.isStoneInstalled(context) }
 
     var currentTime by remember { mutableStateOf("") }
@@ -147,6 +146,8 @@ fun CheckoutScreenPremium(
 
     fun processarPagamento(forma: FormaPagamento) {
         showFormaPagamentoDialog = false
+        stonePaymentError = null
+        paymentProcessed = false
         when (forma) {
             FormaPagamento.DINHEIRO -> {
                 showValorDialog = true
@@ -155,8 +156,11 @@ fun CheckoutScreenPremium(
                 if (isStoneAvailable && onSendStonePayment != null && StoneDeeplinkService.shouldUseStone(forma)) {
                     val transactionType = StoneDeeplinkService.mapFormaPagamentoToStone(forma) ?: return
                     val centavos = (total * 100).toLong()
+                    stonePaymentResult = null
                     onSendStonePayment?.invoke(centavos, transactionType, StoneDeeplinkService.InstallmentType.NONE, "") { result ->
+                        if (paymentProcessed) return@invoke
                         if (result != null && result.success) {
+                            paymentProcessed = true
                             stonePaymentResult = result
                             val stoneAtk = result.authorizationCode.ifEmpty { null }
                             viewModel.finalizarVenda(forma, total, clienteSelecionado?.id, stoneAtk)
@@ -166,6 +170,7 @@ fun CheckoutScreenPremium(
                             stonePaymentError = when {
                                 code == 401 -> "Terminal não ativado na Stone"
                                 code == 1000 -> "App Stone não encontrado"
+                                result == null -> "Pagamento cancelado ou não concluído"
                                 reason.contains("NOT_FOUND") -> "App de pagamento não encontrado"
                                 reason.isNotBlank() -> "Pagamento recusado: $reason (código: $code)"
                                 else -> "Pagamento recusado no terminal (código: $code)"
@@ -183,7 +188,7 @@ fun CheckoutScreenPremium(
     }
 
     Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        Box(modifier = Modifier.fillMaxWidth().background(surfaceColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     if (logoBitmap != null) {
@@ -299,14 +304,12 @@ fun CheckoutScreenPremium(
         AlertDialog(
             onDismissRequest = { showFormaPagamentoDialog = false },
             shape = RoundedCornerShape(20.dp),
-            containerColor = Color(0xFF0F0F23),
-            titleContentColor = Color.White,
-            textContentColor = Color.White,
+            containerColor = backgroundColor,
             title = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("Pagamento", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White)
+                    Text("Pagamento", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("R$ ${"%.2f".format(total)}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = goldColor)
+                    Text("R$ ${"%.2f".format(total)}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = primaryColor)
                 }
             },
             text = {
@@ -345,7 +348,7 @@ fun CheckoutScreenPremium(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showFormaPagamentoDialog = false }) {
-                    Text("Cancelar", color = Color.White.copy(alpha = 0.7f))
+                    Text("Cancelar")
                 }
             }
         )
@@ -354,13 +357,11 @@ fun CheckoutScreenPremium(
     if (showCarrinhoDialog) {
         AlertDialog(
             onDismissRequest = { showCarrinhoDialog = false },
-            containerColor = Color(0xFF0F0F23),
+            containerColor = backgroundColor,
             shape = RoundedCornerShape(20.dp),
-            titleContentColor = Color.White,
-            textContentColor = Color.White,
             title = {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Carrinho (${carrinho.size})", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White, modifier = Modifier.weight(1f))
+                    Text("Carrinho (${carrinho.size})", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
                     TextButton(onClick = { viewModel.limparCarrinho(); showCarrinhoDialog = false }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp), tint = Color.Red)
                         Spacer(Modifier.width(2.dp))
@@ -370,25 +371,25 @@ fun CheckoutScreenPremium(
             },
             text = {
                 if (carrinho.isEmpty()) {
-                    Text("Carrinho vazio", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Color.White.copy(alpha = 0.5f))
+                    Text("Carrinho vazio", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), color = Color.Gray)
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                         items(carrinho) { item ->
                             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(item.produtoNome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White)
-                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f))
+                                    Text(item.produtoNome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("R$ ${"%.2f".format(item.precoUnitario)}", fontSize = 11.sp, color = Color.Gray)
                                 }
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade - 1) }, modifier = Modifier.size(28.dp)) {
-                                        Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                        Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp))
                                     }
-                                    Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center, color = Color.White)
+                                    Text("%.0f".format(item.quantidade), fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.widthIn(min = 20.dp), textAlign = TextAlign.Center)
                                     IconButton(onClick = { viewModel.atualizarQuantidade(item.produtoId, item.quantidade + 1) }, modifier = Modifier.size(28.dp)) {
-                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                                     }
                                 }
-                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = goldColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
+                                Text("R$ ${"%.2f".format(item.total)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = primaryColor, modifier = Modifier.width(70.dp), textAlign = TextAlign.End)
                                 IconButton(onClick = { viewModel.removerDoCarrinho(item.produtoId) }, modifier = Modifier.size(24.dp)) {
                                     Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Red)
                                 }
@@ -399,7 +400,7 @@ fun CheckoutScreenPremium(
             },
             confirmButton = {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = goldColor)
+                    Text("Total: R$ ${"%.2f".format(total)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryColor)
                     Button(onClick = { showCarrinhoDialog = false; showFormaPagamentoDialog = true }) { Text("VENDER") }
                 }
             }
@@ -448,20 +449,20 @@ private fun PaymentOptionCard(
         modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (enabled) color.copy(alpha = 0.15f) else Color(0xFF1A1A1A)
+            containerColor = if (enabled) color.copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.08f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(color.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(if (enabled) color.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.08f)), contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = if (enabled) color else Color.Gray, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(label, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (enabled) Color.White else Color.White.copy(alpha = 0.3f))
-                Text(desc, fontSize = 11.sp, color = if (enabled) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.2f))
+                Text(label, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (enabled) Color.Black else Color.Gray)
+                Text(desc, fontSize = 11.sp, color = if (enabled) Color.Black.copy(alpha = 0.5f) else Color.Gray)
             }
-            Icon(Icons.Default.ChevronRight, null, tint = if (enabled) color else Color.White.copy(alpha = 0.2f), modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.ChevronRight, null, tint = if (enabled) color else Color.Gray, modifier = Modifier.size(20.dp))
         }
     }
 }
