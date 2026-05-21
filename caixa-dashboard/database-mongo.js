@@ -95,6 +95,8 @@ const DispositivoSchema = new mongoose.Schema({
   serialNumber: { type: String, default: null },
   connectedAt: { type: String, default: null },
   lastPoll: { type: String, default: null },
+  lastLogin: { type: String, default: null },
+  lastLoginUser: { type: String, default: null },
   usageTimeLimit: { type: Number, default: null },
   usageStartTime: { type: String, default: null }
 }, { versionKey: false });
