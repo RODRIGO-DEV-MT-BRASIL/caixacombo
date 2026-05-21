@@ -640,7 +640,7 @@ export default function ConfiguracoesImpressao() {
                 {[
                   { key: 'mercado', label: 'Mercado', desc: 'Grid de produtos grande + carrinho na lateral. Ideal para bares, restaurantes, fast-food e dispositivos Android como Stone Positivo L400, Positivo L300, P2-B (P2 A7), P2-P (P2 A11), T8, D2S, V1, V2.', cor: '#3b82f6' },
                   { key: 'master', label: 'Master', desc: 'Lista compacta vertical + teclado numérico. Ideal para minimercados, padarias, lojas. Suporta dispositivos D2S, V1, V2.', cor: '#f59e0b' },
-                  { key: 'premium', label: 'Premium', desc: 'Cards com imagem do produto + carrinho na parte inferior. Ideal para butiques, eletrônicos.', cor: '#8b5cf6' },
+                  { key: 'premium', label: 'Premium', desc: 'Cards com imagem do produto + carrinho na parte inferior. Ideal para butiques, eletrônicos. Compatível com Stone Positivo L400, L300, P2-B, P2-P, T8.', cor: '#8b5cf6' },
                 ].map(design => (
                   <div key={design.key} onClick={() => updateField('designApp', 'tipo', design.key)}
                     className={`cursor-pointer rounded-xl border-2 transition-all p-4 ${template.designApp?.tipo === design.key ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 hover:border-gray-500'}`}>
