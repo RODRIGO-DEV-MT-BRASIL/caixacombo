@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Edit, Trash2, UserCog, Users, Building2 } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, UserCog, Users, Building2, X } from 'lucide-react'
 
 export default function ClientesFuncionarios() {
   const [activeTab, setActiveTab] = useState('clientes')
