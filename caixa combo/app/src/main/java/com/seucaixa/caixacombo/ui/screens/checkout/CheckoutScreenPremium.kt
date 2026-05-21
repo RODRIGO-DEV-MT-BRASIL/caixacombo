@@ -60,6 +60,25 @@ fun CheckoutScreenPremium(
     val primaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("primary_color", 0xFF6200EE.toInt()))) }
     val secondaryColor by remember { mutableStateOf(Color(sharedPreferences.getInt("secondary_color", 0xFF03DAC5.toInt()))) }
 
+    var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
+    LaunchedEffect(Unit) {
+        try {
+            val operatorId = com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(context)
+            if (operatorId > 0) {
+                val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).usuarioDao()
+                usuarioLogado = dao.getUsuarioById(operatorId)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CheckoutPremium", "Erro ao carregar usuário", e)
+        }
+    }
+
+    val isAdmin = usuarioLogado?.cargo == CargoUsuario.ADMIN
+    val permCaixa = isAdmin || usuarioLogado?.permCaixa == true
+    val permVendas = isAdmin || usuarioLogado?.permVendas == true
+    val permProdutos = isAdmin || usuarioLogado?.permProdutos == true
+    val permConfig = isAdmin || usuarioLogado?.permConfiguracoes == true
+
     val produtos by viewModel.produtos.collectAsState()
     val carrinho by viewModel.carrinho.collectAsState()
     val total by viewModel.total.collectAsState()
@@ -105,6 +124,10 @@ fun CheckoutScreenPremium(
                     Text("PREMIUM", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 18.sp)
                     Text(currentTime, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                 }
+                if (permCaixa) IconButton(onClick = onNavigateToCaixa) { Icon(Icons.Default.AccountBalance, null, tint = Color.White) }
+                if (permVendas) IconButton(onClick = onNavigateToVendas) { Icon(Icons.Default.Receipt, null, tint = Color.White) }
+                if (permProdutos) IconButton(onClick = onNavigateToProdutos) { Icon(Icons.Default.Inventory, null, tint = Color.White) }
+                if (permConfig) IconButton(onClick = onNavigateToConfiguracaoTipoImpressao) { Icon(Icons.Default.Print, null, tint = Color.White) }
                 IconButton(onClick = onNavigateToHome) { Icon(Icons.Default.Home, null, tint = Color.White) }
                 IconButton(onClick = onLogout) { Icon(Icons.Default.Logout, null, tint = Color.White) }
             }
