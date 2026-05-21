@@ -84,11 +84,16 @@ fun CheckoutScreenMaster(
                 val dao = AppDatabase.getDatabase(context).usuarioDao()
                 usuarioLogado = dao.getUsuarioById(operatorId)
             }
-            val empresaDao = AppDatabase.getDatabase(context).empresaDao()
-            val empresa = empresaDao.getEmpresaOnce()
-            if (empresa != null) {
-                val nome = empresa.nomeFantasia.ifBlank { empresa.razaoSocial }
-                if (nome.isNotBlank()) empresaNome = nome
+            val nomePrefs = sharedPreferences.getString("empresa_nome", "")
+            if (nomePrefs.isNullOrBlank()) {
+                val empresaDao = AppDatabase.getDatabase(context).empresaDao()
+                val empresa = empresaDao.getEmpresaOnce()
+                if (empresa != null) {
+                    val nome = empresa.nomeFantasia.ifBlank { empresa.razaoSocial }
+                    if (nome.isNotBlank()) empresaNome = nome
+                }
+            } else {
+                empresaNome = nomePrefs
             }
             val logoFile = java.io.File(context.filesDir, "logo.png")
             if (logoFile.exists()) {
@@ -236,7 +241,7 @@ fun CheckoutScreenMaster(
 
     Column(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
         Box(
-            modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -244,16 +249,16 @@ fun CheckoutScreenMaster(
                         androidx.compose.foundation.Image(
                             painter = BitmapPainter(logoBitmap!!.asImageBitmap()),
                             contentDescription = "Logo",
-                            modifier = Modifier.height(32.dp).width(32.dp)
+                            modifier = Modifier.height(36.dp).width(36.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
                     Column {
-                        Text(if (empresaNome.isNotBlank()) empresaNome else "MASTER POS", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(currentTime, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text(if (empresaNome.isNotBlank()) empresaNome else "MASTER POS", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(currentTime, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 }
-                IconButton(onClick = { showBuscaDialog = true }, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.Search, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                IconButton(onClick = { showBuscaDialog = true }, modifier = Modifier.size(42.dp)) { Icon(Icons.Default.Search, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
             }
         }
 
