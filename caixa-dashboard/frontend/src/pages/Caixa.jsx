@@ -535,7 +535,7 @@ export default function Caixa({ onNavigateToFechamento }) {
                   <stat.icon size={16} className="text-current" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-white truncate">R$ {stat.value.toFixed(2)}</p>
+                  <p className="text-[11px] font-bold text-white whitespace-nowrap">R$ {stat.value.toFixed(2)}</p>
                   <p className="text-[9px] text-white/50 uppercase tracking-wider">{stat.label}</p>
                 </div>
               </div>
@@ -673,10 +673,10 @@ export default function Caixa({ onNavigateToFechamento }) {
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20">
                     <Monitor size={22} className="text-white" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2.5">
-                      <p className="font-semibold text-white text-sm">{deviceName}</p>
-                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Aberto</span>
+                      <p className="font-semibold text-white text-sm truncate">{deviceName}</p>
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 shrink-0">Aberto</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       <span className="text-gray-400">{getOperacoesByTab(dispositivo, selectedTab).length}</span> {selectedTab >= 4 ? 'vendas' : 'operações'}
@@ -686,8 +686,8 @@ export default function Caixa({ onNavigateToFechamento }) {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="text-right whitespace-nowrap">
                     <p className={`text-lg font-bold ${cardInfo.total >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                       R$ {cardInfo.total.toFixed(2)}
                     </p>
@@ -843,7 +843,7 @@ export default function Caixa({ onNavigateToFechamento }) {
                                 {item.observacao && ` • ${item.observacao}`}
                               </p>
                             </div>
-                            <p className={`text-sm font-bold shrink-0 ${isVenda ? 'text-emerald-400' : (item.tipo === 'abertura' || item.tipo === 'suprimento' ? 'text-emerald-400' : 'text-red-400')}`}>
+                            <p className={`text-sm font-bold shrink-0 whitespace-nowrap ${isVenda ? 'text-emerald-400' : (item.tipo === 'abertura' || item.tipo === 'suprimento' ? 'text-emerald-400' : 'text-red-400')}`}>
                               {isVenda ? '' : (item.tipo === 'abertura' || item.tipo === 'suprimento' ? '+' : '-')}R$ {(item.valor || item.total || 0).toFixed(2)}
                             </p>
                             {isVenda && (
