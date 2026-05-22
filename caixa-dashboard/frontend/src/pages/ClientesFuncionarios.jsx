@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Edit, Trash2, UserCog, Users, Building2, X } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, UserCog, Users, Building2, X, Loader2 } from 'lucide-react'
 
 export default function ClientesFuncionarios() {
   const [activeTab, setActiveTab] = useState('clientes')
@@ -10,17 +10,18 @@ export default function ClientesFuncionarios() {
   const [showModal, setShowModal] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const [formData, setFormData] = useState({
     nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '',
     codigo: '', senha: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
   })
 
-  const token = sessionStorage.getItem('token')
-
   const fetchClientes = async () => {
     try {
+      const t = sessionStorage.getItem('token')
       const res = await fetch('/api/clientes', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {
         const data = await res.json()
@@ -34,8 +35,9 @@ export default function ClientesFuncionarios() {
 
   const fetchFuncionarios = async () => {
     try {
+      const t = sessionStorage.getItem('token')
       const res = await fetch('/api/funcionarios', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {
         const data = await res.json()
@@ -53,6 +55,16 @@ export default function ClientesFuncionarios() {
 
   const handleSave = async (e) => {
     e.preventDefault()
+    setSaving(true)
+    setSaveError(null)
+
+    const currentToken = sessionStorage.getItem('token')
+    if (!currentToken) {
+      setSaveError('Sessão expirada. Faça login novamente.')
+      setSaving(false)
+      return
+    }
+
     try {
       const url = activeTab === 'clientes' ? '/api/clientes' : '/api/funcionarios'
       const method = editingItem ? 'PUT' : 'POST'
@@ -77,7 +89,7 @@ export default function ClientesFuncionarios() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${currentToken}`
         },
         body: JSON.stringify(body)
       })
@@ -85,15 +97,22 @@ export default function ClientesFuncionarios() {
       if (res.ok) {
         setShowModal(false)
         setEditingItem(null)
+        setSaveError(null)
         setFormData({
           nome: '', cpfCnpj: '', telefone: '', email: '', endereco: '', cidade: '', cep: '', observacao: '',
           codigo: '', senha: '', cargo: 'caixa', permissoes: { vendas: true, caixa: true, produtos: false, categorias: false, relatorios: false, desconto: false, cancelar_venda: false, operacoes_caixa: true }
         })
         if (activeTab === 'clientes') fetchClientes()
         else fetchFuncionarios()
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        setSaveError(errData?.error || `Erro ao salvar (${res.status})`)
       }
     } catch (error) {
+      setSaveError('Erro de conexão. Verifique sua internet.')
       console.error('Erro ao salvar:', error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -141,10 +160,11 @@ export default function ClientesFuncionarios() {
 
   const confirmDeleteExecute = async (id) => {
     try {
+      const t = sessionStorage.getItem('token')
       const url = activeTab === 'clientes' ? '/api/clientes' : '/api/funcionarios'
       const res = await fetch(`${url}/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {
         if (activeTab === 'clientes') fetchClientes()
@@ -533,6 +553,11 @@ export default function ClientesFuncionarios() {
                 )}
               </div>
 
+              {saveError && (
+                <div className="px-3 py-2 bg-red-900/30 border-t border-red-800/50">
+                  <p className="text-sm text-red-400">{saveError}</p>
+                </div>
+              )}
               <div className="flex gap-2 px-3 py-2 border-t border-gray-700 shrink-0">
                 <button
                   type="button"
@@ -551,9 +576,11 @@ export default function ClientesFuncionarios() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
+                  disabled={saving}
+                  className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
                 >
-                  Salvar
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {saving ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
             </form>
