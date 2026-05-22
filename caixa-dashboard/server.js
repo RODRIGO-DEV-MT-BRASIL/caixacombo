@@ -327,7 +327,7 @@ const io = new Server(server, {
     origin: process.env.NODE_ENV === 'production' ? '*' : true,
     credentials: true 
   },
-  transports: ["websocket", "polling"],
+  transports: ["polling", "websocket"],
   pingTimeout: 60000,
   pingInterval: 25000,
   allowEIO3: true
