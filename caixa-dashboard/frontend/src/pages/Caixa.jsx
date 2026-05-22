@@ -499,7 +499,7 @@ export default function Caixa({ onNavigateToFechamento }) {
             </div>
             <div>
               <p className="text-[10px] text-gray-500 uppercase tracking-wider">Vendas Hoje</p>
-              <p className="text-lg font-bold text-white">R$ {totalVendas.toFixed(2)}</p>
+              <p className="text-lg font-bold text-white whitespace-nowrap">R$ {totalVendas.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -509,7 +509,7 @@ export default function Caixa({ onNavigateToFechamento }) {
       </div>
 
       {/* Stats Cards Consolidados */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 gap-2.5">
         {[
           { label: 'Abertura', value: totalAbertura, icon: ArrowUpCircle, color: 'emerald' },
           { label: 'Fechamento', value: totalFechamento, icon: ArrowDownCircle, color: 'red' },
@@ -535,7 +535,7 @@ export default function Caixa({ onNavigateToFechamento }) {
                   <stat.icon size={16} className="text-current" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white whitespace-nowrap">R$ {stat.value.toFixed(2)}</p>
+                  <p className="text-xs font-bold text-white whitespace-nowrap">R$ {stat.value.toFixed(2)}</p>
                   <p className="text-[9px] text-white/50 uppercase tracking-wider">{stat.label}</p>
                 </div>
               </div>
@@ -545,8 +545,8 @@ export default function Caixa({ onNavigateToFechamento }) {
       </div>
 
       {/* Abas de Operações e Vendas */}
-      <div className="bg-gray-900/80 border border-white/5 rounded-2xl p-1.5 shadow-lg shadow-black/10">
-        <div className="flex flex-wrap gap-1">
+      <div className="bg-gray-900/80 border border-white/5 rounded-2xl p-1.5 shadow-lg shadow-black/10 overflow-x-auto">
+        <div className="flex gap-1 min-w-max">
           {[
             { id: 0, label: 'Aberturas', icon: ArrowUpCircle, color: 'emerald' },
             { id: 1, label: 'Fechamentos', icon: ArrowDownCircle, color: 'red' },
