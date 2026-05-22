@@ -43,8 +43,13 @@ const navItems = [
 export default function Dashboard() {
   const { user, logout, token, hasPermission, hasPageAccess } = useAuth()
   const { devices, connected, socket, vendas } = useSocket()
-  const [page, setPage] = useState('dashboard')
+  const [page, setPage] = useState(() => sessionStorage.getItem('currentPage') || 'dashboard')
   const [stats, setStats] = useState({ vendasHoje: 0, qtdVendas: 0 })
+
+  // Persistir página atual no sessionStorage para não voltar ao dashboard ao recarregar
+  useEffect(() => {
+    if (page) sessionStorage.setItem('currentPage', page)
+  }, [page])
 
   // Aplicar cores do branding
   useEffect(() => {
