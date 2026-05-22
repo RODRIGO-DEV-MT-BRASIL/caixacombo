@@ -285,11 +285,9 @@ export default function Caixa({ onNavigateToFechamento }) {
   const filteredDispositivos = dispositivos.filter(d => {
     const s = search.toLowerCase()
     const matchSearch = d.deviceId.toLowerCase().includes(s)
-    // Só mostrar dispositivos com sessão aberta OU com dados na última sessão
+    // Só mostrar dispositivos com caixa ABERTO
     const sessao = caixaAtual[d.deviceId]
-    const temSessao = sessao?.aberturaTimestamp
-    const temDados = d.operacoes.length > 0 || getVendasSessao(d.deviceId).length > 0
-    return matchSearch && (temSessao || temDados)
+    return matchSearch && sessao?.aberto === true
   })
 
   // Filtrar operações/vendas por aba selecionada (por dispositivo, sessão atual)
@@ -483,153 +481,104 @@ export default function Caixa({ onNavigateToFechamento }) {
   return (
     <div className="space-y-5">
       {/* Summary Bar */}
-      <div className="glass px-5 py-3 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-400">Caixas:</span>
-          <span className="text-emerald-400 font-medium flex items-center gap-1">
-            <LockOpen size={14} /> {dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length} abertos
-          </span>
-          <span className="text-gray-500">/</span>
-          <span className="text-gray-400 font-medium flex items-center gap-1">
-            <Lock size={14} /> {dispositivos.filter(d => caixaAtual[d.deviceId] && !caixaAtual[d.deviceId].aberto).length} fechados
-          </span>
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-white/5 rounded-2xl px-6 py-4 flex items-center justify-between flex-wrap gap-4 shadow-lg shadow-black/20">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+              <LockOpen size={18} className="text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Caixas Abertos</p>
+              <p className="text-lg font-bold text-white">{dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length}</p>
+            </div>
+          </div>
+          <div className="w-px h-10 bg-white/5" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+              <DollarSign size={18} className="text-blue-400" />
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Vendas Hoje</p>
+              <p className="text-lg font-bold text-white">R$ {totalVendas.toFixed(2)}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-blue-400 font-medium">R$ {totalVendas.toFixed(2)} vendas</span>
-          <span className="text-gray-500">|</span>
-          <span className="text-gray-400">{dispositivos.length} dispositivo(s)</span>
+        <div className="flex items-center gap-3 text-sm">
+          <span className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-xs">{dispositivos.length} dispositivo(s)</span>
         </div>
       </div>
 
       {/* Stats Cards Consolidados */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-3">
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <ArrowUpCircle size={16} className="text-emerald-400" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2.5">
+        {[
+          { label: 'Abertura', value: totalAbertura, icon: ArrowUpCircle, color: 'emerald' },
+          { label: 'Fechamento', value: totalFechamento, icon: ArrowDownCircle, color: 'red' },
+          { label: 'Suprimento', value: totalSuprimento, icon: PiggyBank, color: 'blue' },
+          { label: 'Sangria', value: totalSangria, icon: Wallet, color: 'amber' },
+          { label: 'Dinheiro', value: totalDinheiro, icon: DollarSign, color: 'emerald' },
+          { label: 'PIX', value: totalPix, icon: Smartphone, color: 'blue' },
+          { label: 'Crédito', value: totalCredito, icon: CreditCard, color: 'amber' },
+          { label: 'Débito', value: totalDebito, icon: CreditCard, color: 'cyan' },
+        ].map((stat, i) => {
+          const c = stat.color
+          const colors = {
+            emerald: 'from-emerald-600/20 to-emerald-400/5 border-emerald-500/15 text-emerald-400',
+            red: 'from-red-600/20 to-red-400/5 border-red-500/15 text-red-400',
+            blue: 'from-blue-600/20 to-blue-400/5 border-blue-500/15 text-blue-400',
+            amber: 'from-amber-600/20 to-amber-400/5 border-amber-500/15 text-amber-400',
+            cyan: 'from-cyan-600/20 to-cyan-400/5 border-cyan-500/15 text-cyan-400',
+          }
+          return (
+            <div key={i} className={`bg-gradient-to-br ${colors[c]} border rounded-xl p-3 transition-all hover:scale-[1.02]`}>
+              <div className="flex items-center gap-2.5">
+                <div className={`w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0`}>
+                  <stat.icon size={16} className="text-current" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">R$ {stat.value.toFixed(2)}</p>
+                  <p className="text-[9px] text-white/50 uppercase tracking-wider">{stat.label}</p>
+                </div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalAbertura.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Abertura</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
-              <ArrowDownCircle size={16} className="text-red-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalFechamento.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Fechamento</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-              <PiggyBank size={16} className="text-blue-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalSuprimento.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Suprimento</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-              <Wallet size={16} className="text-amber-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalSangria.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Sangria</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <DollarSign size={16} className="text-emerald-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalDinheiro.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Dinheiro</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-              <Smartphone size={16} className="text-blue-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalPix.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">PIX</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-              <CreditCard size={16} className="text-amber-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalCredito.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Crédito</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
-              <CreditCard size={16} className="text-cyan-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalDebito.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Débito</p>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card !p-3 !min-h-0" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-              <DollarSign size={16} className="text-blue-400" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">R$ {totalVendas.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">Total Vendas</p>
-            </div>
-          </div>
-        </div>
+          )
+        })}
       </div>
 
       {/* Abas de Operações e Vendas */}
-      <div className="glass p-1 rounded-xl">
+      <div className="bg-gray-900/80 border border-white/5 rounded-2xl p-1.5 shadow-lg shadow-black/10">
         <div className="flex flex-wrap gap-1">
           {[
-            { id: 0, label: 'Aberturas', icon: ArrowUpCircle, activeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' },
-            { id: 1, label: 'Fechamentos', icon: ArrowDownCircle, activeClass: 'bg-red-500/20 text-red-400 border border-red-500/20' },
-            { id: 2, label: 'Suprimentos', icon: PiggyBank, activeClass: 'bg-blue-500/20 text-blue-400 border border-blue-500/20' },
-            { id: 3, label: 'Sangrias', icon: Wallet, activeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/20' },
-            { id: 4, label: 'Dinheiro', icon: DollarSign, activeClass: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' },
-            { id: 5, label: 'PIX', icon: Smartphone, activeClass: 'bg-blue-500/20 text-blue-400 border border-blue-500/20' },
-            { id: 6, label: 'Crédito', icon: CreditCard, activeClass: 'bg-amber-500/20 text-amber-400 border border-amber-500/20' },
-            { id: 7, label: 'Débito', icon: CreditCard, activeClass: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/20' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedTab(tab.id)}
-              className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                selectedTab === tab.id
-                  ? tab.activeClass
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <tab.icon size={16} />
-              {tab.label}
-            </button>
-          ))}
+            { id: 0, label: 'Aberturas', icon: ArrowUpCircle, color: 'emerald' },
+            { id: 1, label: 'Fechamentos', icon: ArrowDownCircle, color: 'red' },
+            { id: 2, label: 'Suprimentos', icon: PiggyBank, color: 'blue' },
+            { id: 3, label: 'Sangrias', icon: Wallet, color: 'amber' },
+            { id: 4, label: 'Dinheiro', icon: DollarSign, color: 'emerald' },
+            { id: 5, label: 'PIX', icon: Smartphone, color: 'blue' },
+            { id: 6, label: 'Crédito', icon: CreditCard, color: 'amber' },
+            { id: 7, label: 'Débito', icon: CreditCard, color: 'cyan' }
+          ].map(tab => {
+            const activeColors = {
+              emerald: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-sm shadow-emerald-500/10',
+              red: 'bg-red-500/20 text-red-300 border-red-500/30 shadow-sm shadow-red-500/10',
+              blue: 'bg-blue-500/20 text-blue-300 border-blue-500/30 shadow-sm shadow-blue-500/10',
+              amber: 'bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-sm shadow-amber-500/10',
+              cyan: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-sm shadow-cyan-500/10',
+            }
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedTab(tab.id)}
+                className={`flex-1 min-w-[90px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  selectedTab === tab.id
+                    ? activeColors[tab.color] + ' border'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                }`}
+              >
+                <tab.icon size={15} className={selectedTab === tab.id ? '' : 'text-gray-600'} />
+                {tab.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -641,7 +590,7 @@ export default function Caixa({ onNavigateToFechamento }) {
               <select
                 value={filterEmpresa}
                 onChange={(e) => setFilterEmpresa(e.target.value)}
-                className="px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                className="px-3 py-2.5 bg-gray-800/80 border border-white/5 rounded-xl text-sm text-white/80 focus:outline-none focus:border-blue-500/50 transition-colors"
               >
                 <option value="">Todas as Empresas</option>
                 {empresas.map(emp => (
@@ -651,7 +600,7 @@ export default function Caixa({ onNavigateToFechamento }) {
               <select
                 value={filterTerminal}
                 onChange={(e) => setFilterTerminal(e.target.value)}
-                className="px-3 py-2 bg-gray-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+                className="px-3 py-2.5 bg-gray-800/80 border border-white/5 rounded-xl text-sm text-white/80 focus:outline-none focus:border-blue-500/50 transition-colors"
               >
                 <option value="">Todos os Terminais</option>
                 {dispositivosConectados.map(d => (
@@ -660,27 +609,27 @@ export default function Caixa({ onNavigateToFechamento }) {
               </select>
             </>
           )}
-          <div className="relative w-full sm:max-w-xs">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2.5 text-sm" placeholder="Buscar dispositivo..." />
+          <div className="relative">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 pr-4 py-2.5 bg-gray-800/80 border border-white/5 rounded-xl text-sm text-white/80 placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-colors w-52" placeholder="Buscar dispositivo..." />
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => { setShowFaturamento(!showFaturamento); setShowHistorico(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showFaturamento ? 'bg-blue-600 text-white' : 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20'}`}>
-            <TrendingUp size={16} /> Faturamento
+          <button onClick={() => { setShowFaturamento(!showFaturamento); setShowHistorico(false) }} className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${showFaturamento ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white/5 hover:bg-white/10 text-gray-400 border border-white/5'}`}>
+            <TrendingUp size={15} /> Faturamento
           </button>
-          <button onClick={() => { setShowHistorico(!showHistorico); setShowFaturamento(false) }} className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-colors ${showHistorico ? 'bg-amber-600 text-white' : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-500/20'}`}>
-            <Wallet size={16} /> Histórico
+          <button onClick={() => { setShowHistorico(!showHistorico); setShowFaturamento(false) }} className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${showHistorico ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'bg-white/5 hover:bg-white/10 text-gray-400 border border-white/5'}`}>
+            <Wallet size={15} /> Histórico
           </button>
           <button
             onClick={() => setShowFecharCaixaModal(true)}
             disabled={fechandoCaixa}
-            className="relative bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/20"
+            className="relative px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/20"
           >
             {fechandoCaixa ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={15} className="animate-spin" />
             ) : (
-              <Printer size={16} />
+              <Printer size={15} />
             )}
             {fechandoCaixa ? 'Fechando...' : 'Fechar Caixa'}
             {!fechandoCaixa && dispositivos.filter(d => caixaAtual[d.deviceId]?.aberto).length > 0 && (
@@ -689,8 +638,8 @@ export default function Caixa({ onNavigateToFechamento }) {
               </span>
             )}
           </button>
-          <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2 text-sm">
-            <Plus size={16} /> Nova Operação
+          <button onClick={() => setShowModal(true)} className="px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-medium transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/20">
+            <Plus size={15} /> Nova Operação
           </button>
         </div>
       </div>
@@ -707,51 +656,53 @@ export default function Caixa({ onNavigateToFechamento }) {
           <p className="text-gray-400">Nenhuma operação registrada</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredDispositivos.map(dispositivo => (
-            <div key={dispositivo.deviceId} className="glass glass-hover">
+        <div className="space-y-3">
+          {filteredDispositivos.map(dispositivo => {
+            const deviceName = dispositivo.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === dispositivo.deviceId)?.deviceName || dispositivo.deviceName || dispositivo.deviceId
+            const isExpanded = expandedDevice === dispositivo.deviceId
+            const cardInfo = getCardInfo(dispositivo, selectedTab)
+            const sessao = caixaAtual[dispositivo.deviceId]
+            return (
+            <div key={dispositivo.deviceId} className={`bg-gradient-to-br from-gray-900 to-gray-800/80 border border-white/5 rounded-2xl overflow-hidden transition-all duration-200 ${isExpanded ? 'shadow-xl shadow-black/30' : 'shadow-md shadow-black/10 hover:shadow-lg hover:shadow-black/20 hover:border-white/10'}`}>
               {/* Header do dispositivo */}
               <div 
                 className="p-4 flex items-center justify-between cursor-pointer"
-                onClick={() => setExpandedDevice(expandedDevice === dispositivo.deviceId ? null : dispositivo.deviceId)}
+                onClick={() => setExpandedDevice(isExpanded ? null : dispositivo.deviceId)}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${caixaAtual[dispositivo.deviceId]?.aberto ? 'bg-gradient-to-br from-emerald-600 to-emerald-400' : 'bg-gradient-to-br from-gray-600 to-gray-500'}`}>
-                    <Monitor size={24} className="text-white" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20">
+                    <Monitor size={22} className="text-white" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-white text-sm">{dispositivo.deviceId === 'geral' ? 'Geral' : dispositivosConectados.find(d => d.deviceId === dispositivo.deviceId)?.deviceName || dispositivo.deviceName || dispositivo.deviceId}</p>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${caixaAtual[dispositivo.deviceId]?.aberto ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                        {caixaAtual[dispositivo.deviceId]?.aberto ? 'Aberto' : 'Fechado'}
-                      </span>
+                    <div className="flex items-center gap-2.5">
+                      <p className="font-semibold text-white text-sm">{deviceName}</p>
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Aberto</span>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      {getOperacoesByTab(dispositivo, selectedTab).length} {selectedTab >= 4 ? 'vendas' : 'operações'}
-                      {caixaAtual[dispositivo.deviceId]?.aberturaEm && ` • Desde ${new Date(caixaAtual[dispositivo.deviceId].aberturaEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`}
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      <span className="text-gray-400">{getOperacoesByTab(dispositivo, selectedTab).length}</span> {selectedTab >= 4 ? 'vendas' : 'operações'}
+                      {sessao?.aberturaEm && (
+                        <span> • <span className="text-gray-500">aberto</span> {new Date(sessao.aberturaEm).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                      )}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className={`text-lg font-bold ${getCardInfo(dispositivo, selectedTab).total >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      R$ {getCardInfo(dispositivo, selectedTab).total.toFixed(2)}
+                    <p className={`text-lg font-bold ${cardInfo.total >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      R$ {cardInfo.total.toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-500">{getCardInfo(dispositivo, selectedTab).label}</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">{cardInfo.label}</p>
                   </div>
-                  {expandedDevice === dispositivo.deviceId ? <ChevronUp size={20} className="text-gray-400" /> : <ChevronDown size={20} className="text-gray-400" />}
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${isExpanded ? 'bg-white/10' : 'bg-white/5'}`}>
+                    {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                  </div>
                 </div>
               </div>
 
               {/* Status do Caixa / Informações da Aba */}
-              <div className="p-4 border-t border-white/5">
+              <div className="px-4 pb-4">
                 {(() => {
-                  const cardInfo = getCardInfo(dispositivo, selectedTab)
-                  const sessao = caixaAtual[dispositivo.deviceId]
                   const isVenda = cardInfo.isVenda
-                  const isAberto = sessao?.aberto
-
-                  // Calcular totais da sessão para o resumo
                   const opsSessao = getOpsSessao(dispositivo.deviceId)
                   const vendasSessao = getVendasSessao(dispositivo.deviceId)
                   const totalVendasSessao = vendasSessao.reduce((s, v) => s + (v.total || 0), 0)
@@ -763,148 +714,84 @@ export default function Caixa({ onNavigateToFechamento }) {
                   const formatarData = (dt) => {
                     if (!dt) return null
                     const d = new Date(dt)
-                    return {
-                      diaSemana: diasSemana[d.getDay()],
-                      data: d.toLocaleDateString('pt-BR'),
-                      hora: d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
-                    }
+                    return { diaSemana: diasSemana[d.getDay()], data: d.toLocaleDateString('pt-BR'), hora: d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) }
                   }
-
                   const aberturaInfo = sessao?.aberturaEm ? formatarData(sessao.aberturaEm) : null
-                  const fechamentoInfo = sessao?.fechamentoEm ? formatarData(sessao.fechamentoEm) : null
 
                   return (
-                    <>
-                      {/* Badge de status + total da aba */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          {isVenda ? (
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                              <Smartphone size={16} className="text-blue-400" />
-                            </div>
-                          ) : isAberto ? (
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                              <LockOpen size={16} className="text-emerald-400" />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                              <Lock size={16} className="text-red-400" />
-                            </div>
-                          )}
-                          <span className={`text-sm font-medium ${isVenda ? 'text-blue-400' : (isAberto ? 'text-emerald-400' : 'text-red-400')}`}>
-                            {isVenda ? cardInfo.label : `Caixa ${isAberto ? 'Aberto' : 'Fechado'}`}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-lg font-bold ${cardInfo.total >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                            R$ {cardInfo.total.toFixed(2)}
-                          </p>
-                          <p className="text-xs text-gray-500">{cardInfo.label}</p>
-                        </div>
-                      </div>
-
+                    <div className="bg-black/20 rounded-xl p-3 space-y-3">
                       {/* Info da sessão - Abertura */}
                       {aberturaInfo && (
-                        <div className="glass p-3 mb-2">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-gray-400">Abertura</p>
-                              <p className="text-sm font-medium text-emerald-400">{aberturaInfo.diaSemana}, {aberturaInfo.data}</p>
-                              <p className="text-xs text-gray-500">às {aberturaInfo.hora}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                              <LockOpen size={15} className="text-emerald-400" />
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-emerald-400">R$ {totalAberturaSessao.toFixed(2)}</p>
-                              {sessao?.operador && <p className="text-xs text-gray-500">{sessao.operador}</p>}
+                            <div>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Abertura</p>
+                              <p className="text-sm font-medium text-white">{aberturaInfo.diaSemana}, {aberturaInfo.data} às {aberturaInfo.hora}</p>
                             </div>
                           </div>
-                        </div>
-                      )}
-
-                      {/* Info da sessão - Fechamento (só quando fechado) */}
-                      {!isAberto && fechamentoInfo && (
-                        <div className="glass p-3 mb-2 border border-red-500/10">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-gray-400">Fechamento</p>
-                              <p className="text-sm font-medium text-red-400">{fechamentoInfo.diaSemana}, {fechamentoInfo.data}</p>
-                              <p className="text-xs text-gray-500">às {fechamentoInfo.hora}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-red-400">R$ {(totalAberturaSessao + totalSuprimentoSessao - totalSangriaSessao + totalVendasSessao).toFixed(2)}</p>
-                              <p className="text-xs text-gray-500">Saldo final</p>
-                            </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-emerald-400">R$ {totalAberturaSessao.toFixed(2)}</p>
+                            {sessao?.operador && <p className="text-[10px] text-gray-500">{sessao.operador}</p>}
                           </div>
                         </div>
                       )}
 
                       {/* Resumo da sessão */}
                       {sessao?.aberturaTimestamp && !isVenda && (
-                        <div className="grid grid-cols-3 gap-2 mb-2">
-                          <div className="glass p-2 text-center">
-                            <p className="text-xs text-gray-500">Vendas</p>
-                            <p className="text-sm font-bold text-blue-400">R$ {totalVendasSessao.toFixed(2)}</p>
-                          </div>
-                          <div className="glass p-2 text-center">
-                            <p className="text-xs text-gray-500">Suprimento</p>
-                            <p className="text-sm font-bold text-blue-400">R$ {totalSuprimentoSessao.toFixed(2)}</p>
-                          </div>
-                          <div className="glass p-2 text-center">
-                            <p className="text-xs text-gray-500">Sangria</p>
-                            <p className="text-sm font-bold text-amber-400">R$ {totalSangriaSessao.toFixed(2)}</p>
-                          </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { label: 'Vendas', value: totalVendasSessao, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                            { label: 'Suprimento', value: totalSuprimentoSessao, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+                            { label: 'Sangria', value: totalSangriaSessao, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+                          ].map((item, i) => (
+                            <div key={i} className={`${item.bg} rounded-lg p-2.5 text-center`}>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider">{item.label}</p>
+                              <p className={`text-sm font-bold ${item.color}`}>R$ {item.value.toFixed(2)}</p>
+                            </div>
+                          ))}
                         </div>
                       )}
 
                       {/* Última Operação/Venda da aba */}
                       {cardInfo.lastItem && (
-                        <div className="glass p-3 mb-2">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-gray-400">
-                                {isVenda ? 'Última Venda' : 'Última Operação'}
-                              </p>
-                              <p className="text-sm font-medium text-white">
-                                {new Date(cardInfo.lastItem.dataHora || cardInfo.lastItem.createdAt).toLocaleString('pt-BR')}
-                              </p>
-                              {cardInfo.lastItem.nomeOperador && (
-                                <p className="text-xs text-gray-500">
-                                  Operador: {cardInfo.lastItem.nomeOperador}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-emerald-400">
-                                R$ {(cardInfo.lastItem.valor || cardInfo.lastItem.total || 0).toFixed(2)}
-                              </p>
-                            </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                          <div>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">{isVenda ? 'Última Venda' : 'Última Operação'}</p>
+                            <p className="text-xs text-gray-300 mt-0.5">{new Date(cardInfo.lastItem.dataHora || cardInfo.lastItem.createdAt).toLocaleString('pt-BR')}</p>
+                            {cardInfo.lastItem.nomeOperador && <p className="text-[10px] text-gray-500">por {cardInfo.lastItem.nomeOperador}</p>}
                           </div>
+                          <p className="text-sm font-bold text-emerald-400">R$ {(cardInfo.lastItem.valor || cardInfo.lastItem.total || 0).toFixed(2)}</p>
                         </div>
                       )}
-                    </>
+                    </div>
                   )
                 })()}
               </div>
 
               {/* Lista de operações do dispositivo (filtradas por aba) */}
-              {expandedDevice === dispositivo.deviceId && (
-                <div className="border-t border-white/5 p-4 space-y-2">
+              {isExpanded && (
+                <div className="border-t border-white/5 p-4 space-y-2 bg-black/20">
                   {getOperacoesByTab(dispositivo, selectedTab).length === 0 ? (
-                    <div className="text-center py-6">
-                      <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center mx-auto mb-2">
-                        {selectedTab >= 4 ? <DollarSign size={18} className="text-gray-500" /> : <Wallet size={18} className="text-gray-500" />}
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 rounded-xl bg-gray-500/5 flex items-center justify-center mx-auto mb-3">
+                        {selectedTab >= 4 ? <DollarSign size={20} className="text-gray-600" /> : <Wallet size={20} className="text-gray-600" />}
                       </div>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-500 text-sm">
                         {selectedTab >= 4 
                           ? `Nenhuma venda via ${['','Dinheiro','PIX','Crédito','Débito'][selectedTab-3]} nesta sessão`
                           : `Nenhuma operação de ${['abertura','fechamento','suprimento','sangria'][selectedTab]} nesta sessão`
                         }
                       </p>
-                      {!caixaAtual[dispositivo.deviceId]?.aberturaTimestamp && (
+                      {!sessao?.aberturaTimestamp && (
                         <p className="text-gray-600 text-xs mt-1">Abra o caixa para registrar operações</p>
                       )}
                     </div>
                   ) : (
-                    getOperacoesByTab(dispositivo, selectedTab).map(item => {
+                    <div className="space-y-1.5">
+                    {getOperacoesByTab(dispositivo, selectedTab).map((item, idx) => {
                       const isVenda = item.formaPagamento !== undefined
                       
                       return (
@@ -986,11 +873,13 @@ export default function Caixa({ onNavigateToFechamento }) {
                         </div>
                       )
                     })
-                  )}
+                  }
                 </div>
               )}
             </div>
-          ))}
+          )}
+        </div>
+      )})}
         </div>
       )}
 
