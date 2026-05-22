@@ -20,14 +20,28 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Servir arquivos estáticos da pasta uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Criar pasta uploads se não existir
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(uploadsDir));
+
+// Fallback para imagens de upload que foram perdidas (ex: filesystem efêmero do Render)
+app.use('/uploads', (req, res) => {
+  const ext = req.path.split('.').pop()?.toLowerCase();
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
+    res.type('svg').status(200).send(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+      <rect width="200" height="200" fill="#f0f0f0" rx="8"/>
+      <text x="100" y="85" text-anchor="middle" font-size="48" fill="#ccc">📷</text>
+      <text x="100" y="125" text-anchor="middle" font-size="14" fill="#aaa">Imagem indisponível</text>
+    </svg>`);
+  } else {
+    res.status(404).json({ error: 'Arquivo não encontrado' });
+  }
+});
 
 // Configurar multer para upload de imagens
 const storage = multer.diskStorage({
