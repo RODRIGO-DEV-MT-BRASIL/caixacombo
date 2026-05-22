@@ -78,6 +78,7 @@ fun CheckoutScreenMaster(
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var empresaNome by remember { mutableStateOf("") }
     var logoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val operadorNome = sharedPreferences.getString("operador_nome", null)
 
     LaunchedEffect(Unit) {
         try {
@@ -238,7 +239,7 @@ fun CheckoutScreenMaster(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
+    Column(modifier = Modifier.fillMaxSize().background(backgroundColor).statusBarsPadding()) {
         Box(
             modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
@@ -254,7 +255,12 @@ fun CheckoutScreenMaster(
                     }
                     Column {
                         Text(if (empresaNome.isNotBlank()) empresaNome else "MASTER POS", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(currentTime, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(currentTime, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+                            if (operadorNome != null) {
+                                Text("  |  Op: $operadorNome", fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
                     }
                 }
                 IconButton(onClick = { showBuscaDialog = true }, modifier = Modifier.size(42.dp)) { Icon(Icons.Default.Search, null, tint = Color.White, modifier = Modifier.size(24.dp)) }

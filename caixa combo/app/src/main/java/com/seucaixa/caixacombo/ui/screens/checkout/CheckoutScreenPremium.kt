@@ -70,6 +70,7 @@ fun CheckoutScreenPremium(
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var empresaNome by remember { mutableStateOf("PREMIUM") }
     var logoBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val operadorNome = sharedPreferences.getString("operador_nome", null)
 
     LaunchedEffect(Unit) {
         try {
@@ -189,7 +190,7 @@ fun CheckoutScreenPremium(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         Box(modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -203,7 +204,12 @@ fun CheckoutScreenPremium(
                     }
                     Column {
                         Text(empresaNome, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(currentTime, fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(currentTime, fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
+                            if (operadorNome != null) {
+                                Text("  |  Op: $operadorNome", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
                     }
                 }
                 if (permCaixa) IconButton(onClick = onNavigateToCaixa, modifier = Modifier.size(40.dp)) { Icon(Icons.Default.AccountBalance, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
