@@ -57,6 +57,7 @@ class PollingService : Service() {
         private var onUnlockResponse: ((Boolean, String?) -> Unit)? = null
         private var onReprintRequested: ((String?) -> Unit)? = null      // atk da venda
         private var onCancelRequested: ((String, Long?) -> Unit)? = null  // atk, amount em centavos
+        private var onPrintFechamentoRequested: ((JSONObject) -> Unit)? = null
         private var onClientesReceived: ((JSONArray) -> Unit)? = null     // clientes do servidor
         private var onCategoriasReceived: ((JSONArray) -> Unit)? = null   // categorias do servidor
         private var onTerminalApproved: ((String, String?) -> Unit)? = null // (companyId, companyName) callback
@@ -137,7 +138,8 @@ class PollingService : Service() {
             onApprovalStatus: ((Boolean, String?, String?) -> Unit)? = null,
             onEmpresaConfig: ((JSONObject) -> Unit)? = null,
             onFuncionariosReceived: ((JSONArray) -> Unit)? = null,
-            onPrintConfigReceived: ((JSONObject) -> Unit)? = null
+            onPrintConfigReceived: ((JSONObject) -> Unit)? = null,
+            onPrintFechamentoRequested: ((JSONObject) -> Unit)? = null
         ) {
             this.onConnectionChange = onConnectionChange
             this.onCommandReceived = onCommandReceived
@@ -155,6 +157,7 @@ class PollingService : Service() {
             this.onEmpresaConfig = onEmpresaConfig
             this.onFuncionariosReceived = onFuncionariosReceived
             this.onPrintConfigReceived = onPrintConfigReceived
+            this.onPrintFechamentoRequested = onPrintFechamentoRequested
         }
 
         fun isConnected(): Boolean = isRunning && consecutiveErrors < MAX_RETRIES
@@ -678,6 +681,10 @@ class PollingService : Service() {
                 val atk = params?.optString("atk", null)
                 Log.d(TAG, "Comando reimprimir_venda recebido, atk=$atk")
                 onReprintRequested?.invoke(atk)
+            }
+            "print_fechamento" -> {
+                Log.d(TAG, "Comando print_fechamento recebido")
+                onPrintFechamentoRequested?.invoke(params ?: JSONObject())
             }
             "cancelar_venda" -> {
                 val atk = params?.optString("atk", "") ?: ""

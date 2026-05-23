@@ -65,6 +65,12 @@ import com.seucaixa.caixacombo.ui.viewmodel.CheckoutViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ConfiguracaoImpressaoViewModel
 import com.seucaixa.caixacombo.ui.viewmodel.ProdutosViewModel
 import com.seucaixa.caixacombo.data.model.Produto
+import com.seucaixa.caixacombo.data.model.Venda
+import com.seucaixa.caixacombo.data.model.ItemVenda
+import com.seucaixa.caixacombo.data.model.FormaPagamento
+import com.seucaixa.caixacombo.data.model.OperacaoCaixa
+import com.seucaixa.caixacombo.data.model.TipoOperacaoCaixa
+import com.seucaixa.caixacombo.data.model.ConfiguracaoImpressao
 import com.seucaixa.caixacombo.ui.viewmodel.VendasViewModel
 import com.seucaixa.caixacombo.ui.screens.dashboard.DashboardScreen
 import com.seucaixa.caixacombo.ui.screens.dashboard.DashboardViewModel
@@ -283,6 +289,98 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     android.util.Log.d("MainActivity", "Print config recebida do servidor")
                     syncPrintConfigFromServer(configJson)
+                }
+            },
+            onPrintFechamentoRequested = { params ->
+                lifecycleScope.launch {
+                    try {
+                        android.util.Log.d("MainActivity", "Print fechamento solicitado via dashboard")
+                        val operador = params.optString("operador", "dashboard")
+                        val dataAbertura = params.optString("dataAbertura", "")
+                        val dataFechamento = params.optString("dataFechamento", "")
+                        val aberturaTimestamp = try {
+                            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).parse(dataAbertura)?.time ?: params.optLong("dataAberturaTimestamp", 0L)
+                        } catch (e: Exception) { params.optLong("dataAberturaTimestamp", 0L) }
+                        val fechamentoTimestamp = try {
+                            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).parse(dataFechamento)?.time ?: params.optLong("dataFechamentoTimestamp", 0L)
+                        } catch (e: Exception) { params.optLong("dataFechamentoTimestamp", 0L) }
+                        val valorInicial = params.optDouble("valorInicial", 0.0)
+                        val totalVendas = params.optDouble("totalVendas", 0.0)
+                        val totalSangria = params.optDouble("totalSangria", 0.0)
+
+                        val vendasJson = params.optJSONArray("vendas")
+                        val vendas = mutableListOf<Venda>()
+                        if (vendasJson != null) {
+                            for (i in 0 until vendasJson.length()) {
+                                val vJson = vendasJson.getJSONObject(i)
+                                val itensJson = vJson.optJSONArray("itens")
+                                val itens = mutableListOf<ItemVenda>()
+                                if (itensJson != null) {
+                                    for (j in 0 until itensJson.length()) {
+                                        val itemJson = itensJson.getJSONObject(j)
+                                        val qtd = itemJson.optDouble("quantidade", 1.0)
+                                        val total = itemJson.optDouble("total", 0.0)
+                                        itens.add(ItemVenda(
+                                            produtoId = 0,
+                                            produtoNome = itemJson.optString("produtoNome", "Produto"),
+                                            quantidade = qtd,
+                                            unidade = "UN",
+                                            precoUnitario = if (qtd > 0) total / qtd else total,
+                                            total = total
+                                        ))
+                                    }
+                                }
+                                val formaStr = vJson.optString("formaPagamento", "DINHEIRO")
+                                val forma = try { FormaPagamento.valueOf(formaStr) } catch (e: Exception) { FormaPagamento.DINHEIRO }
+                                vendas.add(Venda(
+                                    numero = vJson.optString("id", "0"),
+                                    itens = itens,
+                                    subtotal = vJson.optDouble("total", 0.0),
+                                    total = vJson.optDouble("total", 0.0),
+                                    formaPagamento = forma,
+                                    valorRecebido = vJson.optDouble("total", 0.0)
+                                ))
+                            }
+                        }
+
+                        val sangriasJson = params.optJSONArray("sangrias")
+                        val sangrias = mutableListOf<OperacaoCaixa>()
+                        if (sangriasJson != null) {
+                            for (i in 0 until sangriasJson.length()) {
+                                val sJson = sangriasJson.getJSONObject(i)
+                                sangrias.add(OperacaoCaixa(
+                                    tipo = TipoOperacaoCaixa.SANGRIA,
+                                    nomeOperador = operador,
+                                    valor = sJson.optDouble("valor", 0.0),
+                                    observacao = sJson.optString("observacao", "Sangria")
+                                ))
+                            }
+                        }
+
+                        val app = application as CaixaApplication
+                        val configSemLogo = app.configuracaoImpressaoRepository.getConfiguracaoSemLogo()
+                        val logoBase64 = app.configuracaoImpressaoRepository.getLogoBase64() ?: ""
+                        val configuracao = if (configSemLogo != null) configSemLogo.toConfiguracaoImpressao(logoBase64) else ConfiguracaoImpressao()
+
+                        app.printService.imprimirFechamentoCaixa(
+                            nomeOperador = operador,
+                            dataAbertura = aberturaTimestamp,
+                            dataFechamento = fechamentoTimestamp,
+                            valorInicial = valorInicial,
+                            totalVendas = totalVendas,
+                            totalSangrias = totalSangria,
+                            vendas = vendas,
+                            valoresInformados = emptyMap(),
+                            sangrias = sangrias,
+                            configuracao = configuracao,
+                            valorContado = 0.0
+                        )
+
+                        PollingService.sendControlResult("print_fechamento", true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("MainActivity", "Erro ao processar print_fechamento", e)
+                        PollingService.sendControlResult("print_fechamento", false, e.message)
+                    }
                 }
             }
         )
@@ -1500,6 +1598,55 @@ class MainActivity : ComponentActivity() {
             val editor = prefs.edit()
             editor.putString("funcionarios_json", funcionariosJson.toString())
             editor.apply()
+
+            // Atualizar permissões no banco Room para o operador atual
+            val operatorId = com.seucaixa.caixacombo.data.SecurePrefs.getOperatorId(this)
+            if (operatorId > 0) {
+                for (i in 0 until funcionariosJson.length()) {
+                    val f = funcionariosJson.getJSONObject(i)
+                    val serverId = f.optString("id", "-1").toLongOrNull() ?: -1L
+                    if (serverId == operatorId) {
+                        val nome = f.optString("nome", "")
+                        val cargo = f.optString("cargo", "caixa")
+                        val permissoes = f.optJSONObject("permissoes")
+                        thread {
+                            try {
+                                val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(this@MainActivity).usuarioDao()
+                                val existente = dao.getUsuarioById(operatorId)
+                                if (existente != null) {
+                                    val cargoUsuario = when (cargo.lowercase()) {
+                                        "admin" -> com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                        "gerente" -> com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE
+                                        else -> com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO
+                                    }
+                                    val isGerenteOrAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE || cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                    val isAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                    val updated = existente.copy(
+                                        nome = nome,
+                                        cargo = cargoUsuario,
+                                        permVender = permissoes?.optBoolean("vendas", true) ?: true,
+                                        permCaixa = permissoes?.optBoolean("caixa", true) ?: true,
+                                        permProdutos = permissoes?.optBoolean("produtos", false) ?: false,
+                                        permVendas = permissoes?.optBoolean("vendas", true) ?: true,
+                                        permRelatorios = permissoes?.optBoolean("relatorios", false) ?: false,
+                                        permConfiguracoes = isGerenteOrAdmin,
+                                        permSangria = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permSuprimento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permFechamento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permAcessos = isAdmin
+                                    )
+                                    dao.insert(updated)
+                                    android.util.Log.d("MainActivity", "✅ Permissões atualizadas no Room para operador $operatorId")
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("MainActivity", "Erro ao atualizar permissões no Room", e)
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+
             android.util.Log.d("MainActivity", "✅ ${funcionariosJson.length()} funcionários sincronizados do servidor")
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Erro ao sincronizar funcionários", e)
