@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import android.content.Context
 import androidx.compose.material3.SnackbarHost
@@ -63,10 +64,10 @@ fun CaixaOperacoesScreen(
     var selectedTab by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
-    val operadorNomeLogado = remember {
-        context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE)
-            .getString("operador_nome", null)
-    }
+    val coresPrefs = remember { context.getSharedPreferences("cores_sistema", Context.MODE_PRIVATE) }
+    val primaryColor = remember { Color(coresPrefs.getInt("primary_color", 0xFF6200EE.toInt())) }
+    val backgroundColor = remember { Color(coresPrefs.getInt("background_color", 0xFFF5F5F5.toInt())) }
+    val operadorNomeLogado = remember { coresPrefs.getString("operador_nome", null) }
 
     var showAberturaDialog by remember { mutableStateOf(false) }
     var showFechamentoDialog by remember { mutableStateOf(false) }
@@ -90,7 +91,8 @@ fun CaixaOperacoesScreen(
                 showAberturaDialog = true
             },
             onDismiss = { showSenhaAberturaDialog = false },
-            onErro = { errorMessage = it }
+            onErro = { errorMessage = it },
+            primaryColor = primaryColor
         )
     }
 
@@ -103,7 +105,8 @@ fun CaixaOperacoesScreen(
                 showFechamentoDialog = true
             },
             onDismiss = { showSenhaFechamentoDialog = false },
-            onErro = { errorMessage = it }
+            onErro = { errorMessage = it },
+            primaryColor = primaryColor
         )
     }
 
@@ -125,288 +128,222 @@ fun CaixaOperacoesScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Operações de Caixa") },
+                title = {
+                    Column {
+                        Text("Caixa", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        if (ultimaAbertura != null) {
+                            val dateFormat = SimpleDateFormat("dd/MM", Locale.getDefault())
+                            Text(dateFormat.format(Date(ultimaAbertura!!.dataHora)), fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Voltar")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = primaryColor,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
-        }
+        },
+        containerColor = backgroundColor
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Status do Caixa
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (caixaAberto)
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    else
-                        MaterialTheme.colorScheme.errorContainer
-                )
+            // Status Banner
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .padding(top = 12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (caixaAberto) Color(0xFF065F46) else Color(0xFF7F1D1D)
+                    )
                 ) {
-                    Icon(
-                        if (caixaAberto) Icons.Default.LockOpen else Icons.Default.Lock,
-                        null,
-                        modifier = Modifier.size(28.dp),
-                        tint = if (caixaAberto)
-                            MaterialTheme.colorScheme.tertiary
-                        else
-                            MaterialTheme.colorScheme.error
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        if (caixaAberto) "CAIXA ABERTO" else "CAIXA FECHADO",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    ultimaAbertura?.let { abertura ->
-                        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                        Text(
-                            "Abertura: ${dateFormat.format(Date(abertura.dataHora))}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "Operador: ${abertura.nomeOperador}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "Valor inicial: R$ %.2f".format(abertura.valorInicial ?: 0.0),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    // Mostrar saldo atual se caixa estiver aberto
-                    if (caixaAberto) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            "SALDO ATUAL",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "R$ %.2f".format(saldoAtual),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Vendas por forma de pagamento
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FormaPagamentoItem("Dinheiro", vendasDinheiro, Color(0xFF4CAF50))
-                            FormaPagamentoItem("Crédito", vendasCredito, Color(0xFF2196F3))
-                            FormaPagamentoItem("Débito", vendasDebito, Color(0xFFFF9800))
-                            FormaPagamentoItem("Pix", vendasPix, Color(0xFF9C27B0))
+                            Icon(
+                                if (caixaAberto) Icons.Default.LockOpen else Icons.Default.Lock,
+                                null,
+                                modifier = Modifier.size(28.dp),
+                                tint = Color.White.copy(alpha = 0.9f)
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    if (caixaAberto) "Caixa Aberto" else "Caixa Fechado",
+                                    fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White
+                                )
+                                if (ultimaAbertura != null) {
+                                    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                                    Text(
+                                        dateFormat.format(Date(ultimaAbertura!!.dataHora)),
+                                        fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                            if (caixaAberto) {
+                                Text(
+                                    "R$ %.2f".format(saldoAtual),
+                                    fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White
+                                )
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Totais de operações
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            FormaPagamentoItem("Vendas", totalVendas, MaterialTheme.colorScheme.tertiary, prefix = "+")
-                            FormaPagamentoItem("Sangrias", totalSangrias, MaterialTheme.colorScheme.error, prefix = "-")
-                            FormaPagamentoItem("Supr.", totalSuprimentos, Color(0xFF10B981), prefix = "+")
+                        if (caixaAberto && ultimaAbertura != null) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                LabelValue("Operador", ultimaAbertura!!.nomeOperador)
+                                LabelValue("Abertura", "R$ %.2f".format(ultimaAbertura!!.valorInicial ?: 0.0))
+                            }
                         }
                     }
                 }
             }
 
-            // Botões de Operação
-            if (!caixaAberto) {
-                // Caixa Fechado - Mostrar apenas Abertura
-                Button(
-                    onClick = {
-                        if (caixaAbertoDiaAnterior) {
-                            showCaixaDiaAnteriorDialog = true
-                        } else {
-                            showSenhaAberturaDialog = true
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
+            // Saldo / Métricas (quando caixa aberto)
+            if (caixaAberto) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Icon(Icons.Default.LockOpen, null, modifier = Modifier.size(24.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "ABRIR CAIXA",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text("Resumo do Período", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF374151))
+                        Spacer(Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            MetricItem("Vendas", "R$ %.2f".format(totalVendas), primaryColor)
+                            MetricItem("Sangrias", "R$ %.2f".format(totalSangrias), Color(0xFFDC2626))
+                            MetricItem("Supr.", "R$ %.2f".format(totalSuprimentos), primaryColor)
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        HorizontalDivider(color = Color(0xFFE5E7EB))
+                        Spacer(Modifier.height(10.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            MiniChip("Dinheiro", "R$ %.2f".format(vendasDinheiro), Color(0xFF16A34A))
+                            MiniChip("Crédito", "R$ %.2f".format(vendasCredito), Color(0xFF2563EB))
+                            MiniChip("Débito", "R$ %.2f".format(vendasDebito), Color(0xFFD97706))
+                            MiniChip("PIX", "R$ %.2f".format(vendasPix), Color(0xFF7C3AED))
+                        }
+                    }
                 }
-            } else {
-                // Caixa Aberto - Mostrar Fechamento, Sangria e Suprimento
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            }
+
+            // Botões de Ação
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                if (!caixaAberto) {
+                    Button(
+                        onClick = {
+                            if (caixaAbertoDiaAnterior) showCaixaDiaAnteriorDialog = true
+                            else showSenhaAberturaDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                     ) {
-                        Button(
-                            onClick = {
-                                showSenhaFechamentoDialog = true
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFDC2626)
-                            )
-                        ) {
-                            Icon(Icons.Default.Lock, null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "FECHAR",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        Button(
-                            onClick = { showSangriaDialog = true },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF59E0B)
-                            )
-                        ) {
-                            Icon(Icons.Default.MoneyOff, null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "SANGRIA",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        Button(
-                            onClick = { showSuprimentoDialog = true },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF10B981)
-                            )
-                        ) {
-                            Icon(Icons.Default.AddCircle, null, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "SUPR.",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                        Icon(Icons.Default.LockOpen, null, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Abrir Caixa", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                } else {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ActionCard(
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.Lock,
+                            label = "Fechar",
+                            color = Color(0xFFDC2626),
+                            onClick = { showSenhaFechamentoDialog = true }
+                        )
+                        ActionCard(
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.MoneyOff,
+                            label = "Sangria",
+                            color = Color(0xFFD97706),
+                            onClick = { showSangriaDialog = true }
+                        )
+                        ActionCard(
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.AddCircle,
+                            label = "Supr.",
+                            color = Color(0xFF16A34A),
+                            onClick = { showSuprimentoDialog = true }
+                        )
                     }
                 }
             }
 
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = primaryColor)
+                }
             }
 
-            // Abas de registros
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    ScrollableTabRow(
-                        selectedTabIndex = selectedTab,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            text = { Text("Aberturas") }
-                        )
-                        Tab(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            text = { Text("Fechamentos") }
-                        )
-                        Tab(
-                            selected = selectedTab == 2,
-                            onClick = { selectedTab = 2 },
-                            text = { Text("Sangrias") }
-                        )
-                        Tab(
-                            selected = selectedTab == 3,
-                            onClick = { selectedTab = 3 },
-                            text = { Text("Suprimentos") }
-                        )
-                        Tab(
-                            selected = selectedTab == 4,
-                            onClick = { selectedTab = 4 },
-                            text = { Text("Dinheiro") }
-                        )
-                        Tab(
-                            selected = selectedTab == 5,
-                            onClick = { selectedTab = 5 },
-                            text = { Text("Crédito") }
-                        )
-                        Tab(
-                            selected = selectedTab == 6,
-                            onClick = { selectedTab = 6 },
-                            text = { Text("Débito") }
-                        )
-                        Tab(
-                            selected = selectedTab == 7,
-                            onClick = { selectedTab = 7 },
-                            text = { Text("PIX") }
-                        )
-                    }
+            // Abas de Registros
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column {
+                        ScrollableTabRow(
+                            selectedTabIndex = selectedTab,
+                            modifier = Modifier.fillMaxWidth(),
+                            edgePadding = 0.dp,
+                            containerColor = Color(0xFFF9FAFB),
+                            divider = {},
+                            indicator = {}
+                        ) {
+                            listOf("Aberturas", "Fechamentos", "Sangrias", "Supr.", "Dinheiro", "Crédito", "Débito", "PIX").forEachIndexed { i, label ->
+                                Tab(
+                                    selected = selectedTab == i,
+                                    onClick = { selectedTab = i },
+                                    text = {
+                                        Text(
+                                            label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (selectedTab == i) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (selectedTab == i) primaryColor else Color(0xFF6B7280)
+                                        )
+                                    },
+                                    selectedContentColor = primaryColor,
+                                    unselectedContentColor = Color(0xFF6B7280)
+                                )
+                            }
+                        }
 
-                    HorizontalDivider()
+                        HorizontalDivider(color = Color(0xFFE5E7EB))
 
-                    when (selectedTab) {
-                        0 -> AberturasTab(aberturas)
-                        1 -> FechamentosTab(fechamentos)
-                        2 -> SangriasTab(sangrias)
-                        3 -> SuprimentosTab(suprimentos)
-                        4 -> VendasPorFormaTab(vendasDinheiroList, "Dinheiro")
-                        5 -> VendasPorFormaTab(vendasCreditoList, "Crédito")
-                        6 -> VendasPorFormaTab(vendasDebitoList, "Débito")
-                        7 -> VendasPorFormaTab(vendasPixList, "PIX")
+                        Box(modifier = Modifier.padding(12.dp)) {
+                            when (selectedTab) {
+                                0 -> AberturasTab(aberturas)
+                                1 -> FechamentosTab(fechamentos)
+                                2 -> SangriasTab(sangrias)
+                                3 -> SuprimentosTab(suprimentos)
+                                4 -> VendasPorFormaTab(vendasDinheiroList, "Dinheiro")
+                                5 -> VendasPorFormaTab(vendasCreditoList, "Crédito")
+                                6 -> VendasPorFormaTab(vendasDebitoList, "Débito")
+                                7 -> VendasPorFormaTab(vendasPixList, "PIX")
+                            }
+                        }
                     }
                 }
             }
@@ -429,7 +366,8 @@ fun CaixaOperacoesScreen(
                 )
             },
             onDismiss = { showAberturaDialog = false },
-            operadorNome = operadorNomeLogado
+            operadorNome = operadorNomeLogado,
+            primaryColor = primaryColor
         )
     }
 
@@ -523,14 +461,24 @@ fun CaixaOperacoesScreen(
 fun AberturaCaixaDialog(
     onConfirm: (String, Double) -> Unit,
     onDismiss: () -> Unit,
-    operadorNome: String? = null
+    operadorNome: String? = null,
+    primaryColor: Color = Color(0xFF6200EE),
+    backgroundColor: Color = Color.White
 ) {
     var nome by remember { mutableStateOf(operadorNome ?: "") }
     var valorField by remember { mutableStateOf(TextFieldValue("", selection = TextRange(0))) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Abertura de Caixa") },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = backgroundColor,
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.AccountBalance, null, tint = primaryColor, modifier = Modifier.size(36.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Abertura de Caixa", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = primaryColor)
+            }
+        },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -540,8 +488,14 @@ fun AberturaCaixaDialog(
                     value = nome,
                     onValueChange = { nome = it },
                     label = { Text("Nome do Operador *") },
-                    leadingIcon = { Icon(Icons.Default.Person, null) },
-                    modifier = Modifier.fillMaxWidth()
+                    leadingIcon = { Icon(Icons.Default.Person, null, tint = primaryColor) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        cursorColor = primaryColor
+                    )
                 )
 
                 val valorFormatado = formatarValor(valorField.text)
@@ -554,11 +508,17 @@ fun AberturaCaixaDialog(
                         valorField = criarTextFieldValue(formatarValor(digitsOnly))
                     },
                     label = { Text("Valor Inicial") },
-                    leadingIcon = { Icon(Icons.Default.AttachMoney, null) },
+                    leadingIcon = { Icon(Icons.Default.AttachMoney, null, tint = primaryColor) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("R$ 0,00") },
-                    suffix = { Text(valorDisplay) }
+                    suffix = { Text(valorDisplay, color = primaryColor, fontWeight = FontWeight.Bold) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        cursorColor = primaryColor
+                    )
                 )
             }
         },
@@ -570,14 +530,19 @@ fun AberturaCaixaDialog(
                         onConfirm(nome, valorInicial)
                     }
                 },
-                enabled = nome.isNotBlank() && valorField.text.toDoubleSafe() > 0
+                enabled = nome.isNotBlank() && valorField.text.toDoubleSafe() > 0,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
-                Text("Abrir Caixa")
+                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Abrir Caixa", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text("Cancelar", color = Color.Gray)
             }
         }
     )
@@ -1538,6 +1503,65 @@ fun DialogVendaPreview(
 // ==================== COMPONENTES AUXILIARES ====================
 
 @Composable
+private fun LabelValue(label: String, value: String) {
+    Column {
+        Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.5f))
+        Text(value, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun MetricItem(label: String, value: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, fontSize = 10.sp, color = Color(0xFF6B7280))
+        Spacer(Modifier.height(2.dp))
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = color)
+    }
+}
+
+@Composable
+private fun MiniChip(label: String, value: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .background(color.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text(value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color)
+        }
+        Spacer(Modifier.height(2.dp))
+        Text(label, fontSize = 9.sp, color = Color(0xFF6B7280))
+    }
+}
+
+@Composable
+private fun ActionCard(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.height(64.dp),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(2.dp))
+            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = color)
+        }
+    }
+}
+
+@Composable
 private fun FormaPagamentoItem(
     label: String,
     valor: Double,
@@ -1565,18 +1589,20 @@ private fun SenhaAdminDialog(
     senhaCorreta: String,
     onSenhaCorreta: () -> Unit,
     onDismiss: () -> Unit,
-    onErro: (String) -> Unit
+    onErro: (String) -> Unit,
+    primaryColor: Color = Color(0xFF6200EE)
 ) {
     var senha by remember { mutableStateOf("") }
     var tentativas by remember { mutableStateOf(0) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.AdminPanelSettings, null, modifier = Modifier.size(32.dp)) },
-        title = { Text("Senha Necessária") },
+        shape = RoundedCornerShape(24.dp),
+        icon = { Icon(Icons.Default.AdminPanelSettings, null, tint = primaryColor, modifier = Modifier.size(36.dp)) },
+        title = { Text("Senha Necessária", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryColor) },
         text = {
             Column {
-                Text("Digite a senha de administrador para $motivo")
+                Text("Digite a senha de administrador para $motivo", color = Color.Gray)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = senha,
@@ -1585,6 +1611,12 @@ private fun SenhaAdminDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        cursorColor = primaryColor
+                    ),
                     isError = tentativas > 0 && senha.isNotBlank() && senha != senhaCorreta,
                     supportingText = {
                         if (tentativas > 0 && senha.isNotBlank() && senha != senhaCorreta) {
@@ -1595,7 +1627,7 @@ private fun SenhaAdminDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            Button(
                 onClick = {
                     if (senha == senhaCorreta) {
                         onSenhaCorreta()
@@ -1604,14 +1636,18 @@ private fun SenhaAdminDialog(
                         onErro("Senha incorreta!")
                     }
                 },
-                enabled = senha.isNotBlank()
+                enabled = senha.isNotBlank(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Text("Confirmar")
+                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Confirmar", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text("Cancelar", color = Color.Gray)
             }
         }
     )

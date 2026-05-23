@@ -239,9 +239,9 @@ fun CheckoutScreenMaster(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(backgroundColor).statusBarsPadding()) {
+    Column(modifier = Modifier.fillMaxSize().background(backgroundColor)) {
         Box(
-            modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 16.dp, vertical = 14.dp)
+            modifier = Modifier.fillMaxWidth().background(primaryColor).statusBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -360,12 +360,13 @@ fun CheckoutScreenMaster(
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(produto.nome, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, color = textOnBg, modifier = Modifier.fillMaxWidth())
-                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Text(produto.nome, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, color = textOnBg, modifier = Modifier.fillMaxWidth())
+                                Text("R$ ${"%.2f".format(produto.precoVenda)}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                                Text(produto.descricao?.take(40) ?: "", fontSize = 10.sp, color = textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                                    Text("Est:${"%.0f".format(produto.estoque)}", fontSize = 9.sp, color = textSecondary)
-                                    Text(" | ", fontSize = 9.sp, color = textSecondary.copy(alpha = 0.3f))
-                                    Text("V:$vendidos", fontSize = 9.sp, color = textSecondary)
+                                    Text("Estoque: ${"%.0f".format(produto.estoque)}", fontSize = 10.sp, color = textSecondary)
+                                    Text("  |  ", fontSize = 10.sp, color = textSecondary.copy(alpha = 0.3f))
+                                    Text("Vendidos: $vendidos", fontSize = 10.sp, color = textSecondary)
                                 }
                             }
                         }

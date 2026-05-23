@@ -79,11 +79,16 @@ fun CheckoutScreenPremium(
                 val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(context).usuarioDao()
                 usuarioLogado = dao.getUsuarioById(operatorId)
             }
-            val empresaDao = AppDatabase.getDatabase(context).empresaDao()
-            val empresa = empresaDao.getEmpresaOnce()
-            if (empresa != null) {
-                val nome = empresa.nomeFantasia.ifBlank { empresa.razaoSocial }
-                if (nome.isNotBlank()) empresaNome = nome
+            val nomePrefs = sharedPreferences.getString("empresa_nome", "")
+            if (nomePrefs.isNullOrBlank()) {
+                val empresaDao = AppDatabase.getDatabase(context).empresaDao()
+                val empresa = empresaDao.getEmpresaOnce()
+                if (empresa != null) {
+                    val nome = empresa.nomeFantasia.ifBlank { empresa.razaoSocial }
+                    if (nome.isNotBlank()) empresaNome = nome
+                }
+            } else {
+                empresaNome = nomePrefs
             }
             val logoFile = java.io.File(context.filesDir, "logo.png")
             if (logoFile.exists()) {
@@ -190,8 +195,8 @@ fun CheckoutScreenPremium(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-        Box(modifier = Modifier.fillMaxWidth().background(primaryColor).padding(horizontal = 12.dp, vertical = 8.dp)) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxWidth().background(primaryColor).statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     if (logoBitmap != null) {
@@ -254,9 +259,11 @@ fun CheckoutScreenPremium(
                 else produtos
             items(filtered.take(60)) { produto ->
                 val vendidos = vendidosPorProduto[produto.id] ?: 0
+                val qtdNoCarrinho = carrinho.find { it.produtoId == produto.id }?.quantidade?.toInt() ?: 0
                 PdvProdutoCard(
                     produto = produto,
                     vendidos = vendidos,
+                    quantidadeNoCarrinho = qtdNoCarrinho,
                     primaryColor = primaryColor,
                     onCardClick = { viewModel.adicionarAoCarrinho(produto) },
                     imageHeight = 60.dp,
@@ -271,32 +278,48 @@ fun CheckoutScreenPremium(
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth().background(Color.White).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().background(primaryColor).navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("TOTAL", fontSize = 9.sp, color = Color.Gray)
-                    Text("R$ ${"%.2f".format(total)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                    Text("TOTAL", fontSize = 9.sp, color = Color.White.copy(alpha = 0.7f))
+                    Text("R$ ${"%.2f".format(total)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 if (carrinho.isNotEmpty()) {
                     OutlinedButton(onClick = { showCarrinhoDialog = true },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.7f))
                     ) {
-                        Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(16.dp), tint = Color.White)
                         Spacer(Modifier.width(4.dp))
-                        Text("Itens (${carrinho.size})", fontSize = 11.sp)
+                        Text("Itens (${carrinho.sumOf { it.quantidade.toInt() }})", fontSize = 11.sp, color = Color.White)
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                 }
-                Button(onClick = { if (carrinho.isNotEmpty()) showFormaPagamentoDialog = true },
+                Button(onClick = {
+                        if (carrinho.isNotEmpty()) {
+                            if (caixaAberto) showFormaPagamentoDialog = true
+                            else onNavigateToCaixa()
+                        }
+                    },
                     enabled = carrinho.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (caixaAberto) Color.White else Color(0xFFEF4444),
+                        contentColor = if (caixaAberto) primaryColor else Color.White
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
-                    Icon(Icons.Default.ShoppingCartCheckout, null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        if (caixaAberto) Icons.Default.ShoppingCartCheckout else Icons.Default.Lock,
+                        null, modifier = Modifier.size(16.dp)
+                    )
                     Spacer(Modifier.width(4.dp))
-                    Text("VENDER", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text(
+                        if (caixaAberto) "VENDER" else "ABRIR CAIXA",
+                        fontWeight = FontWeight.Bold, fontSize = 13.sp
+                    )
                 }
             }
         }

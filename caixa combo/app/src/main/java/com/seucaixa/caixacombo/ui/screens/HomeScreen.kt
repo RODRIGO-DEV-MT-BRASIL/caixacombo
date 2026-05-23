@@ -186,20 +186,30 @@ fun HomeScreen(
                                 scope.launch(Dispatchers.IO) {
                                     val dao = AppDatabase.getDatabase(context).usuarioDao()
                                     val existente = dao.getUsuarioById(funcId)
+                                    val cargoUsuario = when (cargo.lowercase()) {
+                                        "admin" -> com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                        "gerente" -> com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE
+                                        else -> com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO
+                                    }
+                                    val isGerenteOrAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE || cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                    val isAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
                                     val usuario = com.seucaixa.caixacombo.data.model.Usuario(
                                         id = funcId,
                                         nome = nome,
                                         codigo = existente?.codigo ?: "",
                                         email = identifier,
-                                        cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO,
+                                        cargo = cargoUsuario,
                                         ativo = true,
                                         permVender = permissoes?.optBoolean("vendas", true) ?: true,
                                         permCaixa = permissoes?.optBoolean("caixa", true) ?: true,
                                         permProdutos = permissoes?.optBoolean("produtos", false) ?: false,
                                         permVendas = permissoes?.optBoolean("vendas", true) ?: true,
                                         permRelatorios = permissoes?.optBoolean("relatorios", false) ?: false,
-                                        permConfiguracoes = false,
-                                        permAcessos = false
+                                        permConfiguracoes = isGerenteOrAdmin,
+                                        permSangria = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permSuprimento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permFechamento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                        permAcessos = isAdmin
                                     )
                                     dao.insert(usuario)
                                     withContext(Dispatchers.Main) {
@@ -536,20 +546,30 @@ fun HomeScreen(
                                                 val dao = AppDatabase.getDatabase(context).usuarioDao()
                                                 // Buscar se já existe
                                                 val existente = dao.getUsuarioById(funcId)
+                                                val cargoUsuario = when (cargo.lowercase()) {
+                                                    "admin" -> com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                                    "gerente" -> com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE
+                                                    else -> com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO
+                                                }
+                                                val isGerenteOrAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.GERENTE || cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
+                                                val isAdmin = cargoUsuario == com.seucaixa.caixacombo.data.model.CargoUsuario.ADMIN
                                                 val usuario = com.seucaixa.caixacombo.data.model.Usuario(
                                                     id = funcId,
                                                     nome = nome,
                                                     codigo = existente?.codigo ?: "",
                                                     email = loginIdentifier,
-                                                    cargo = com.seucaixa.caixacombo.data.model.CargoUsuario.FUNCIONARIO,
+                                                    cargo = cargoUsuario,
                                                     ativo = true,
                                                     permVender = permissoes?.optBoolean("vendas", true) ?: true,
                                                     permCaixa = permissoes?.optBoolean("caixa", true) ?: true,
                                                     permProdutos = permissoes?.optBoolean("produtos", false) ?: false,
                                                     permVendas = permissoes?.optBoolean("vendas", true) ?: true,
                                                     permRelatorios = permissoes?.optBoolean("relatorios", false) ?: false,
-                                                    permConfiguracoes = false,
-                                                    permAcessos = false
+                                                    permConfiguracoes = isGerenteOrAdmin,
+                                                    permSangria = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                                    permSuprimento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                                    permFechamento = permissoes?.optBoolean("operacoes_caixa", true) ?: true,
+                                                    permAcessos = isAdmin
                                                 )
                                                 dao.insert(usuario)
                                                 withContext(Dispatchers.Main) {

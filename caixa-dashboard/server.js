@@ -1677,6 +1677,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
   await debouncedSaveData();
 
   addAuditoria('criacao_funcionario', null, `Funcionário "${nome}" (${cargo}) criado com código ${finalCodigo}`, req.user?.username);
+  broadcastFuncionariosSync(targetEmpresaId);
   res.json(funcionario);
 });
 
@@ -1720,6 +1721,7 @@ app.put('/api/funcionarios/:id', authenticateToken, async (req, res) => {
 
   await debouncedSaveData();
   addAuditoria('edicao_funcionario', null, `Funcionário "${func.nome}" atualizado`, req.user?.username);
+  broadcastFuncionariosSync(func.empresaId);
   res.json(db.funcionarios[index]);
 });
 
@@ -1737,6 +1739,7 @@ app.delete('/api/funcionarios/:id', authenticateToken, async (req, res) => {
   const deleted = db.funcionarios.splice(index, 1)[0];
   await debouncedSaveData();
   addAuditoria('remocao_funcionario', null, `Funcionário "${func.nome}" removido`, req.user?.username);
+  broadcastFuncionariosSync(func.empresaId);
   res.json(deleted);
 });
 
@@ -2026,6 +2029,44 @@ app.post('/api/operacoes', authenticateToken, async (req, res) => {
       );
 
       console.log(`🧹 [FECHAMENTO] Sessão fechada para ${deviceId || 'geral'}: removidas ${vendaIdsSessao.size} vendas e ${opsSessao.length} operações do banco ativo`);
+
+      // Enfileirar comando de impressão do fechamento para o terminal
+      if (deviceId && deviceId !== 'geral') {
+        const vendasPrint = vendasSessao.map(v => ({
+          id: v.id,
+          total: v.total,
+          formaPagamento: v.formaPagamento,
+          createdAt: v.createdAt || v.dataHora,
+          itens: (v.itens || []).map(i => ({
+            produtoNome: i.produtoNome || i.nome || 'Produto',
+            quantidade: i.quantidade || 1,
+            total: i.total || 0
+          }))
+        }));
+        const sangriasPrint = opsSessao
+          .filter(o => o.tipo === 'sangria')
+          .map(s => ({ valor: s.valor, observacao: s.observacao || 'Sangria' }));
+
+        const printData = {
+          operador: nomeOperador || 'dashboard',
+          dataAbertura: ultimaAbertura.dataHora,
+          dataFechamento: operacao.dataHora,
+          dataAberturaTimestamp: ultimaAbertura.timestamp,
+          dataFechamentoTimestamp: operacao.timestamp,
+          valorInicial: ultimaAbertura.valor || 0,
+          totalVendas: sessao.totalVendas,
+          totalSangria: sessao.totalSangria,
+          vendas: vendasPrint,
+          sangrias: sangriasPrint
+        };
+
+        enqueueDeviceCommand(deviceId, 'print_fechamento', printData);
+
+        const deviceConfig = connectedDevices.get(deviceId);
+        if (deviceConfig?.socketId) {
+          io.to(deviceConfig.socketId).emit('print_fechamento', printData);
+        }
+      }
     }
   }
   

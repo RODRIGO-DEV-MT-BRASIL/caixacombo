@@ -108,7 +108,10 @@ fun CaixaComboTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.navigationBarColor = colorScheme.primary.toArgb()
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = darkTheme
+            controller.isAppearanceLightNavigationBars = darkTheme
         }
     }
     
