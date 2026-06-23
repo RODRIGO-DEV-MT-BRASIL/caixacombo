@@ -3,7 +3,7 @@ services:
   - type: web
     name: caixa-combo-api
     env: node
-    buildCommand: cd caixa-dashboard && npm install
+    buildCommand: cd caixa-dashboard && npm install && npm run build
     startCommand: cd caixa-dashboard && node server.js
     envVars:
       - key: NODE_ENV
