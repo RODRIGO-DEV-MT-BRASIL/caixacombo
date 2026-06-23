@@ -14,19 +14,5 @@ export default defineConfig({
         ws: true
       }
     }
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          pdf: ['jspdf', 'jspdf-autotable']
-        }
-      }
-    }
   }
 })
