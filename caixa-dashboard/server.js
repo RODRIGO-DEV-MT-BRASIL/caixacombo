@@ -3973,17 +3973,24 @@ app.get('/api/payment/dashboard/:empresaId', authenticateToken, async (req, res)
 });
 
 // ==================== SPA CATCH-ALL ====================
-// Servir arquivos estáticos do frontend (após build)
-app.use(express.static(path.join(__dirname, 'frontend/dist')));
-
-// Serve o index.html para todas as rotas que não são de API (para React Router)
-app.get('*', (req, res) => {
-  // Ignorar rotas de API e uploads
-  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
-    return res.status(404).json({ error: 'Not found' });
-  }
-  res.sendFile(path.join(__dirname, 'frontend/dist/index.html'));
-});
+// Servir arquivos estáticos do frontend (após build) - apenas se existir
+const frontendDist = path.join(__dirname, 'frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    res.json({ message: 'CaixaCombo API', docs: '/api/health' });
+  });
+}
 
 const PORT = 3001;
 initializeApp().then(() => {
