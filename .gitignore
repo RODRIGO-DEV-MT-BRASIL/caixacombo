@@ -2,6 +2,7 @@ node_modules/
 dist/
 target/
 build/
+caixa-dashboard/frontend/dist/
 .env
 .env.local
 .env.*.local
