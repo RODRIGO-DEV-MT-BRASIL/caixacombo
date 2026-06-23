@@ -9,14 +9,123 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 
+// Constant-time comparison para prevenir timing attacks em PINs
+function safeCompare(a, b) {
+  const bufA = Buffer.from(String(a || ''));
+  const bufB = Buffer.from(String(b || ''));
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, Buffer.alloc(bufA.length));
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+// Funcoes de validacao de entrada
+function validateEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email.trim().toLowerCase());
+}
+
+function validateString(value, minLength = 1, maxLength = 1000) {
+  if (!value || typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  return trimmed.length >= minLength && trimmed.length <= maxLength;
+}
+
+function validateNumber(value, min = 0, max = Number.MAX_SAFE_INTEGER) {
+  const num = Number(value);
+  return !isNaN(num) && num >= min && num <= max;
+}
+
+function sanitizeInput(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(/[<>]/g, '').trim();
+}
+
+// Middleware de validacao para login
+function validateLoginInput(req, res, next) {
+  const { username, password, email, pin } = req.body;
+  
+  // Se usa email, validar formato
+  if (email && !validateEmail(email)) {
+    return res.status(400).json({ error: 'Formato de email invalido' });
+  }
+  
+  // Se usa username, validar formato
+  if (username && !validateString(username, 3, 50)) {
+    return res.status(400).json({ error: 'Username deve ter entre 3 e 50 caracteres' });
+  }
+  
+  // Validar senha/PIN
+  const credential = password || pin;
+  if (!credential || credential.length < 4 || credential.length > 128) {
+    return res.status(400).json({ error: 'Credenciais invalidas' });
+  }
+  
+  // Sanitizar inputs
+  if (username) req.body.username = sanitizeInput(username);
+  if (email) req.body.email = sanitizeInput(email);
+  
+  next();
+}
+
+// Security headers (Stone compliance)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "same-site" },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  noSniff: true,
+  xssFilter: true
+}));
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 200,
+  message: { error: 'Muitas requisições. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Muitas tentativas de login. Conta bloqueada temporariamente.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth/', authLimiter);
+
+// CORS (seguro - origens específicas)
 const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').filter(Boolean);
 app.use(cors({ 
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true, 
-  credentials: true 
+  origin: allowedOrigins.length > 0 ? allowedOrigins : ['http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Authorization', 'Content-Type']
 }));
 app.use(express.json({ limit: '10mb' }));
 
@@ -72,26 +181,11 @@ const upload = multer({
   }
 });
 
-// ==================== PERSISTÊNCIA DE DADOS (MongoDB) ====================
-const { db, saveData, saveAuditoria, connectMongo, isConnected } = require('./database-mongo');
+// ==================== PERSISTÊNCIA DE DADOS (Supabase PostgreSQL) ====================
+const { connectDatabase, query, queryOne, queryMany } = require('./database');
+const { db, loadAll, debouncedSave, flushToDb, saveData, saveAuditoria } = require('./db');
 
-// Debounce para saveData - evita múltiplos bulkWrites seguidos
-let saveDataTimer = null;
-const SAVEDATA_DEBOUNCE_MS = 2000; // 2 segundos
-function debouncedSaveData() {
-  if (saveDataTimer) clearTimeout(saveDataTimer);
-  return new Promise(resolve => {
-    saveDataTimer = setTimeout(async () => {
-      await saveData();
-      saveDataTimer = null;
-      resolve();
-    }, SAVEDATA_DEBOUNCE_MS);
-  });
-}
-
-// Seed do admin será feito após connectMongo() para verificar dados do MongoDB primeiro
-
-// Gerador de IDs único - evita colisões quando múltiplas operações rodam no mesmo milissegundo
+// Gerador de IDs único
 let _idCounter = 0;
 let _lastIdTime = 0;
 function generateId() {
@@ -102,7 +196,7 @@ function generateId() {
     _idCounter = 0;
     _lastIdTime = now;
   }
-  return now * 1000 + _idCounter; // Garante unicidade mesmo no mesmo ms
+  return now * 1000 + _idCounter;
 }
 
 // Gerar slug único a partir do nome da empresa
@@ -157,60 +251,23 @@ function emitDeviceEvent(event, data) {
   emitToEmpresa(event, data, deviceEmpresaId);
 }
 
-// Inicialização assíncrona: conectar MongoDB e carregar dados
+// Inicialização assíncrona: conectar PostgreSQL e carregar dados
 async function initializeApp() {
-  await connectMongo();
-
-  // Seed do admin padrão após carregar dados do MongoDB
-  // REQUER variáveis de ambiente - NÃO permite valores padrão por segurança
-  const adminUsername = process.env.ADMIN_USERNAME;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const existingAdmin = (db.usuarios || []).find(u => u.role === 'admin');
-
-  if (!adminUsername || !adminPassword) {
-    if (!existingAdmin) {
-      console.error('❌ ERRO: ADMIN_USERNAME e ADMIN_PASSWORD devem ser definidos como variáveis de ambiente ao criar o primeiro admin');
-      console.error('   Exemplo: ADMIN_USERNAME=admin ADMIN_PASSWORD=senha_segura_aleatoria npm start');
-      process.exit(1);
-    }
-
-    console.warn('⚠️ Aviso: ADMIN_USERNAME e ADMIN_PASSWORD não definidos. Usando admin existente no banco.');
-  } else {
-    if (!existingAdmin) {
-      if (!db.usuarios) db.usuarios = [];
-      db.usuarios.push({
-        id: generateId(),
-        username: adminUsername,
-        password: bcrypt.hashSync(adminPassword, 10),
-        role: 'admin'
-      });
-      await saveData();
-      console.log(`👤 Admin criado: ${adminUsername}`);
-    } else if (existingAdmin.username !== adminUsername) {
-      console.warn(`⚠️ Admin existente encontrado com username diferente: ${existingAdmin.username}. Não será criado novo admin com ${adminUsername}.`);
-    } else if (!bcrypt.compareSync(adminPassword, existingAdmin.password)) {
-      existingAdmin.password = bcrypt.hashSync(adminPassword, 10);
-      await saveData();
-      console.log(`👤 Admin "${adminUsername}" atualizado com nova senha`);
-    } else {
-      console.log(`👤 Admin "${adminUsername}" já existe com senha correta`);
-    }
+  const connected = await connectDatabase();
+  if (!connected) {
+    console.error('❌ Não foi possível conectar ao banco de dados');
+    process.exit(1);
   }
 
-  // Limpar imagens de produtos que apontam para /uploads/ (filesystem efêmero do Render)
-  let imagensLimpas = 0;
-  if (db.produtos && db.produtos.length > 0) {
-    db.produtos.forEach(p => {
-      if (p.imagem && p.imagem.startsWith('/uploads/')) {
-        p.imagem = null;
-        imagensLimpas++;
-      }
-    });
-    if (imagensLimpas > 0) {
-      await saveData();
-      console.log(`🧹 ${imagensLimpas} imagens /uploads/ limpas (arquivos não existem mais no Render)`);
-    }
-  }
+  // Carregar todos os dados do PostgreSQL para memória
+  await loadAll();
+
+  // Seed do admin padrão
+  const { seedAdmin } = require('./database');
+  await seedAdmin();
+
+  // Recarregar dados após seed
+  await loadAll();
 
   // Carregar dispositivos do banco para o mapa ao iniciar
   if (db.dispositivos && db.dispositivos.length > 0) {
@@ -237,40 +294,36 @@ async function initializeApp() {
 // Função para adicionar logs de auditoria
 function addAuditoria(tipo, deviceId, detalhes, usuario = null) {
   const deviceEmpresaId = deviceId ? (connectedDevices.get(deviceId)?.empresaId || null) : null;
+  
   const log = {
     id: generateId(),
-    timestamp: new Date(),
-    tipo, // 'conexao', 'desconexao', 'bloqueio', 'desbloqueio', 'mudanca_status'
+    timestamp: new Date().toISOString(),
+    tipo,
     deviceId,
     deviceName: connectedDevices.get(deviceId)?.deviceName || deviceId,
     detalhes,
     usuario: usuario || (connectedDevices.get(deviceId)?.deviceName || 'Sistema'),
-    ip: null, // Poderia ser extraído do socket se necessário
+    ip: null,
     empresaId: deviceEmpresaId
   };
   
-  db.auditoria.unshift(log); // Adicionar no início (mais recente primeiro)
+  db.auditoria.unshift(log);
   
-  // Manter apenas os últimos 1000 logs para não sobrecarregar memória
-  if (db.auditoria.length > 1000) {
-    db.auditoria = db.auditoria.slice(0, 1000);
+  // Manter apenas os últimos 2000 logs
+  if (db.auditoria.length > 2000) {
+    db.auditoria = db.auditoria.slice(0, 2000);
   }
   
-  // Salvar auditoria em disco
   saveAuditoria();
   
-  // Notificar dashboards sobre novo log - filtrar por empresa
-  const logEmpresaId = log.empresaId || null;
-  emitToEmpresa('auditoria_update', log, logEmpresaId);
-  
+  emitToEmpresa('auditoria_update', log, deviceEmpresaId);
   console.log(`[AUDITORIA] ${tipo.toUpperCase()}: ${deviceId} - ${detalhes}`);
 }
 
 // Salvar dados periodicamente a cada 30 segundos
 setInterval(async () => {
-  await saveData();
-  if (isConnected()) console.log('💾 Dados salvos no MongoDB');
-  else console.log('⚠️ MongoDB desconectado - dados apenas em memória');
+  await flushToDb();
+  console.log('💾 Dados sincronizados com PostgreSQL');
 }, 30000);
 
 // ==================== CONTROLE VIA ADB ====================
@@ -329,8 +382,7 @@ async function sendAdbCommand(action, deviceId) {
 // Salvar dados ao encerrar servidor
 process.on('SIGINT', async () => {
   console.log('\n🔄 Salvando dados antes de encerrar...');
-  await saveData();
-  saveAuditoria();
+  await flushToDb();
   process.exit(0);
 });
 
@@ -338,13 +390,14 @@ process.on('SIGINT', async () => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { 
-    origin: process.env.NODE_ENV === 'production' ? '*' : true,
-    credentials: true 
+    origin: allowedOrigins.length > 0 ? allowedOrigins : ['http://localhost:5173'],
+    credentials: true,
+    methods: ['GET', 'POST']
   },
-  transports: ["polling", "websocket"],
+  transports: ["polling"],
   pingTimeout: 60000,
   pingInterval: 25000,
-  allowEIO3: true
+  allowEIO3: false
 });
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -393,14 +446,52 @@ function authenticateToken(req, res, next) {
 }
 
 // ==================== ROTAS API ====================
-app.post('/api/auth/login', async (req, res) => {
+// Middleware para logging de tentativas de login
+const loginAttempts = new Map();
+const LOGIN_ATTEMPT_WINDOW = 15 * 60 * 1000; // 15 minutos
+const MAX_LOGIN_ATTEMPTS = 10;
+
+function checkLoginAttempts(identifier) {
+  const now = Date.now();
+  const attempts = loginAttempts.get(identifier) || [];
+  
+  // Limpar tentativas antigas
+  const recentAttempts = attempts.filter(t => now - t < LOGIN_ATTEMPT_WINDOW);
+  
+  if (recentAttempts.length >= MAX_LOGIN_ATTEMPTS) {
+    return false; // Bloqueado
+  }
+  
+  return true;
+}
+
+function recordLoginAttempt(identifier, success) {
+  const now = Date.now();
+  const attempts = loginAttempts.get(identifier) || [];
+  
+  if (success) {
+    loginAttempts.delete(identifier);
+  } else {
+    attempts.push(now);
+    loginAttempts.set(identifier, attempts);
+  }
+}
+
+app.post('/api/auth/login', validateLoginInput, async (req, res) => {
   const { username, password, email, pin } = req.body;
 
   const providedEmail = (email || '').toString().trim().toLowerCase();
   const providedPassword = (password || pin || '').toString().trim();
+  
+  // Verificar rate limit de tentativas de login
+  const identifier = providedEmail || username || 'unknown';
+  if (!checkLoginAttempts(identifier)) {
+    console.warn(`[SECURITY] Login bloqueado por muitas tentativas: ${identifier}`);
+    return res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente mais tarde.' });
+  }
 
   if (providedEmail && providedPassword) {
-    console.log(`[LOGIN] Tentativa por email: email="${providedEmail}"`);
+    console.log(`[LOGIN] Tentativa por email`);
     
     // DeviceId enviado pelo terminal Android
     const { deviceId } = req.body;
@@ -414,8 +505,14 @@ app.post('/api/auth/login', async (req, res) => {
         // Tentar admin/usuario por email
         const admin = (db.usuarios || []).find(u => ((u.email || '').toString().trim().toLowerCase()) === providedEmail && u.ativo);
         if (!admin) return res.status(401).json({ error: 'Credenciais inválidas' });
-        const okAdmin = admin.password ? bcrypt.compareSync(providedPassword, admin.password) : (providedPassword === (admin.password_plain || '').toString());
-        if (!okAdmin) return res.status(401).json({ error: 'Credenciais inválidas' });
+        if (!admin.password) return res.status(401).json({ error: 'Credenciais inválidas' });
+        const okAdmin = bcrypt.compareSync(providedPassword, admin.password);
+        if (!okAdmin) {
+          recordLoginAttempt(identifier, false);
+          console.warn(`[SECURITY] Login falhou para admin: ${providedEmail}`);
+          return res.status(401).json({ error: 'Credenciais inválidas' });
+        }
+        recordLoginAttempt(identifier, true);
         const token = jwt.sign({ id: admin.id, email: admin.email, role: admin.role || 'admin' }, JWT_SECRET, { expiresIn: '24h' });
         return res.json({ token, user: { id: admin.id, email: admin.email, username: admin.username || admin.nome, role: admin.role || 'admin' } });
       }
@@ -426,10 +523,10 @@ app.post('/api/auth/login', async (req, res) => {
       if (!empresa || !empresa.ativo) return res.status(403).json({ error: 'Empresa desativada ou não encontrada.' });
 
       // check password/pin
-      let ok = false;
-      if (funcionarioByCodigo.password) ok = bcrypt.compareSync(providedPassword, funcionarioByCodigo.password);
-      else if (funcionarioByCodigo.pin) ok = providedPassword === funcionarioByCodigo.pin.toString();
-      if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
+    let ok = false;
+    if (funcionarioByCodigo.password) ok = bcrypt.compareSync(providedPassword, funcionarioByCodigo.password);
+    else if (funcionarioByCodigo.pin) ok = safeCompare(providedPassword, funcionarioByCodigo.pin);
+    if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
       
       // VERIFICAR TERMINAL SE deviceId FOR ENVIADO
       const terminalResult = verifyTerminalAndLogin(deviceId, funcionarioByCodigo.empresaId, funcionarioByCodigo?.nome || 'desconhecido', req);
@@ -446,7 +543,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     let ok = false;
     if (funcionario.password) ok = bcrypt.compareSync(providedPassword, funcionario.password);
-    else if (funcionario.pin) ok = providedPassword === funcionario.pin.toString();
+    else if (funcionario.pin) ok = safeCompare(providedPassword, funcionario.pin);
     if (!ok) return res.status(401).json({ error: 'Credenciais inválidas' });
     
     // VERIFICAR TERMINAL SE deviceId FOR ENVIADO
@@ -458,27 +555,29 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   // Login de admin/empresa (username + password)
-  console.log(`[LOGIN] Tentativa: username="${username}", usuarios no db=${db.usuarios.length}, empresas no db=${(db.empresas || []).length}`);
+  console.log(`[LOGIN] Tentativa: username="${username}"`);
   
   // Verificar se é usuário do sistema
-  let user = db.usuarios.find(u => u.username === username);
+  let user = db.usuarios.find(u => u.username === username && u.ativo);
   console.log(`[LOGIN] Usuário encontrado: ${user ? `id=${user.id}, role=${user.role}` : 'NENHUM'}`);
   
   // Se não for usuário do sistema, verificar se é empresa
   if (!user) {
-    const empresa = (db.empresas || []).find(e => e.login === username);
+    const empresa = db.empresas.find(e => e.login === username && e.ativa);
     console.log(`[LOGIN] Empresa encontrada: ${empresa ? `id=${empresa.id}, login=${empresa.login}, temSenha=${!!empresa.senha}` : 'NENHUMA'}`);
     if (empresa) {
-      if (!empresa.ativo) {
+      if (!empresa.ativa) {
         return res.status(403).json({ error: 'Empresa desativada. Contate o administrador.' });
       }
       if (!empresa.senha || !bcrypt.compareSync(password, empresa.senha)) {
         console.log(`[LOGIN] Senha da empresa não confere ou senha ausente`);
+        recordLoginAttempt(identifier, false);
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
       
+      recordLoginAttempt(identifier, true);
       const token = jwt.sign(
-        { id: empresa.id, username: empresa.login, role: 'empresa', empresaId: empresa.id, permissoes: empresa.permissoes, paginasPermitidas: empresa.paginasPermitidas },
+        { id: empresa.id, username: empresa.login, role: 'empresa', empresaId: empresa.id, permissoes: empresa.permissoes, paginasPermitidas: empresa.paginas_permitidas },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -492,12 +591,12 @@ app.post('/api/auth/login', async (req, res) => {
           empresaId: empresa.id,
           slug: empresa.slug,
           permissoes: empresa.permissoes,
-          paginasPermitidas: empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'],
+          paginasPermitidas: empresa.paginas_permitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'],
           branding: {
-            primaryColor: empresa.primaryColor || '#3b82f6',
-            secondaryColor: empresa.secondaryColor || '#06b6d4',
-            accentColor: empresa.accentColor || '#10b981',
-            logoUrl: empresa.logoUrl || '',
+            primaryColor: empresa.primary_color || '#3b82f6',
+            secondaryColor: empresa.secondary_color || '#06b6d4',
+            accentColor: empresa.accent_color || '#10b981',
+            logoUrl: empresa.logo_url || '',
             companyName: empresa.nome
           }
         }
@@ -505,22 +604,27 @@ app.post('/api/auth/login', async (req, res) => {
     }
   }
   
-  if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
-  
-  if (!bcrypt.compareSync(password, user.password)) {
-    console.log(`[LOGIN] Senha do usuário não confere para "${username}"`);
+  if (!user) {
+    recordLoginAttempt(identifier, false);
     return res.status(401).json({ error: 'Credenciais inválidas' });
   }
   
-  const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+  if (!bcrypt.compareSync(password, user.password)) {
+    console.log(`[LOGIN] Senha do usuário não confere para "${username}"`);
+    recordLoginAttempt(identifier, false);
+    return res.status(401).json({ error: 'Credenciais inválidas' });
+  }
+  
+  recordLoginAttempt(identifier, true);
+  const token = jwt.sign({ id: user.id, username: user.username, role: user.role, empresaId: user.empresa_id }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token, user: { id: user.id, username: user.username, role: user.role, empresaId: user.empresa_id } });
 });
 
-app.get('/api/auth/verify', authenticateToken, (req, res) => {
+app.get('/api/auth/verify', authenticateToken, async (req, res) => {
   const userData = { ...req.user };
   // Se for empresa, buscar branding atualizado
   if (req.user.role === 'empresa' && req.user.empresaId) {
-    const empresa = (db.empresas || []).find(e => e.id === req.user.empresaId);
+    const empresa = db.empresas.find(e => e.id === req.user.empresaId);
     if (empresa) {
       userData.paginasPermitidas = empresa.paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'terminais', 'impressao', 'config'];
       userData.branding = {
@@ -746,6 +850,15 @@ app.get('/api/categorias', authenticateToken, (req, res) => {
 });
 
 app.post('/api/categorias', authenticateToken, async (req, res) => {
+  // Validacao de entrada
+  if (!validateString(req.body.nome, 1, 100)) {
+    return res.status(400).json({ error: 'Nome da categoria obrigatorio (1-100 caracteres)' });
+  }
+  
+  // Sanitizar inputs
+  req.body.nome = sanitizeInput(req.body.nome);
+  if (req.body.descricao) req.body.descricao = sanitizeInput(req.body.descricao);
+  
   let empresaId = null;
   if (req.user.role === 'empresa') {
     empresaId = req.user.empresaId;
@@ -848,11 +961,13 @@ app.post('/api/upload-base64', authenticateToken, async (req, res) => {
 // ==================== ROTAS DE PRODUTOS ====================
 app.get('/api/produtos', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
-  let result = db.produtos;
-  // Filtrar por empresa se role=empresa - SÓ dados da própria empresa
+  let result = db.produtos.filter(p => p.ativo !== false);
+  
+  // Filtrar por empresa se role=empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
     result = result.filter(p => p.empresaId === req.user.empresaId);
   }
+  
   const total = result.length;
   if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
@@ -864,14 +979,14 @@ app.get('/api/produtos', authenticateToken, (req, res) => {
 app.get('/api/vendas', authenticateToken, (req, res) => {
   const { limit, offset } = req.query;
   let result = db.vendas || [];
+  
   // Empresa só vê vendas da própria empresa
   if (req.user.role === 'empresa' && req.user.empresaId) {
     result = result.filter(v => v.empresaId === req.user.empresaId);
-  }
-  // Admin pode filtrar por empresa via query
-  else if (req.query.empresaId) {
+  } else if (req.query.empresaId) {
     result = result.filter(v => v.empresaId === req.query.empresaId);
   }
+  
   const total = result.length;
   if (!limit && !offset) return res.json(result);
   if (offset) result = result.slice(Number(offset));
@@ -939,6 +1054,21 @@ app.post('/api/admin/clear-old-data', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/produtos', authenticateToken, async (req, res) => {
+  // Validacao de entrada
+  if (!validateString(req.body.nome, 1, 200)) {
+    return res.status(400).json({ error: 'Nome do produto obrigatorio (1-200 caracteres)' });
+  }
+  if (req.body.preco !== undefined && !validateNumber(req.body.preco, 0, 9999999.99)) {
+    return res.status(400).json({ error: 'Preco invalido' });
+  }
+  if (req.body.estoque !== undefined && !validateNumber(req.body.estoque, 0, 999999)) {
+    return res.status(400).json({ error: 'Estoque invalido' });
+  }
+  
+  // Sanitizar inputs
+  req.body.nome = sanitizeInput(req.body.nome);
+  if (req.body.descricao) req.body.descricao = sanitizeInput(req.body.descricao);
+  
   let empresaId = null;
   let empresaNome = 'desconhecida';
   
@@ -1031,28 +1161,45 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Apenas admin' });
   const { nome, cnpj, email, telefone, login, senha, permissoes, primaryColor, secondaryColor, accentColor, logoUrl, paginasPermitidas } = req.body;
 
-  if (!nome || !login || !senha) {
-    return res.status(400).json({ error: 'Nome, login e senha são obrigatórios' });
+  // Validacao de entrada
+  if (!validateString(nome, 2, 200)) {
+    return res.status(400).json({ error: 'Nome da empresa obrigatorio (2-200 caracteres)' });
+  }
+  if (!validateString(login, 3, 50)) {
+    return res.status(400).json({ error: 'Login obrigatorio (3-50 caracteres)' });
+  }
+  if (!senha || senha.length < 8 || senha.length > 128) {
+    return res.status(400).json({ error: 'Senha obrigatoria (minimo 8 caracteres)' });
+  }
+  if (email && !validateEmail(email)) {
+    return res.status(400).json({ error: 'Formato de email invalido' });
+  }
+  if (cnpj && !validateString(cnpj, 14, 18)) {
+    return res.status(400).json({ error: 'CNPJ invalido' });
   }
 
+  // Sanitizar inputs
+  const nomeSanitizado = sanitizeInput(nome);
+  const loginSanitizado = sanitizeInput(login);
+
   // Verificar se login já existe
-  const existingLogin = (db.empresas || []).find(e => e.login === login);
+  const existingLogin = (db.empresas || []).find(e => e.login === loginSanitizado);
   if (existingLogin) {
     return res.status(400).json({ error: 'Login já existe' });
   }
 
   // Gerar slug único baseado no nome
   const existingSlugs = (db.empresas || []).map(e => e.slug);
-  const slug = generateSlug(nome, existingSlugs);
+  const slug = generateSlug(nomeSanitizado, existingSlugs);
 
   const empresa = {
     id: generateId(),
-    nome,
+    nome: nomeSanitizado,
     slug,
     cnpj: cnpj || null,
     email: email || null,
     telefone: telefone || null,
-    login,
+    login: loginSanitizado,
     senha: bcrypt.hashSync(senha, 10),
     permissoes: permissoes || {
       dashboard: false,
@@ -1441,7 +1588,7 @@ app.put('/api/dispositivos/:deviceId/aprovar', authenticateToken, async (req, re
     return res.status(403).json({ error: 'Apenas admin ou empresa pode aprovar dispositivos' });
   }
 
-  const empresa = (db.empresas || []).find(e => e.id === targetEmpresaId);
+  const empresa = (db.empresas || []).find(e => String(e.id) === String(targetEmpresaId));
   if (!empresa) {
     return res.status(404).json({ error: 'Empresa não encontrada' });
   }
@@ -1849,7 +1996,7 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, r
   // Auditoria
   addAuditoria('mudanca_status', deviceId, 'Senha de bloqueio atualizada', dashboardInfo?.usuario);
 
-  console.log(`🔑 Nova senha gerada para ${deviceId}: ${newPassword}`);
+  console.log(`🔑 Nova senha gerada para ${deviceId}`);
 
   res.json({
     message: 'Senha de bloqueio atualizada com sucesso',
@@ -3235,7 +3382,7 @@ io.on('connection', (socket) => {
     const { deviceId, password } = data;
     const device = connectedDevices.get(deviceId);
     
-    console.log(`🔑 [DEBUG] Tentativa de desbloqueio: ${deviceId} - senha: ${password}`);
+    console.log(`🔑 [DEBUG] Tentativa de desbloqueio: ${deviceId}`);
     
     if (device) {
       if (device.lockPassword === password) {
@@ -3668,6 +3815,161 @@ io.on('connection', (socket) => {
       }
     }
   });
+});
+
+// ==================== INTEGRACAO COM SPRING BOOT PAYMENT SERVICE ====================
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:8080';
+
+// Health check do payment service
+app.get('/api/payment-service/health', authenticateToken, async (req, res) => {
+  try {
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/actuator/health`);
+    const data = await response.json();
+    res.json({ paymentService: data.status || 'UP', url: PAYMENT_SERVICE_URL });
+  } catch (error) {
+    res.json({ paymentService: 'DOWN', error: error.message, url: PAYMENT_SERVICE_URL });
+  }
+});
+
+// Webhook receiver para notificacoes do Spring Boot
+app.post('/api/payment/webhook', async (req, res) => {
+  const event = req.body;
+  console.log(`💰 [PAYMENT-WEBHOOK] Evento recebido: ${event.type}`);
+
+  try {
+    switch (event.type) {
+      case 'payment.approved':
+        // Atualizar venda no banco local se necessario
+        if (event.vendaId) {
+          const vendaIndex = db.vendas.findIndex(v => v.id === event.vendaId);
+          if (vendaIndex !== -1) {
+            db.vendas[vendaIndex].paymentStatus = 'APPROVED';
+            db.vendas[vendaIndex].stoneTransactionId = event.stoneTransactionId;
+            debouncedSaveData();
+          }
+        }
+        // Notificar dashboards
+        emitToEmpresa('payment_approved', event, event.empresaId);
+        break;
+
+      case 'payment.declined':
+        emitToEmpresa('payment_declined', event, event.empresaId);
+        break;
+
+      case 'payment.cancelled':
+        if (event.vendaId) {
+          const vendaIndex = db.vendas.findIndex(v => v.id === event.vendaId);
+          if (vendaIndex !== -1) {
+            db.vendas[vendaIndex].cancelada = true;
+            db.vendas[vendaIndex].canceladaEm = new Date().toISOString();
+            debouncedSaveData();
+          }
+        }
+        emitToEmpresa('payment_cancelled', event, event.empresaId);
+        break;
+
+      case 'payment.refunded':
+        emitToEmpresa('payment_refunded', event, event.empresaId);
+        break;
+
+      default:
+        console.log(`⚠️ [PAYMENT-WEBHOOK] Evento desconhecido: ${event.type}`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`❌ [PAYMENT-WEBHOOK] Erro ao processar evento:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Rota para processar pagamento via Spring Boot
+app.post('/api/payment/process', authenticateToken, async (req, res) => {
+  const { vendaId, amount, paymentMethod, empresaId, deviceId, operatorName } = req.body;
+
+  try {
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${req.headers['authorization']?.split(' ')[1]}`
+      },
+      body: JSON.stringify({
+        externalId: vendaId || `venda-${Date.now()}`,
+        amount,
+        paymentMethod,
+        empresaId,
+        deviceId,
+        operatorName
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      res.json(data);
+    } else {
+      res.status(response.status).json(data);
+    }
+  } catch (error) {
+    console.error(`❌ [PAYMENT] Erro ao processar pagamento:`, error);
+    res.status(500).json({ error: 'Erro ao conectar com servico de pagamentos' });
+  }
+});
+
+// Rota para cancelar pagamento via Spring Boot
+app.post('/api/payment/cancel', authenticateToken, async (req, res) => {
+  const { paymentId, stoneAtk, amount, motivo, empresaId } = req.body;
+
+  try {
+    const response = await fetch(`${PAYMENT_SERVICE_URL}/api/v1/payments/${paymentId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${req.headers['authorization']?.split(' ')[1]}`
+      },
+      body: JSON.stringify({ stoneAtk, amount, motivo, empresaId })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      res.json(data);
+    } else {
+      res.status(response.status).json(data);
+    }
+  } catch (error) {
+    console.error(`❌ [PAYMENT] Erro ao cancelar pagamento:`, error);
+    res.status(500).json({ error: 'Erro ao conectar com servico de pagamentos' });
+  }
+});
+
+// Rota para obter dashboard do Spring Boot
+app.get('/api/payment/dashboard/:empresaId', authenticateToken, async (req, res) => {
+  const { empresaId } = req.params;
+  const { period = 'hoje' } = req.query;
+
+  try {
+    const response = await fetch(
+      `${PAYMENT_SERVICE_URL}/api/v1/reports/dashboard/${empresaId}?period=${period}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${req.headers['authorization']?.split(' ')[1]}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      res.json(data);
+    } else {
+      res.status(response.status).json(data);
+    }
+  } catch (error) {
+    console.error(`❌ [PAYMENT] Erro ao obter dashboard:`, error);
+    res.status(500).json({ error: 'Erro ao conectar com servico de pagamentos' });
+  }
 });
 
 // ==================== SPA CATCH-ALL ====================
