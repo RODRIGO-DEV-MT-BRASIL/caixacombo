@@ -557,13 +557,23 @@ app.post('/api/auth/login', validateLoginInput, async (req, res) => {
   // Login de admin/empresa (username + password)
   console.log(`[LOGIN] Tentativa: username="${username}"`);
   
-  // Verificar se é usuário do sistema
-  let user = db.usuarios.find(u => u.username === username && u.ativo);
+  // Verificar se é usuário do sistema (checar banco direto para senha atualizada)
+  let user = null;
+  try {
+    user = await queryOne('SELECT * FROM usuarios WHERE username = $1 AND ativo = true', [username]);
+  } catch (e) {
+    user = db.usuarios.find(u => u.username === username && u.ativo);
+  }
   console.log(`[LOGIN] Usuário encontrado: ${user ? `id=${user.id}, role=${user.role}` : 'NENHUM'}`);
   
   // Se não for usuário do sistema, verificar se é empresa
   if (!user) {
-    const empresa = db.empresas.find(e => e.login === username && e.ativa);
+    let empresa = null;
+    try {
+      empresa = await queryOne('SELECT * FROM empresas WHERE login = $1 AND ativa = true', [username]);
+    } catch (e) {
+      empresa = db.empresas.find(e => e.login === username && e.ativa);
+    }
     console.log(`[LOGIN] Empresa encontrada: ${empresa ? `id=${empresa.id}, login=${empresa.login}, temSenha=${!!empresa.senha}` : 'NENHUMA'}`);
     if (empresa) {
       if (!empresa.ativa) {
