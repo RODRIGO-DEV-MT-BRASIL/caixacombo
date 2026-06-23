@@ -1,5 +1,7 @@
 node_modules/
 dist/
+target/
+build/
 .env
 .env.local
 .env.*.local
@@ -9,3 +11,5 @@ dist/
 .DS_Store
 *.keystore
 *.jks
+*.jar
+*.class
