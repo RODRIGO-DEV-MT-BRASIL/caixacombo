@@ -34,6 +34,10 @@ services:
     name: caixa-combo-frontend
     buildCommand: cd caixa-dashboard/frontend && npm install && npm run build
     staticPublishPath: caixa-dashboard/frontend/dist
+    routes:
+      - type: rewrite
+        source: /**
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         value: https://caixa-combo-api.onrender.com
