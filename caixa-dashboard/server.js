@@ -520,6 +520,21 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// ==================== Vercel serverless: inicializacao sob demanda ====================
+let initialized = false;
+async function ensureInitialized() {
+  if (!initialized) {
+    try { await initializeApp(); } catch (e) { console.error('⚠️ Init:', e.message); }
+    initialized = true;
+  }
+}
+if (process.env.VERCEL) {
+  app.use(async (req, res, next) => {
+    if (!initialized) await ensureInitialized();
+    next();
+  });
+}
+
 // ==================== ROTAS API ====================
 // Middleware para logging de tentativas de login
 const loginAttempts = new Map();
@@ -3952,27 +3967,6 @@ if (fs.existsSync(frontendDist)) {
 }
 
 const PORT = process.env.PORT || 3001;
-
-// Vercel serverless: inicializar sob demanda e exportar app
-let initialized = false;
-async function ensureInitialized() {
-  if (!initialized) {
-    try {
-      await initializeApp();
-    } catch (e) {
-      console.error('⚠️ Erro na inicialização:', e.message);
-    }
-    initialized = true;
-  }
-}
-
-// Middleware para inicializar sob demanda (Vercel serverless)
-app.use(async (req, res, next) => {
-  if (!initialized) {
-    await ensureInitialized();
-  }
-  next();
-});
 
 // Modo standalone (Render, local, etc)
 if (!process.env.VERCEL) {
