@@ -42,7 +42,7 @@ export default function Auditoria() {
       setLoading(true)
       setError(null)
       const params = new URLSearchParams(filters)
-      const res = await fetch(`/api/auditoria?${params}`, {
+      const res = await fetch(apiUrl(`/api/auditoria?${params}`), {
         headers: { Authorization: `Bearer ${token}` }
       })
       

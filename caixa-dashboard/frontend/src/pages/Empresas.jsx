@@ -126,7 +126,7 @@ export default function Empresas() {
     if (!confirm('Tem certeza que deseja excluir esta empresa?')) return
     
     try {
-      const res = await fetch(`/api/empresas/${id}`, {
+      const res = await fetch(apiUrl(`/api/empresas/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -214,7 +214,7 @@ export default function Empresas() {
   const handleClienteDelete = async (id) => {
     if (!confirm('Tem certeza que deseja excluir este cliente?')) return
     try {
-      const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(apiUrl(`/api/clientes/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
       if (res.ok) {
         success('Cliente excluído com sucesso', 3000)
         fetchClientes()
@@ -241,7 +241,7 @@ export default function Empresas() {
 
   const handleClienteToggleAtivo = async (cliente) => {
     try {
-      const res = await fetch(`/api/clientes/${cliente.id}`, {
+      const res = await fetch(apiUrl(`/api/clientes/${cliente.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...cliente, ativo: !cliente.ativo })

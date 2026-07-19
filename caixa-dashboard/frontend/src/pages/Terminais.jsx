@@ -91,7 +91,7 @@ export default function Terminais() {
 
   const handleApprove = async (deviceId, empresaId) => {
     try {
-      const res = await fetch(`/api/dispositivos/${deviceId}/aprovar`, {
+      const res = await fetch(apiUrl(`/api/dispositivos/${deviceId}/aprovar`), {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ empresaId })
       })
@@ -103,7 +103,7 @@ export default function Terminais() {
 
   const handleReject = async (deviceId) => {
     try {
-      const res = await fetch(`/api/dispositivos/${deviceId}/rejeitar`, {
+      const res = await fetch(apiUrl(`/api/dispositivos/${deviceId}/rejeitar`), {
         method: 'PUT', headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) { success('Terminal rejeitado', 3000); setApproveModal(null) }
@@ -123,7 +123,7 @@ export default function Terminais() {
 
   const handleControl = useCallback(async (deviceId, action) => {
     try {
-      const res = await fetch(`/api/dispositivos/${deviceId}/control`, {
+      const res = await fetch(apiUrl(`/api/dispositivos/${deviceId}/control`), {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action })
       })
@@ -137,7 +137,7 @@ export default function Terminais() {
 
   const handleDelete = async (deviceId) => {
     try {
-      const res = await fetch(`/api/dispositivos/${deviceId}`, {
+      const res = await fetch(apiUrl(`/api/dispositivos/${deviceId}`), {
         method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) { success('Terminal excluído', 3000); setDevices(prev => prev.filter(d => d.deviceId !== deviceId)); setDeleteModal(null) }
