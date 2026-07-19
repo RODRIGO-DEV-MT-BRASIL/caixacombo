@@ -1,15 +1,26 @@
 {
   "version": 2,
+  "installCommand": "npm install && cd frontend && npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "frontend/dist",
   "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "installCommand": "npm install && cd frontend && npm install",
+        "buildCommand": "cd frontend && npm run build",
+        "outputDirectory": "frontend/dist"
+      }
+    },
     {
       "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/server.js" },
-    { "src": "/uploads/(.*)", "dest": "/server.js" },
-    { "src": "/socket.io/(.*)", "dest": "/server.js" },
-    { "src": "/", "dest": "/server.js" }
+    { "src": "/api/(.*)", "dest": "server.js" },
+    { "src": "/uploads/(.*)", "dest": "server.js" },
+    { "src": "/socket.io/(.*)", "dest": "server.js" }
   ]
 }
