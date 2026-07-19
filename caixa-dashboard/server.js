@@ -200,6 +200,7 @@ const upload = multer({
 // ==================== PERSISTÊNCIA DE DADOS (Supabase PostgreSQL) ====================
 const { connectDatabase, query, queryOne, queryMany } = require('./database');
 const { db, loadAll, debouncedSave, flushToDb, saveData, saveAuditoria, setDbConnected } = require('./db');
+const debouncedSaveData = debouncedSave;
 
 // Gerador de IDs único
 let _idCounter = 0;
@@ -524,7 +525,42 @@ function authenticateToken(req, res, next) {
 let initialized = false;
 async function ensureInitialized() {
   if (!initialized) {
-    try { await initializeApp(); } catch (e) { console.error('⚠️ Init:', e.message); }
+    try {
+      if (process.env.VERCEL && !process.env.DATABASE_URL) {
+        // Vercel sem banco: carregar data.json direto (evita slow connect do PG)
+        const fs = require('fs');
+        const path = require('path');
+        const dataFile = path.join(__dirname, 'data.json');
+        if (fs.existsSync(dataFile)) {
+          const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+          db.empresas = data.empresas || [];
+          db.usuarios = data.usuarios || [];
+          db.funcionarios = data.funcionarios || [];
+          db.categorias = data.categorias || [];
+          db.produtos = data.produtos || [];
+          db.vendas = data.vendas || [];
+          db.operacoes = data.operacoes || [];
+          db.dispositivos = data.dispositivos || [];
+          db.auditoria = data.auditoria || [];
+          db.clientes = data.clientes || [];
+          db.config = data.config || {};
+          db.impressaoTemplate = data.impressaoTemplate || null;
+        }
+        const adminUser = process.env.ADMIN_USERNAME || 'admin';
+        const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+        if (!db.usuarios.find(u => u.username === adminUser)) {
+          db.usuarios.push({ id: Date.now(), username: adminUser, password: bcrypt.hashSync(adminPass, 10), role: 'admin', ativo: true, createdAt: new Date().toISOString() });
+        } else {
+          const admin = db.usuarios.find(u => u.username === adminUser);
+          if (admin && !bcrypt.compareSync(adminPass, admin.password || '')) {
+            admin.password = bcrypt.hashSync(adminPass, 10);
+          }
+        }
+        console.log(`📦 Vercel offline: ${db.produtos.length} produtos, ${db.usuarios.length} users`);
+      } else {
+        await initializeApp();
+      }
+    } catch (e) { console.error('⚠️ Init:', e.message); }
     initialized = true;
   }
 }
