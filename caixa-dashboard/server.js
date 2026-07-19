@@ -205,7 +205,13 @@ const debouncedSaveData = debouncedSave;
 // Gerador de IDs único
 let _idCounter = 0;
 let _lastIdTime = 0;
+// Gerador de IDs único — UUID para PostgreSQL, número para compatibilidade
 function generateId() {
+  // No Vercel com PostgreSQL, usar UUID
+  if (process.env.VERCEL || process.env.DATABASE_URL) {
+    return crypto.randomUUID();
+  }
+  // Modo offline: número compatível com data.json
   const now = Date.now();
   if (now === _lastIdTime) {
     _idCounter++;
