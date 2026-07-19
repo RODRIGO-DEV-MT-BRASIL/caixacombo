@@ -15,7 +15,8 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!token) return
 
-    const socket = io(import.meta.env.PROD ? window.location.origin : '/', {
+    const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
+    const socket = io(apiUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
