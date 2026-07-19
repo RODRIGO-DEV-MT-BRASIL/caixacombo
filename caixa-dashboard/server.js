@@ -1359,7 +1359,7 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
 
   if (!db.empresas) db.empresas = [];
   db.empresas.push(empresa);
-  debouncedSaveData();
+  await debouncedSaveData();
 
   // Sincronizar empresa com os terminais
   broadcastEmpresasSync();

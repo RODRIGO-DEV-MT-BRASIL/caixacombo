@@ -193,17 +193,32 @@ let _saveTimer = null;
 const SAVE_DEBOUNCE_MS = 3000;
 
 // Debounced save — evita múltiplas escritas seguidas
-function debouncedSave() {
+async function debouncedSave() {
+  // No Vercel, salvar IMEDIATAMENTE e aguardar (setTimeout pode não disparar)
+  if (process.env.VERCEL && _dbConnected) {
+    try { await flushToDb(); } catch(e) { console.error('❌ flush:', e.message); }
+    return;
+  }
   if (_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => flushToDb(), SAVE_DEBOUNCE_MS);
 }
 
+// Síncrono para compatibilidade — fire-and-forget no modo offline
+function debouncedSaveSync() {
+  if (process.env.VERCEL && _dbConnected) {
+    flushToDb().catch(e => console.error('❌ flush:', e.message));
+  } else {
+    debouncedSave();
+  }
+}
+
 // Flush imediato — no-op se banco não conectado
 let _dbConnected = false;
-function setDbConnected(val) { _dbConnected = val; }
+function setDbConnected(val) { _dbConnected = val; console.log('🔗 DB connected:', val); }
 
 async function flushToDb() {
-  if (!_dbConnected) return; // Modo offline: não tentar salvar
+  if (!_dbConnected) { console.log('⚠️ flushToDb: DB não conectado, dados ficam em memória'); return; }
+  console.log(`💾 flushToDb: salvando empresas=${db.empresas?.length}, produtos=${db.produtos?.length}`);
   try {
     await Promise.all([
       syncTable('empresas', db.empresas, mapEmpresaToDb),
