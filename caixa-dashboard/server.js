@@ -3928,14 +3928,42 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
-const PORT = 3001;
-initializeApp().then(() => {
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server na porta ${PORT}`);
-  });
-}).catch(err => {
-  console.error('❌ Falha na inicialização:', err);
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server na porta ${PORT} (sem MongoDB)`);
-  });
+const PORT = process.env.PORT || 3001;
+
+// Vercel serverless: inicializar sob demanda e exportar app
+let initialized = false;
+async function ensureInitialized() {
+  if (!initialized) {
+    try {
+      await initializeApp();
+    } catch (e) {
+      console.error('⚠️ Erro na inicialização:', e.message);
+    }
+    initialized = true;
+  }
+}
+
+// Middleware para inicializar sob demanda (Vercel serverless)
+app.use(async (req, res, next) => {
+  if (!initialized) {
+    await ensureInitialized();
+  }
+  next();
 });
+
+// Modo standalone (Render, local, etc)
+if (!process.env.VERCEL) {
+  initializeApp().then(() => {
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server na porta ${PORT}`);
+    });
+  }).catch(err => {
+    console.error('❌ Falha na inicialização:', err);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server na porta ${PORT} (modo offline)`);
+    });
+  });
+}
+
+// Exportar para Vercel serverless
+module.exports = app;
