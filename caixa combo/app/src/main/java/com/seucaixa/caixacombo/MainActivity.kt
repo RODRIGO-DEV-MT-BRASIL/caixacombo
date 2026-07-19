@@ -79,7 +79,7 @@ import com.seucaixa.caixacombo.service.PollingService
 import com.seucaixa.caixacombo.service.StoneDeeplinkService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
+
 
 class MainActivity : ComponentActivity() {
 
@@ -1340,7 +1340,7 @@ class MainActivity : ComponentActivity() {
                 usageTimeDialog?.dismiss()
                 // Bloquear automaticamente (mantém a senha atual se existir)
                 if (currentLockPassword != null) {
-                    android.util.Log.d("MainActivity", "Mantendo senha atual para desbloqueio: $currentLockPassword")
+                    android.util.Log.d("MainActivity", "Mantendo senha atual para desbloqueio")
                 }
                 showLockScreen("Tempo de uso expirado")
             }
@@ -1677,10 +1677,10 @@ class MainActivity : ComponentActivity() {
             val app = application as CaixaApplication
             val repository = app.configuracaoImpressaoRepository
             
-            thread {
-                val existing = kotlinx.coroutines.runBlocking { repository.getConfiguracaoSemLogo() }
-                val existingLogo = kotlinx.coroutines.runBlocking { repository.getLogoBase64() }
-                
+            lifecycleScope.launch(Dispatchers.IO) {
+                val existing = repository.getConfiguracaoSemLogo()
+                val existingLogo = repository.getLogoBase64()
+
                 val configuracao = com.seucaixa.caixacombo.data.model.ConfiguracaoImpressao(
                     id = 1,
                     titulo = template.optString("titulo", "COMPROVANTE"),
@@ -1710,15 +1710,13 @@ class MainActivity : ComponentActivity() {
                     logoEspacamentoAcima = (template.optJSONObject("logo")?.optDouble("spacingTop", 16.0) ?: 16.0).toFloat(),
                     logoEspacamentoAbaixo = (template.optJSONObject("logo")?.optDouble("spacingBottom", 16.0) ?: 16.0).toFloat()
                 )
-                
-                kotlinx.coroutines.runBlocking {
-                    if (existing != null) {
-                        repository.updateConfiguracao(configuracao)
-                    } else {
-                        repository.saveConfiguracao(configuracao)
-                    }
+
+                if (existing != null) {
+                    repository.updateConfiguracao(configuracao)
+                } else {
+                    repository.saveConfiguracao(configuracao)
                 }
-                
+
                 android.util.Log.d("MainActivity", "✅ Configuração de impressão sincronizada do servidor")
             }
         } catch (e: Exception) {
@@ -1736,7 +1734,7 @@ class MainActivity : ComponentActivity() {
         }
         val serverUrl = PollingService.getServerUrl()
 
-        thread {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val url = java.net.URL("$serverUrl/api/auth/funcionario")
                 val conn = url.openConnection() as java.net.HttpURLConnection
