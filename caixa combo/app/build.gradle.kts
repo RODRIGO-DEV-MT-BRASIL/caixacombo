@@ -41,6 +41,7 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"${env("API_BASE_URL", "http://10.0.2.2:3001")}\"")
         buildConfigField("int", "API_TIMEOUT_SECONDS", env("API_TIMEOUT_SECONDS", "30"))
         buildConfigField("String", "APP_VERSION_NAME", "\"${env("APP_VERSION_NAME", "1.0.0")}\"")
+        buildConfigField("int", "APP_VERSION_CODE", env("APP_VERSION_CODE", "1"))
         buildConfigField("boolean", "DEBUG_MODE", env("DEBUG_MODE", "true"))
         buildConfigField("String", "STONE_ENVIRONMENT", "\"${env("STONE_ENVIRONMENT", "PRODUCTION")}\"")
         buildConfigField("String", "STONE_STONE_CODE", "\"${env("STONE_STONE_CODE", "placeholder")}\"")

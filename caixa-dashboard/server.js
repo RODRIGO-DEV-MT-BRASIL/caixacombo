@@ -1844,7 +1844,7 @@ app.post('/api/funcionarios', authenticateToken, async (req, res) => {
   let finalCodigo = (codigo || '').toString().trim();
   if (!finalCodigo) {
     const existingCodigos = (db.funcionarios || []).filter(f => f.empresaId === targetEmpresaId).map(f => f.codigo);
-    do { finalCodigo = 'F' + Math.floor(100000 + Math.random() * 900000); } while (existingCodigos.includes(finalCodigo));
+    do { finalCodigo = 'F' + crypto.randomInt(100000, 999999); } while (existingCodigos.includes(finalCodigo));
   }
   const existing = (db.funcionarios || []).find(f => f.codigo === finalCodigo && f.empresaId === targetEmpresaId);
   if (existing) return res.status(400).json({ error: 'Código já existe nesta empresa' });
@@ -3808,7 +3808,7 @@ io.on('connection', (socket) => {
     if (device) {
       // Gerar nova senha apenas se não existir (primeiro bloqueio)
       if (!device.lockPassword) {
-        device.lockPassword = Math.floor(100000 + Math.random() * 900000).toString();
+        device.lockPassword = crypto.randomInt(100000, 999999).toString();
       }
       device.status = 'locked';
       device.lockReason = reason;
