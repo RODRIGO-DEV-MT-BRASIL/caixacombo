@@ -13,6 +13,14 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
+// Carregar variaveis do .env (para BuildConfig)
+val envProps = Properties()
+val envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    envFile.inputStream().use { envProps.load(it) }
+}
+fun env(key: String, default: String = ""): String = System.getenv(key) ?: envProps.getProperty(key, default)
+
 android {
     namespace = "com.seucaixa.caixacombo"
     compileSdk = 34
@@ -25,6 +33,18 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // BuildConfig fields from .env
+        buildConfigField("String", "SUPABASE_URL", "\"${env("SUPABASE_URL", "https://placeholder.supabase.co")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${env("SUPABASE_ANON_KEY", "placeholder")}\"")
+        buildConfigField("String", "SUPABASE_SERVICE_ROLE_KEY", "\"${env("SUPABASE_SERVICE_ROLE_KEY", "placeholder")}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${env("API_BASE_URL", "http://10.0.2.2:3001")}\"")
+        buildConfigField("int", "API_TIMEOUT_SECONDS", env("API_TIMEOUT_SECONDS", "30"))
+        buildConfigField("String", "APP_VERSION_NAME", "\"${env("APP_VERSION_NAME", "1.0.0")}\"")
+        buildConfigField("boolean", "DEBUG_MODE", env("DEBUG_MODE", "true"))
+        buildConfigField("String", "STONE_ENVIRONMENT", "\"${env("STONE_ENVIRONMENT", "PRODUCTION")}\"")
+        buildConfigField("String", "STONE_STONE_CODE", "\"${env("STONE_STONE_CODE", "placeholder")}\"")
+        buildConfigField("String", "STONE_MERCHANT_ID", "\"${env("STONE_MERCHANT_ID", "placeholder")}\"")
     }
 
 
@@ -144,6 +164,11 @@ dependencies {
     
     // Sunmi Printer SDK para V1/V2 compatibilidade
     implementation("com.sunmi:printerx:latest.release")
+
+    // Retrofit + OkHttp (comunicacao com backend)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

@@ -1617,7 +1617,7 @@ class MainActivity : ComponentActivity() {
                         val nome = f.optString("nome", "")
                         val cargo = f.optString("cargo", "caixa")
                         val permissoes = f.optJSONObject("permissoes")
-                        thread {
+                        lifecycleScope.launch(Dispatchers.IO) {
                             try {
                                 val dao = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(this@MainActivity).usuarioDao()
                                 val existente = dao.getUsuarioById(operatorId)
