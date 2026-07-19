@@ -189,7 +189,7 @@ export default function Empresas() {
       const targetEmpresaId = user?.role === 'empresa' ? user.empresaId : clienteForm.empresaId
       if (!targetEmpresaId && user?.role === 'admin') return success('Selecione a empresa', 3000)
       
-      const url = editando ? `/api/clientes/${editando.id}` : '/api/clientes'
+      const url = editando ? apiUrl(`/api/clientes/${editando.id}`) : apiUrl('/api/clientes')
       const method = editando ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
