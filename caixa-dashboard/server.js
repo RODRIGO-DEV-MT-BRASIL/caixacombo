@@ -698,11 +698,11 @@ app.post('/api/auth/login', validateLoginInput, async (req, res) => {
     try {
       empresa = await queryOne('SELECT * FROM empresas WHERE login = $1 AND ativa = true', [username]);
     } catch (e) {
-      empresa = db.empresas.find(e => e.login === username && e.ativa);
+      empresa = db.empresas.find(e => e.login === username && (e.ativa !== false && e.ativo !== false));
     }
     console.log(`[LOGIN] Empresa encontrada: ${empresa ? `id=${empresa.id}, login=${empresa.login}, temSenha=${!!empresa.senha}` : 'NENHUMA'}`);
     if (empresa) {
-      if (!empresa.ativa) {
+      if (!empresa.ativa && empresa.ativo === false) {
         return res.status(403).json({ error: 'Empresa desativada. Contate o administrador.' });
       }
       if (!empresa.senha || !bcrypt.compareSync(password, empresa.senha)) {
@@ -1353,6 +1353,7 @@ app.post('/api/empresas', authenticateToken, async (req, res) => {
     logoUrl: logoUrl || '',
     paginasPermitidas: paginasPermitidas || ['dashboard', 'empresas', 'categorias', 'produtos', 'vendas', 'caixa', 'impressao', 'config'],
     ativo: true,
+    ativa: true,
     createdAt: new Date()
   };
 
