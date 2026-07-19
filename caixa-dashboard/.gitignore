@@ -7,6 +7,6 @@ dist/
 *.db
 *.db-wal
 *.db-shm
-data.json
 auditoria.json
 *.log
+.vercel

@@ -296,6 +296,29 @@ async function initializeApp() {
     } else {
       console.log('📊 Sem dados anteriores — iniciando vazio');
     }
+
+    // Seed admin padrão no modo offline
+    if (!db.usuarios) db.usuarios = [];
+    const adminUser = process.env.ADMIN_USERNAME || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+    if (!db.usuarios.find(u => u.username === adminUser)) {
+      db.usuarios.push({
+        id: Date.now(),
+        username: adminUser,
+        password: bcrypt.hashSync(adminPass, 10),
+        role: 'admin',
+        ativo: true,
+        createdAt: new Date().toISOString()
+      });
+      console.log(`👤 Admin seed: ${adminUser}`);
+    } else {
+      // Atualizar senha do admin para garantir que está correta
+      const admin = db.usuarios.find(u => u.username === adminUser);
+      if (admin && !bcrypt.compareSync(adminPass, admin.password || '')) {
+        admin.password = bcrypt.hashSync(adminPass, 10);
+        console.log(`🔑 Admin password atualizado`);
+      }
+    }
   } else {
     // PostgreSQL: carregar dados do banco
     await loadAll();
