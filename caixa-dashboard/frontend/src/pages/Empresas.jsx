@@ -92,7 +92,7 @@ export default function Empresas() {
     e.preventDefault()
     setSaving(true)
     try {
-      const url = editando ? `/api/empresas/${editando.id}` : '/api/empresas'
+      const url = editando ? apiUrl(`/api/empresas/${editando.id}`) : apiUrl('/api/empresas')
       const method = editando ? 'PUT' : 'POST'
       
       const res = await fetch(url, {

@@ -1,7 +1,66 @@
--- CaixaCombo - Criar tabelas no Supabase
+-- ============================================
+-- CaixaCombo - Reset Completo do Supabase
 -- Executar no: Supabase Dashboard > SQL Editor
+-- ============================================
 
-CREATE TABLE IF NOT EXISTS empresas (
+-- PASSO 1: Desabilitar RLS e dropar todas as tabelas
+ALTER TABLE IF EXISTS clientes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS auditoria DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS dispositivos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS operacoes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS vendas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS produtos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS categorias DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS funcionarios DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS usuarios DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS empresas DISABLE ROW LEVEL SECURITY;
+
+DROP TABLE IF EXISTS clientes CASCADE;
+DROP TABLE IF EXISTS auditoria CASCADE;
+DROP TABLE IF EXISTS dispositivos CASCADE;
+DROP TABLE IF EXISTS operacoes CASCADE;
+DROP TABLE IF EXISTS vendas CASCADE;
+DROP TABLE IF EXISTS produtos CASCADE;
+DROP TABLE IF EXISTS categorias CASCADE;
+DROP TABLE IF EXISTS funcionarios CASCADE;
+DROP TABLE IF EXISTS usuarios CASCADE;
+DROP TABLE IF EXISTS empresas CASCADE;
+
+-- Dropar tabelas de outro projeto que possam conflitar
+DROP TABLE IF EXISTS cash_register_movements CASCADE;
+DROP TABLE IF EXISTS token_balance CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS vehicle_types CASCADE;
+DROP TABLE IF EXISTS profiles CASCADE;
+DROP TABLE IF EXISTS parking_exit_passwords CASCADE;
+DROP TABLE IF EXISTS tickets CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS parking_spots CASCADE;
+DROP TABLE IF EXISTS cash_register_sessions CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS parking_vouchers CASCADE;
+DROP TABLE IF EXISTS cash_registers CASCADE;
+DROP TABLE IF EXISTS returns CASCADE;
+DROP TABLE IF EXISTS rate_limit_events CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS parking_voucher_passwords CASCADE;
+
+DROP FUNCTION IF EXISTS public.current_empresa_id() CASCADE;
+DROP FUNCTION IF EXISTS public.open_cash_register CASCADE;
+DROP FUNCTION IF EXISTS public.close_cash_register CASCADE;
+DROP FUNCTION IF EXISTS public.generate_exit_password CASCADE;
+DROP FUNCTION IF EXISTS public.validate_exit_password CASCADE;
+DROP FUNCTION IF EXISTS public.rls_auto_enable CASCADE;
+
+-- Limpar policies antigas
+DO $$ DECLARE r RECORD; BEGIN
+  FOR r IN (SELECT schemaname, tablename, policyname FROM pg_policies WHERE schemaname = 'public') LOOP
+    EXECUTE 'DROP POLICY IF EXISTS "' || r.policyname || '" ON ' || r.schemaname || '.' || r.tablename;
+  END LOOP;
+END $$;
+
+-- PASSO 2: Criar tabelas do CaixaCombo
+CREATE TABLE empresas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   local_id BIGINT UNIQUE,
   nome TEXT NOT NULL,
@@ -23,7 +82,7 @@ CREATE TABLE IF NOT EXISTS empresas (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS usuarios (
+CREATE TABLE usuarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   username TEXT NOT NULL,
@@ -41,7 +100,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   UNIQUE(empresa_id, username)
 );
 
-CREATE TABLE IF NOT EXISTS funcionarios (
+CREATE TABLE funcionarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   nome TEXT NOT NULL,
@@ -58,7 +117,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS categorias (
+CREATE TABLE categorias (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   nome TEXT NOT NULL,
@@ -71,7 +130,7 @@ CREATE TABLE IF NOT EXISTS categorias (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS produtos (
+CREATE TABLE produtos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   categoria_id UUID,
@@ -87,7 +146,7 @@ CREATE TABLE IF NOT EXISTS produtos (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS vendas (
+CREATE TABLE vendas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   numero TEXT NOT NULL,
@@ -114,7 +173,7 @@ CREATE TABLE IF NOT EXISTS vendas (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS operacoes (
+CREATE TABLE operacoes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   tipo TEXT NOT NULL,
@@ -131,7 +190,7 @@ CREATE TABLE IF NOT EXISTS operacoes (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS dispositivos (
+CREATE TABLE dispositivos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   device_id TEXT UNIQUE NOT NULL,
   device_name TEXT NOT NULL DEFAULT 'Dispositivo',
@@ -151,7 +210,7 @@ CREATE TABLE IF NOT EXISTS dispositivos (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS auditoria (
+CREATE TABLE auditoria (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   tipo TEXT NOT NULL,
@@ -164,7 +223,7 @@ CREATE TABLE IF NOT EXISTS auditoria (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS clientes (
+CREATE TABLE clientes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
   nome TEXT NOT NULL,
@@ -180,25 +239,25 @@ CREATE TABLE IF NOT EXISTS clientes (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Índices
-CREATE INDEX IF NOT EXISTS idx_empresas_slug ON empresas(slug);
-CREATE INDEX IF NOT EXISTS idx_empresas_login ON empresas(login);
-CREATE INDEX IF NOT EXISTS idx_usuarios_empresa ON usuarios(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
-CREATE INDEX IF NOT EXISTS idx_funcionarios_empresa ON funcionarios(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_funcionarios_codigo ON funcionarios(codigo);
-CREATE INDEX IF NOT EXISTS idx_categorias_empresa ON categorias(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_produtos_empresa ON produtos(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_vendas_empresa ON vendas(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_vendas_data ON vendas(empresa_id, data_hora DESC);
-CREATE INDEX IF NOT EXISTS idx_operacoes_empresa ON operacoes(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_operacoes_data ON operacoes(empresa_id, data_hora DESC);
-CREATE INDEX IF NOT EXISTS idx_dispositivos_empresa ON dispositivos(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_auditoria_empresa ON auditoria(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_auditoria_timestamp ON auditoria(timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_clientes_empresa ON clientes(empresa_id);
+-- PASSO 3: Índices
+CREATE INDEX idx_empresas_slug ON empresas(slug);
+CREATE INDEX idx_empresas_login ON empresas(login);
+CREATE INDEX idx_usuarios_empresa ON usuarios(empresa_id);
+CREATE INDEX idx_usuarios_username ON usuarios(username);
+CREATE INDEX idx_funcionarios_empresa ON funcionarios(empresa_id);
+CREATE INDEX idx_funcionarios_codigo ON funcionarios(codigo);
+CREATE INDEX idx_categorias_empresa ON categorias(empresa_id);
+CREATE INDEX idx_produtos_empresa ON produtos(empresa_id);
+CREATE INDEX idx_vendas_empresa ON vendas(empresa_id);
+CREATE INDEX idx_vendas_data ON vendas(empresa_id, data_hora DESC);
+CREATE INDEX idx_operacoes_empresa ON operacoes(empresa_id);
+CREATE INDEX idx_operacoes_data ON operacoes(empresa_id, data_hora DESC);
+CREATE INDEX idx_dispositivos_empresa ON dispositivos(empresa_id);
+CREATE INDEX idx_auditoria_empresa ON auditoria(empresa_id);
+CREATE INDEX idx_auditoria_timestamp ON auditoria(timestamp DESC);
+CREATE INDEX idx_clientes_empresa ON clientes(empresa_id);
 
--- Habilitar RLS
+-- PASSO 4: Habilitar RLS
 ALTER TABLE empresas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios ENABLE ROW LEVEL SECURITY;
@@ -210,14 +269,18 @@ ALTER TABLE dispositivos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auditoria ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
 
--- Policies para service_role (acesso total)
-CREATE POLICY "service_all_empresas" ON empresas FOR ALL USING (true);
-CREATE POLICY "service_all_usuarios" ON usuarios FOR ALL USING (true);
-CREATE POLICY "service_all_funcionarios" ON funcionarios FOR ALL USING (true);
-CREATE POLICY "service_all_categorias" ON categorias FOR ALL USING (true);
-CREATE POLICY "service_all_produtos" ON produtos FOR ALL USING (true);
-CREATE POLICY "service_all_vendas" ON vendas FOR ALL USING (true);
-CREATE POLICY "service_all_operacoes" ON operacoes FOR ALL USING (true);
-CREATE POLICY "service_all_dispositivos" ON dispositivos FOR ALL USING (true);
-CREATE POLICY "service_all_auditoria" ON auditoria FOR ALL USING (true);
-CREATE POLICY "service_all_clientes" ON clientes FOR ALL USING (true);
+-- PASSO 5: Policies (acesso total via service_role do backend)
+CREATE POLICY "service_all_empresas" ON empresas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_usuarios" ON usuarios FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_funcionarios" ON funcionarios FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_categorias" ON categorias FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_produtos" ON produtos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_vendas" ON vendas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_operacoes" ON operacoes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_dispositivos" ON dispositivos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_auditoria" ON auditoria FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "service_all_clientes" ON clientes FOR ALL USING (true) WITH CHECK (true);
+
+-- PASSO 6: Inserir admin padrão
+INSERT INTO usuarios (username, nome, password, role, ativo) VALUES ('admin', 'Administrador', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin', true) ON CONFLICT DO NOTHING;
+-- Senha: admin123
