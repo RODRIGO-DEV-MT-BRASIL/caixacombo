@@ -100,3 +100,4 @@ Thumbs.db
 *.png
 *.txt
 !README.md
+!app/src/main/res/**/*.png

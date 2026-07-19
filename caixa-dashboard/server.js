@@ -117,21 +117,19 @@ const authLimiter = rateLimit({
 });
 
 const unlockLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutos
-  max: 10, // máximo 10 tentativas de desbloqueio por dispositivo
-  message: { error: 'Muitas tentativas de desbloqueio. Tente novamente mais tarde.' },
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  message: { error: 'Muitas tentativas de desbloqueio.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.deviceId || req.ip, // Rate limit per device
 });
 
 const deviceLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minuto
-  max: 60, // máximo 60 requisições por dispositivo por minuto
-  message: { error: 'Muitas requisições do dispositivo. Aguarde.' },
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  message: { error: 'Muitas requisições do dispositivo.' },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.deviceId || req.ip,
 });
 
 app.use('/api/', apiLimiter);
@@ -201,7 +199,7 @@ const upload = multer({
 
 // ==================== PERSISTÊNCIA DE DADOS (Supabase PostgreSQL) ====================
 const { connectDatabase, query, queryOne, queryMany } = require('./database');
-const { db, loadAll, debouncedSave, flushToDb, saveData, saveAuditoria } = require('./db');
+const { db, loadAll, debouncedSave, flushToDb, saveData, saveAuditoria, setDbConnected } = require('./db');
 
 // Gerador de IDs único
 let _idCounter = 0;
@@ -272,20 +270,39 @@ function emitDeviceEvent(event, data) {
 // Inicialização assíncrona: conectar PostgreSQL e carregar dados
 async function initializeApp() {
   const connected = await connectDatabase();
+  setDbConnected(connected);
+  
   if (!connected) {
-    console.error('❌ Não foi possível conectar ao banco de dados');
-    process.exit(1);
+    // Modo offline: carregar dados do data.json
+    console.log('📦 Rodando em modo offline (data.json)...');
+    const fs = require('fs');
+    const path = require('path');
+    const dataFile = path.join(__dirname, 'data.json');
+    if (fs.existsSync(dataFile)) {
+      const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+      db.empresas = data.empresas || [];
+      db.usuarios = data.usuarios || [];
+      db.funcionarios = data.funcionarios || [];
+      db.categorias = data.categorias || [];
+      db.produtos = data.produtos || [];
+      db.vendas = data.vendas || [];
+      db.operacoes = data.operacoes || [];
+      db.dispositivos = data.dispositivos || [];
+      db.auditoria = data.auditoria || [];
+      db.clientes = data.clientes || [];
+      db.config = data.config || {};
+      db.impressaoTemplate = data.impressaoTemplate || null;
+      console.log(`📊 Offline: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.usuarios.length} usuários`);
+    } else {
+      console.log('📊 Sem dados anteriores — iniciando vazio');
+    }
+  } else {
+    // PostgreSQL: carregar dados do banco
+    await loadAll();
+    const { seedAdmin } = require('./database');
+    await seedAdmin();
+    await loadAll();
   }
-
-  // Carregar todos os dados do PostgreSQL para memória
-  await loadAll();
-
-  // Seed do admin padrão
-  const { seedAdmin } = require('./database');
-  await seedAdmin();
-
-  // Recarregar dados após seed
-  await loadAll();
 
   // Carregar dispositivos do banco para o mapa ao iniciar
   if (db.dispositivos && db.dispositivos.length > 0) {

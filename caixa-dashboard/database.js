@@ -11,9 +11,8 @@ async function connectDatabase() {
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
-    console.error('❌ DATABASE_URL não definido! Configure a variável de ambiente.');
-    console.error('   Exemplo: DATABASE_URL=postgresql://postgres:senha@db.projet.supabase.co:5432/postgres');
-    process.exit(1);
+    console.warn('⚠️ DATABASE_URL não definido — rodando em modo offline (data.json)');
+    return false;
   }
 
   try {

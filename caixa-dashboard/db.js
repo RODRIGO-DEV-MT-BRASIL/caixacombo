@@ -198,8 +198,12 @@ function debouncedSave() {
   _saveTimer = setTimeout(() => flushToDb(), SAVE_DEBOUNCE_MS);
 }
 
-// Flush imediato
+// Flush imediato — no-op se banco não conectado
+let _dbConnected = false;
+function setDbConnected(val) { _dbConnected = val; }
+
 async function flushToDb() {
+  if (!_dbConnected) return; // Modo offline: não tentar salvar
   try {
     await Promise.all([
       syncTable('empresas', db.empresas, mapEmpresaToDb),
@@ -445,7 +449,8 @@ module.exports = {
   loadAll,
   debouncedSave,
   flushToDb,
+  setDbConnected,
   saveAuditoria: debouncedSave,
   saveData: debouncedSave,
-  isConnected: () => true,
+  isConnected: () => _dbConnected,
 };
