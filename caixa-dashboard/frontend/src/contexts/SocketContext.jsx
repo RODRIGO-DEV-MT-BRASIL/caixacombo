@@ -18,7 +18,7 @@ export function SocketProvider({ children }) {
     const apiUrl = import.meta.env.VITE_API_URL || window.location.origin
     const socket = io(apiUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

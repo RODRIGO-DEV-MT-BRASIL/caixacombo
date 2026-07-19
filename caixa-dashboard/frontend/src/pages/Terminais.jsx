@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSocket } from '../contexts/SocketContext'
@@ -57,14 +58,14 @@ export default function Terminais() {
   // Buscar empresas para o modal de aprovação
   useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'empresa') {
-      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/empresas'), { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json()).then(data => setEmpresas(Array.isArray(data) ? data : data.data || [])).catch(() => {})
     }
   }, [user, token])
 
   const fetchDevices = useCallback(() => {
     if (!token) return
-    fetch('/api/dispositivos', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(apiUrl('/api/dispositivos'), { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(data => {
         const list = Array.isArray(data) ? data : data.data || []

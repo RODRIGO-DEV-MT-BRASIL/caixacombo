@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api'
 import React, { useState, useEffect } from 'react'
 import { Plus, Search, Edit, Trash2, UserCog, Users, Building2, X, Loader2 } from 'lucide-react'
 
@@ -20,7 +21,7 @@ export default function ClientesFuncionarios() {
   const fetchClientes = async () => {
     try {
       const t = sessionStorage.getItem('token')
-      const res = await fetch('/api/clientes', {
+      const res = await fetch(apiUrl('/api/clientes'), {
         headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {
@@ -36,7 +37,7 @@ export default function ClientesFuncionarios() {
   const fetchFuncionarios = async () => {
     try {
       const t = sessionStorage.getItem('token')
-      const res = await fetch('/api/funcionarios', {
+      const res = await fetch(apiUrl('/api/funcionarios'), {
         headers: { Authorization: `Bearer ${t}` }
       })
       if (res.ok) {

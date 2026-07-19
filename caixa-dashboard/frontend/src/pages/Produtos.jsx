@@ -59,7 +59,7 @@ export default function Produtos() {
   const fetchEmpresas = async () => {
     if (user?.role === 'admin') {
       try {
-        const res = await fetch('/api/empresas', {
+        const res = await fetch(apiUrl('/api/empresas'), {
           headers: { Authorization: `Bearer ${token}` }
         })
         const data = await res.json()

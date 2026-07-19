@@ -53,7 +53,7 @@ export default function Caixa({ onNavigateToFechamento }) {
       .catch(() => setSessoes([]))
 
     if (user?.role === 'admin' || user?.role === 'empresa') {
-      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/empresas'), { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
         .then(data => setEmpresas(Array.isArray(data) ? data : []))
         .catch(() => {})

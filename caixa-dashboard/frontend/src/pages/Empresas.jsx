@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/Toast'
@@ -39,7 +40,7 @@ export default function Empresas() {
 
   const fetchEmpresas = async () => {
     try {
-      const res = await fetch('/api/empresas', {
+      const res = await fetch(apiUrl('/api/empresas'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -53,7 +54,7 @@ export default function Empresas() {
 
   const fetchClientes = async () => {
     try {
-      const res = await fetch('/api/clientes', {
+      const res = await fetch(apiUrl('/api/clientes'), {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -67,7 +68,7 @@ export default function Empresas() {
 
   const fetchFuncionarios = async () => {
     try {
-      const res = await fetch('/api/funcionarios', { headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(apiUrl('/api/funcionarios'), { headers: { Authorization: `Bearer ${token}` } })
       if (res.ok) setFuncionarios(await res.json())
     } catch (err) { console.error('Erro ao buscar funcionários:', err) }
   }
@@ -433,7 +434,7 @@ export default function Empresas() {
                   reader.onload = async (ev) => {
                     const base64 = ev.target.result
                     try {
-                      const res = await fetch('/api/upload-base64', {
+                      const res = await fetch(apiUrl('/api/upload-base64'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                         body: JSON.stringify({ base64 })

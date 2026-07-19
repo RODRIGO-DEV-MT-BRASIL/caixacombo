@@ -35,12 +35,12 @@ export default function Vendas() {
       .catch(() => setLoading(false))
 
     if (user?.role === 'admin' || user?.role === 'empresa') {
-      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/empresas'), { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
         .then(res => res.json()).then(data => setEmpresas(Array.isArray(data) ? data : data.data || [])).catch(() => {})
         .catch(() => {})
       
-      fetch('/api/funcionarios', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/funcionarios'), { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
         .then(res => res.json()).then(data => setFuncionarios(Array.isArray(data) ? data : data.data || [])).catch(() => {})
         .catch(() => {})

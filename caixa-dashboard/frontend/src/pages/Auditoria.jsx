@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { 
@@ -65,7 +66,7 @@ export default function Auditoria() {
     }
 
     if (user?.role === 'admin') {
-      fetch('/api/empresas', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/empresas'), { headers: { Authorization: `Bearer ${token}` } })
         .then(res => res.json())
         .then(res => res.json()).then(data => setEmpresas(Array.isArray(data) ? data : data.data || [])).catch(() => {})
         .catch(() => {})
