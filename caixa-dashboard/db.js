@@ -29,7 +29,7 @@ async function loadAll() {
   console.log('📥 Carregando dados do PostgreSQL...');
   const t0 = Date.now();
 
-  const [empresas, usuarios, funcionarios, categorias, produtos, vendas, operacoes, dispositivos, auditoria] = await Promise.all([
+  const [empresas, usuarios, funcionarios, categorias, produtos, vendas, operacoes, dispositivos, auditoria, clientes] = await Promise.all([
     queryMany('SELECT * FROM empresas ORDER BY created_at'),
     queryMany('SELECT * FROM usuarios ORDER BY created_at'),
     queryMany('SELECT * FROM funcionarios ORDER BY created_at'),
@@ -39,6 +39,7 @@ async function loadAll() {
     queryMany(`SELECT * FROM operacoes ORDER BY created_at DESC LIMIT 10000`),
     queryMany('SELECT * FROM dispositivos'),
     queryMany('SELECT * FROM auditoria ORDER BY created_at DESC LIMIT 2000'),
+    queryMany('SELECT * FROM clientes ORDER BY created_at'),
   ]);
 
   db.empresas = empresas;
@@ -50,6 +51,7 @@ async function loadAll() {
   db.operacoes = operacoes;
   db.dispositivos = dispositivos;
   db.auditoria = auditoria;
+  db.clientes = clientes;
 
   // Converter campos snake_case → camelCase para compatibilidade com o código existente
   db.empresas = db.empresas.map(mapEmpresa);
@@ -61,8 +63,9 @@ async function loadAll() {
   db.operacoes = db.operacoes.map(mapOperacao);
   db.dispositivos = db.dispositivos.map(mapDispositivo);
   db.auditoria = db.auditoria.map(mapAuditoria);
+  db.clientes = db.clientes.map(mapCliente);
 
-  console.log(`📊 PostgreSQL carregado em ${Date.now() - t0}ms: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.vendas.length} vendas, ${db.operacoes.length} operações, ${db.usuarios.length} usuários, ${db.dispositivos.length} dispositivos`);
+  console.log(`📊 PostgreSQL carregado em ${Date.now() - t0}ms: ${db.produtos.length} produtos, ${db.categorias.length} categorias, ${db.vendas.length} vendas, ${db.operacoes.length} operações, ${db.usuarios.length} usuários, ${db.dispositivos.length} dispositivos, ${db.clientes.length} clientes`);
 }
 
 // =============================================================================
@@ -174,6 +177,14 @@ function mapAuditoria(r) {
   };
 }
 
+function mapCliente(r) {
+  return {
+    ...r,
+    empresaId: r.empresa_id,
+    cpfCnpj: r.cpf_cnpj,
+  };
+}
+
 // =============================================================================
 // SAVE: persistir alterações de volta ao PostgreSQL
 // =============================================================================
@@ -199,15 +210,26 @@ async function flushToDb() {
       syncTable('vendas', db.vendas, mapVendaToDb),
       syncTable('operacoes', db.operacoes, mapOperacaoToDb),
       syncTable('dispositivos', db.dispositivos, mapDispositivoToDb),
+      syncTable('clientes', db.clientes, mapClienteToDb),
     ]);
   } catch (err) {
     console.error('❌ Erro ao sincronizar dados:', err.message);
   }
 }
 
+// Whitelist de tabelas permitidas (previne SQL injection via nome de tabela)
+const ALLOWED_TABLES = new Set([
+  'empresas', 'usuarios', 'funcionarios', 'categorias',
+  'produtos', 'vendas', 'operacoes', 'dispositivos', 'clientes'
+]);
+
 // Sincronizar uma tabela: upsert de todos os registros
 async function syncTable(tableName, data, mapper) {
   if (!data || data.length === 0) return;
+  if (!ALLOWED_TABLES.has(tableName)) {
+    console.error(`❌ Tabela não permitida: ${tableName}`);
+    return;
+  }
 
   for (const item of data) {
     if (!item.id) continue;
@@ -243,6 +265,7 @@ function getConflictKey(tableName) {
     vendas: 'id',
     operacoes: 'id',
     dispositivos: 'device_id',
+    clientes: 'id',
   };
   return keys[tableName] || 'id';
 }
@@ -395,6 +418,22 @@ function mapDispositivoToDb(item) {
     last_poll: item.lastPoll || item.last_poll,
     last_login: item.lastLogin || item.last_login,
     last_login_user: item.lastLoginUser || item.last_login_user,
+  };
+}
+
+function mapClienteToDb(item) {
+  return {
+    id: item.id,
+    empresa_id: item.empresaId || item.empresa_id,
+    nome: item.nome,
+    cpf_cnpj: item.cpfCnpj || item.cpf_cnpj || '',
+    telefone: item.telefone || '',
+    email: item.email || '',
+    endereco: item.endereco || '',
+    cidade: item.cidade || '',
+    cep: item.cep || '',
+    observacao: item.observacao || '',
+    ativo: item.ativo !== undefined ? item.ativo : true,
   };
 }
 

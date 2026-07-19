@@ -21,7 +21,7 @@
 
     <application
         android:name=".CaixaApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -82,7 +82,8 @@
         <!-- Uso: adb shell am broadcast -a com.seucaixa.caixacombo.UNPROVISION -->
         <receiver
             android:name=".UnprovisionReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
             <intent-filter>
                 <action android:name="com.seucaixa.caixacombo.UNPROVISION" />
             </intent-filter>

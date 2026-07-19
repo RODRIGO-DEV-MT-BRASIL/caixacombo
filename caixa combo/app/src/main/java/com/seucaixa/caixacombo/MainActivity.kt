@@ -200,7 +200,6 @@ class MainActivity : ComponentActivity() {
             onLockPasswordReceived = { password ->
                 runOnUiThread {
                     currentLockPassword = password
-                    android.util.Log.d("MainActivity", "Senha de bloqueio recebida: $password")
                 }
             },
             onUnlockResponse = { success, message ->
@@ -773,18 +772,28 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Garante que existe pelo menos um usuário admin no banco.
-     * Código padrão: 1234
+     * Código admin gerado aleatoriamente no primeiro acesso (salvo em SharedPreferences).
      */
     private fun ensureAdminUserExists() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val db = com.seucaixa.caixacombo.data.database.AppDatabase.getDatabase(applicationContext)
                 val dao = db.usuarioDao()
-                val admin = dao.getUsuarioByCodigo("1234")
+
+                // Gerar código admin seguro no primeiro acesso
+                val prefs = getSharedPreferences("admin_setup", Context.MODE_PRIVATE)
+                var adminCode = prefs.getString("admin_code", null)
+                if (adminCode == null) {
+                    adminCode = (1000..9999).random().toString()
+                    prefs.edit().putString("admin_code", adminCode).apply()
+                    android.util.Log.w("MainActivity", "⚠️ Código admin gerado: $adminCode (anote!)")
+                }
+
+                val admin = dao.getUsuarioByCodigo(adminCode)
                 if (admin == null) {
                     val id = dao.insert(com.seucaixa.caixacombo.data.model.Usuario(
                         nome = "Admin",
-                        codigo = "1234",
+                        codigo = adminCode,
                         cpf = "",
                         telefone = "",
                         email = "",
@@ -801,7 +810,7 @@ class MainActivity : ComponentActivity() {
                         permFechamento = true,
                         permAcessos = true
                     ))
-                    android.util.Log.d("MainActivity", "Usuário admin padrão criado (código: 1234, id: $id)")
+                    android.util.Log.d("MainActivity", "Usuário admin padrão criado (código: $adminCode, id: $id)")
                 } else {
                     android.util.Log.d("MainActivity", "Usuário admin já existe: ${admin.nome}")
                 }
@@ -934,7 +943,6 @@ class MainActivity : ComponentActivity() {
                 val password = params?.optString("lockPassword", "") ?: ""
                 if (password.isNotEmpty()) {
                     currentLockPassword = password
-                    android.util.Log.d("MainActivity", "Senha de bloqueio atualizada via comando: $password")
                 }
                 showLockScreen(reason)
             }

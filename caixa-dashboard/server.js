@@ -116,6 +116,24 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const unlockLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: 10, // máximo 10 tentativas de desbloqueio por dispositivo
+  message: { error: 'Muitas tentativas de desbloqueio. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.body?.deviceId || req.ip, // Rate limit per device
+});
+
+const deviceLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 60, // máximo 60 requisições por dispositivo por minuto
+  message: { error: 'Muitas requisições do dispositivo. Aguarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.body?.deviceId || req.ip,
+});
+
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 
@@ -327,17 +345,31 @@ setInterval(async () => {
 }, 30000);
 
 // ==================== CONTROLE VIA ADB ====================
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+const execFilePromise = util.promisify(execFile);
 
 /**
  * Envia comando ADB diretamente ao dispositivo para reiniciar ou desligar
  * @param {string} action - 'reboot' ou 'shutdown'
  * @param {string} deviceId - Serial number do dispositivo (mesmo que o ADB usa)
  */
+function sanitizeDeviceId(deviceId) {
+  // Previne command injection: só aceita caracteres alfanuméricos, hífens e underscores
+  if (!deviceId || typeof deviceId !== 'string') return null;
+  const sanitized = deviceId.replace(/[^a-zA-Z0-9\-_.:]/g, '');
+  return sanitized.length > 0 && sanitized.length <= 128 ? sanitized : null;
+}
+
 async function sendAdbCommand(action, deviceId) {
-  console.log(`🔌 [ADB] Enviando comando ${action} para ${deviceId}`);
+  const safeDeviceId = sanitizeDeviceId(deviceId);
+  if (!safeDeviceId) {
+    console.error(`❌ [ADB] deviceId inválido: ${deviceId}`);
+    return { success: false, error: 'deviceId inválido' };
+  }
+
+  console.log(`🔌 [ADB] Enviando comando ${action} para ${safeDeviceId}`);
 
   const ADB_TIMEOUT = 5000; // 5 segundos de timeout para comandos ADB
 
@@ -355,22 +387,25 @@ async function sendAdbCommand(action, deviceId) {
   // Verificar se dispositivo está conectado
   try {
     const { stdout } = await execWithTimeout('adb devices');
-    const isConnected = stdout.includes(deviceId);
+    const isConnected = stdout.includes(safeDeviceId);
 
     if (!isConnected) {
-      console.log(`❌ [ADB] Dispositivo ${deviceId} não está conectado via ADB`);
+      console.log(`❌ [ADB] Dispositivo ${safeDeviceId} não está conectado via ADB`);
       return { success: false, error: 'Dispositivo não está conectado via USB/WiFi ADB' };
     }
 
-    // Enviar comando
-    const adbCommand = action === 'shutdown'
-      ? `adb -s ${deviceId} shell reboot -p`
-      : `adb -s ${deviceId} shell reboot`;
+    // Enviar comando — usando execFile para evitar shell injection
+    const adbArgs = ['-s', safeDeviceId, 'shell'];
+    if (action === 'shutdown') {
+      adbArgs.push('reboot', '-p');
+    } else {
+      adbArgs.push('reboot');
+    }
 
-    console.log(`🔌 [ADB] Executando: ${adbCommand}`);
+    console.log(`🔌 [ADB] Executando: adb ${adbArgs.join(' ')}`);
 
-    await execWithTimeout(adbCommand);
-    console.log(`✅ [ADB] Comando ${action} enviado com sucesso para ${deviceId}`);
+    await execFilePromise('adb', adbArgs);
+    console.log(`✅ [ADB] Comando ${action} enviado com sucesso para ${safeDeviceId}`);
 
     return { success: true, method: 'adb' };
   } catch (error) {
@@ -1483,7 +1518,7 @@ function verifyTerminalAndLogin(deviceId, empresaDoFuncionario, nomeFuncionario,
     const cd = connectedDevices.get(deviceId);
     if (cd) { cd.empresaId = empresaDoFuncionario; cd.status = 'pending' }
     debouncedSaveData();
-    console.log(`📱 [LOGIN] Terminal ${deviceId} transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
+    console.log(`📱 [LOGIN] Terminal transferido para empresa ${empresaDoFuncionario} - pendente de aprovação`);
     return { error: 'Terminal aguardando aprovação da empresa.', status: 403 };
   }
 
@@ -1970,7 +2005,7 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, r
   const { deviceId } = req.params;
   const dashboardInfo = connectedDashboards.get(req.socket?.id);
 
-  console.log(`🔑 [DEBUG] Solicitação para mudar senha do dispositivo: ${deviceId}`);
+  console.log(`🔑 Solicitação para mudar senha do dispositivo: ${sanitizeDeviceId(deviceId) || 'invalid'}`);
 
   // Encontrar dispositivo nos dados persistidos
   const deviceIndex = db.dispositivos.findIndex(d => d.deviceId === deviceId);
@@ -1979,8 +2014,8 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, r
     return res.status(404).json({ error: 'Dispositivo não encontrado' });
   }
 
-  // Gerar nova senha de 6 dígitos
-  const newPassword = Math.floor(100000 + Math.random() * 900000).toString();
+  // Gerar nova senha de 6 dígitos (crypto-secure)
+  const newPassword = crypto.randomInt(100000, 999999).toString();
 
   // Atualizar senha no banco de dados
   db.dispositivos[deviceIndex].lockPassword = newPassword;
@@ -2006,7 +2041,7 @@ app.put('/api/dispositivos/:deviceId/password', authenticateToken, async (req, r
   // Auditoria
   addAuditoria('mudanca_status', deviceId, 'Senha de bloqueio atualizada', dashboardInfo?.usuario);
 
-  console.log(`🔑 Nova senha gerada para ${deviceId}`);
+  console.log(`🔑 Nova senha gerada para ${sanitizeDeviceId(deviceId) || 'invalid'}`);
 
   res.json({
     message: 'Senha de bloqueio atualizada com sucesso',
@@ -2640,8 +2675,24 @@ function isValidSerial(serial) {
   return typeof serial === 'string' && serial.trim().length > 0 && serial.trim().toUpperCase() !== 'UNKNOWN';
 }
 
+// Middleware: validar que deviceId é uma string válida e não está na blocklist
+function validateDeviceRequest(req, res, next) {
+  const { deviceId } = req.body || req.params || {};
+  if (!deviceId || typeof deviceId !== 'string' || deviceId.trim().length === 0) {
+    return res.status(400).json({ error: 'deviceId obrigatório' });
+  }
+  if (BLOCKED_DEVICE_IDS.includes(deviceId)) {
+    return res.status(403).json({ error: 'Dispositivo bloqueado' });
+  }
+  // Sanitizar: só alphanumeric, hífens, underscores, pontos
+  if (!/^[a-zA-Z0-9\-_.:]{1,128}$/.test(deviceId)) {
+    return res.status(400).json({ error: 'deviceId com formato inválido' });
+  }
+  next();
+}
+
 // Dispositivo faz heartbeat e recebe comandos pendentes
-app.post('/api/device/poll', async (req, res) => {
+app.post('/api/device/poll', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, deviceName, deviceType, serialNumber, status, caixaData } = req.body;
   
   if (!deviceId) {
@@ -2737,7 +2788,7 @@ console.log(`📱 [POLL] deviceId=${deviceId}, isApproved=${isApproved}, pollEmp
 });
 
 // Enviar venda via REST
-app.post('/api/device/sale', async (req, res) => {
+app.post('/api/device/sale', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, sale } = req.body;
   
   console.log(`💰 [SALE] Venda recebida via REST - deviceId: ${deviceId}, sale.id: ${sale?.id}, total: ${sale?.total}, forma: ${sale?.formaPagamento}`);
@@ -2789,7 +2840,7 @@ app.post('/api/device/sale', async (req, res) => {
 });
 
 // Enviar operação de caixa via REST (sem autenticação - usado pelos terminais Android)
-app.post('/api/device/operacao', async (req, res) => {
+app.post('/api/device/operacao', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, tipo, valor, nomeOperador, observacao } = req.body;
   
   if (!deviceId || !tipo) {
@@ -2898,7 +2949,7 @@ app.post('/api/device/operacao', async (req, res) => {
 });
 
 // Enviar status do dispositivo via REST
-app.post('/api/device/status', async (req, res) => {
+app.post('/api/device/status', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, status } = req.body;
   
   if (!deviceId) {
@@ -2923,7 +2974,7 @@ app.post('/api/device/status', async (req, res) => {
 });
 
 // Enviar atualização de estoque via REST
-app.post('/api/device/estoque', async (req, res) => {
+app.post('/api/device/estoque', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, produtoId, novoEstoque } = req.body;
   
   if (!deviceId) {
@@ -2943,7 +2994,7 @@ app.post('/api/device/estoque', async (req, res) => {
 });
 
 // Confirmar bloqueio via REST
-app.post('/api/device/lock-confirmed', async (req, res) => {
+app.post('/api/device/lock-confirmed', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId } = req.body;
   const device = connectedDevices.get(deviceId);
   if (device) {
@@ -2955,7 +3006,7 @@ app.post('/api/device/lock-confirmed', async (req, res) => {
 });
 
 // Confirmar desbloqueio via REST
-app.post('/api/device/unlock-confirmed', async (req, res) => {
+app.post('/api/device/unlock-confirmed', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId } = req.body;
   const device = connectedDevices.get(deviceId);
   if (device) {
@@ -2966,8 +3017,8 @@ app.post('/api/device/unlock-confirmed', async (req, res) => {
   res.json({ success: true });
 });
 
-// Tentativa de desbloqueio via REST
-app.post('/api/device/unlock-attempt', async (req, res) => {
+// Tentativa de desbloqueio via REST (com rate limiting)
+app.post('/api/device/unlock-attempt', unlockLimiter, async (req, res) => {
   const { deviceId, password } = req.body;
   const device = connectedDevices.get(deviceId);
   
@@ -2991,7 +3042,7 @@ app.post('/api/device/unlock-attempt', async (req, res) => {
 });
 
 // Enviar resultado de controle via REST
-app.post('/api/device/control-result', async (req, res) => {
+app.post('/api/device/control-result', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, action, success, error } = req.body;
   emitDeviceEvent('control_result', { deviceId, action, success, error });
   res.json({ success: true });
@@ -3052,7 +3103,7 @@ app.post('/api/device/produtos-sync', async (req, res) => {
 });
 
 // Terminal salva/edita produto sem autenticação JWT (usa deviceId)
-app.post('/api/device/produto-save', async (req, res) => {
+app.post('/api/device/produto-save', deviceLimiter, validateDeviceRequest, async (req, res) => {
   const { deviceId, produto } = req.body;
   if (!produto || !produto.nome) {
     return res.status(400).json({ error: 'Dados do produto obrigatórios' });
@@ -3387,13 +3438,26 @@ io.on('connection', (socket) => {
     console.log('✅ Venda processada e salva:', venda.id);
   });
 
-  // Validar senha de desbloqueio enviada pelo terminal
+  // Validar senha de desbloqueio enviada pelo terminal (com rate limiting)
+  const unlockAttemptCounts = new Map(); // { deviceId -> [timestamps] }
   socket.on('unlock_attempt', async (data) => {
     const { deviceId, password } = data;
     const device = connectedDevices.get(deviceId);
-    
-    console.log(`🔑 [DEBUG] Tentativa de desbloqueio: ${deviceId}`);
-    
+
+    // Rate limiting manual para WebSocket unlock
+    const now = Date.now();
+    const attempts = unlockAttemptCounts.get(deviceId) || [];
+    const recentAttempts = attempts.filter(t => now - t < 5 * 60 * 1000); // 5 min window
+    if (recentAttempts.length >= 10) {
+      console.log(`🔒 [UNLOCK-RATE] deviceId=${deviceId} bloqueado por muitas tentativas`);
+      socket.emit('unlock_response', { deviceId, success: false, message: 'Muitas tentativas. Aguarde 5 minutos.' });
+      return;
+    }
+    recentAttempts.push(now);
+    unlockAttemptCounts.set(deviceId, recentAttempts);
+
+    console.log(`🔑 Tentativa de desbloqueio: ${sanitizeDeviceId(deviceId) || 'invalid'}`);
+
     if (device) {
       if (device.lockPassword === password) {
         // Senha correta - desbloquear
@@ -3626,7 +3690,7 @@ io.on('connection', (socket) => {
         }
       }
     }
-  }, 1000); // Verificar a cada segundo para contador preciso
+  }, 5000); // Verificar a cada 5 segundos (suficiente para UX, reduz carga)
 
   // Endpoint para sincronizar dados com dispositivos
   socket.on('sync_data', async (data) => {

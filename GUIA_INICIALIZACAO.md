@@ -303,4 +303,7 @@ npm install
 - API: `http://localhost:3001/api`
 - WebSocket: `http://localhost:3001`
 
-**Credenciais padrão:** admin / admin123
+**Credenciais padrão:** admin / (senha definida no .env)
+
+> NOTA: O código de acesso do admin no Android é gerado aleatoriamente no primeiro acesso.
+> Verifique o Logcat do dispositivo (tag: MainActivity) para encontrar o código gerado.

@@ -208,6 +208,22 @@ async function createTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS clientes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE,
+        nome TEXT NOT NULL,
+        cpf_cnpj TEXT DEFAULT '',
+        telefone TEXT DEFAULT '',
+        email TEXT DEFAULT '',
+        endereco TEXT DEFAULT '',
+        cidade TEXT DEFAULT '',
+        cep TEXT DEFAULT '',
+        observacao TEXT DEFAULT '',
+        ativo BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
       CREATE INDEX IF NOT EXISTS idx_empresas_slug ON empresas(slug);
       CREATE INDEX IF NOT EXISTS idx_empresas_login ON empresas(login);
       CREATE INDEX IF NOT EXISTS idx_usuarios_empresa ON usuarios(empresa_id);
@@ -223,6 +239,7 @@ async function createTables() {
       CREATE INDEX IF NOT EXISTS idx_dispositivos_empresa ON dispositivos(empresa_id);
       CREATE INDEX IF NOT EXISTS idx_auditoria_empresa ON auditoria(empresa_id);
       CREATE INDEX IF NOT EXISTS idx_auditoria_timestamp ON auditoria(timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_clientes_empresa ON clientes(empresa_id);
     `);
     
     // Habilitar RLS em todas as tabelas
